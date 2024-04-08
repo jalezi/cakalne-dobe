@@ -5,25 +5,45 @@ import { FacilityProcedureWaitingTimes } from "@/lib/zod-schemas/data-schemas";
 import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
 import { DataTableColumnHeader } from "./table-header";
 
+import type { Column as TColumn } from "@tanstack/react-table";
+
 export type Column = FacilityProcedureWaitingTimes;
 
 const columnHelper = createColumnHelper<Column>();
+
+export const headerText = {
+  procedure: "Storitev",
+  waitingPeriods: "Stopnja nujnosti",
+  code: "Koda",
+  name: "Naziv",
+  facility: "Ustanova",
+  regular: "Običajno",
+  fast: "Hitro",
+  veryFast: "Zelo hitro",
+} as const;
+
+export const isKeyOfHeaderText = (
+  key: string,
+): key is keyof typeof headerText => key in headerText;
 
 export const columns: ColumnDef<Column>[] = [
   columnHelper.group({
     id: "procedure",
     header: "Storitev",
+    enableHiding: false,
     columns: [
       {
         id: "code",
         accessorFn: (originalRow) => originalRow.procedure.code,
-        header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="Koda"
-            className="justify-center"
-          />
-        ),
+        header: ({ column }) => {
+          return (
+            <DataTableColumnHeader
+              column={column}
+              title={headerText.code}
+              className="justify-center"
+            />
+          );
+        },
         sortingFn: "alphanumericCaseSensitive",
       },
       {
@@ -32,7 +52,7 @@ export const columns: ColumnDef<Column>[] = [
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
-            title="Naziv"
+            title={headerText.name}
             className="justify-center"
           />
         ),
@@ -42,14 +62,16 @@ export const columns: ColumnDef<Column>[] = [
   }),
   columnHelper.group({
     id: "facility",
+    enableHiding: false,
     columns: [
       {
         id: "facility",
+
         accessorFn: (originalRow) => originalRow.facility,
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
-            title="Ustanova"
+            title={headerText.facility}
             className="justify-center"
           />
         ),
@@ -60,6 +82,7 @@ export const columns: ColumnDef<Column>[] = [
   columnHelper.group({
     id: "waitingPeriods",
     header: "Stopnja nujnosti",
+    enableHiding: false,
     columns: [
       {
         id: "regular",
@@ -67,7 +90,7 @@ export const columns: ColumnDef<Column>[] = [
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
-            title="Običajno"
+            title={headerText.regular}
             className="justify-center"
           />
         ),
@@ -93,7 +116,7 @@ export const columns: ColumnDef<Column>[] = [
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
-            title="Hitro"
+            title={headerText.fast}
             className="justify-center"
           />
         ),
@@ -119,7 +142,7 @@ export const columns: ColumnDef<Column>[] = [
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
-            title="Zelo hitro"
+            title={headerText.veryFast}
             className="justify-center"
           />
         ),
@@ -142,3 +165,33 @@ export const columns: ColumnDef<Column>[] = [
     ],
   }),
 ];
+
+export function groupByParent<TData, TValue>(
+  columns: TColumn<TData, TValue>[],
+) {
+  const groupedColumns = columns.reduce(
+    (acc, column) => {
+      const parentColumn = column.parent;
+      if (!parentColumn) {
+        return acc;
+      }
+
+      if (!acc[parentColumn.id]) {
+        acc[parentColumn.id] = {
+          column: parentColumn,
+          children: [],
+        };
+      }
+
+      acc[parentColumn.id].children.push(column);
+
+      return acc;
+    },
+    {} as Record<
+      string,
+      { column: TColumn<TData, unknown>; children: TColumn<TData, unknown>[] }
+    >,
+  );
+
+  return groupedColumns;
+}
