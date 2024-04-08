@@ -17,6 +17,9 @@ dependencies:
   '@tanstack/react-table':
     specifier: ^8.15.3
     version: 8.15.3(react-dom@18.2.0)(react@18.2.0)
+  '@tanstack/table-core':
+    specifier: ^8.15.3
+    version: 8.15.3
   class-variance-authority:
     specifier: ^0.7.0
     version: 0.7.0
