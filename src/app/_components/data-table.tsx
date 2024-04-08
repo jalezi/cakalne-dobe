@@ -1,17 +1,22 @@
 "use client";
 
 import {
-  Column,
   ColumnDef,
+  FilterFn,
   SortingState,
   TableMeta,
   VisibilityState,
   flexRender,
   getCoreRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+
+import { rankItem } from "@tanstack/match-sorter-utils";
 
 import {
   Table,
@@ -34,6 +39,22 @@ import {
 import { Button } from "@/components/ui/button";
 import { groupByParent, headerText, isKeyOfHeaderText } from "./columns";
 import { DropdownMenuGroup } from "@radix-ui/react-dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { DebouncedInput } from "@/components/debounced-input";
+
+const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
+  // Rank the item
+  console.log(row);
+  const itemRank = rankItem(row.getValue(columnId), value);
+
+  // Store the itemRank info
+  addMeta({
+    itemRank,
+  });
+
+  // Return if the item should be filtered in/out
+  return itemRank.passed;
+};
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -42,6 +63,7 @@ interface DataTableProps<TData, TValue> {
   initialState?: {
     sorting?: SortingState;
     columnVisibility?: VisibilityState;
+    globalFilter?: string;
   };
 }
 
@@ -57,18 +79,29 @@ export function DataTable<TData, TValue>({
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
     initialVisibilityState,
   );
+  const initialGlobalFilter = initialState?.globalFilter || "";
+  const [globalFilter, setGlobalFilter] = useState(initialGlobalFilter);
+
   const table = useReactTable({
     data,
     columns,
+    filterFns: {
+      fuzzy: fuzzyFilter,
+    },
     state: {
       sorting,
       columnVisibility,
+      globalFilter,
     },
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
+    onGlobalFilterChange: setGlobalFilter,
+    // getFacetedRowModel: getFacetedRowModel(),
+    // getFacetedUniqueValues: getFacetedUniqueValues(),
     meta: {
       ...meta,
       findProcedureMaxAllowedDays: (code: string) => {
@@ -89,6 +122,21 @@ export function DataTable<TData, TValue>({
   return (
     <>
       <div className="flex items-center py-4">
+        <div className="grid w-full max-w-sm items-center gap-1.5">
+          <label htmlFor="global-table-filter" className="sr-only">
+            išči po vseh stolpcih
+          </label>
+          <DebouncedInput
+            type="search"
+            id="global-table-filter"
+            placeholder="Išči po vseh stolpcih..."
+            defaultValue={globalFilter}
+            onChange={(event) => {
+              setGlobalFilter(String(event.target.value));
+            }}
+            debounceTime={500}
+          />
+        </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="ml-auto">
@@ -203,8 +251,8 @@ export function DataTable<TData, TValue>({
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
+                  colSpan={table.getVisibleLeafColumns().length}
+                  className="h-24 text-center bg-red-200"
                 >
                   No results.
                 </TableCell>
