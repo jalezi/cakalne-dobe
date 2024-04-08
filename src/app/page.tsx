@@ -31,13 +31,17 @@ export default async function Home() {
   }).format(startDate);
 
   return (
-    <main>
-      <h1>Čakalne dobe</h1>
-      <p>
-        <time dateTime={start}>{formatedStartDate}</time>
-      </p>
-      <ThemeToggler />
-      <DataTable data={procedures} columns={columns} />
-    </main>
+    <>
+      <header className="flex p-4">
+        <h1>Čakalne dobe</h1>
+        <ThemeToggler className="ml-auto" />
+      </header>
+      <main className="p-4 space-y-2">
+        <p>
+          Podatki pridobljeni: <time dateTime={start}>{formatedStartDate}</time>
+        </p>
+        <DataTable data={procedures} columns={columns} />
+      </main>
+    </>
   );
 }
