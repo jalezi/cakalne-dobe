@@ -1,174 +1,175 @@
-"use client";
+'use client';
 
-import { cn } from "@/lib/utils";
-import { FacilityProcedureWaitingTimes } from "@/lib/zod-schemas/data-schemas";
-import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
-import { DataTableColumnHeader } from "./table-header";
+import { cn } from '@/lib/utils';
+import { FacilityProcedureWaitingTimes } from '@/lib/zod-schemas/data-schemas';
+import { createColumnHelper, type ColumnDef } from '@tanstack/react-table';
+import { DataTableColumnHeader } from './table-header';
 
-import type { Column as TColumn } from "@tanstack/react-table";
+import type { Column as TColumn } from '@tanstack/react-table';
 
 export type Column = FacilityProcedureWaitingTimes;
 
 const columnHelper = createColumnHelper<Column>();
 
-export const headerText = {
-  procedure: "Storitev",
-  waitingPeriods: "Stopnja nujnosti",
-  code: "Koda",
-  name: "Naziv",
-  facility: "Ustanova",
-  facilityName: "Ustanova",
-  regular: "Običajno",
-  fast: "Hitro",
-  veryFast: "Zelo hitro",
+export const HEADER_TEXT_MAP = {
+  procedure: 'Storitev',
+  waitingPeriods: 'Stopnja nujnosti',
+  code: 'Koda',
+  name: 'Naziv',
+  facility: 'Ustanova',
+  facilityName: 'Ime',
+  regular: 'Običajno',
+  fast: 'Hitro',
+  veryFast: 'Zelo hitro',
 } as const;
 
 export const isKeyOfHeaderText = (
-  key: string,
-): key is keyof typeof headerText => key in headerText;
+  key: string
+): key is keyof typeof HEADER_TEXT_MAP => key in HEADER_TEXT_MAP;
 
 export const columns: ColumnDef<Column>[] = [
   columnHelper.group({
-    id: "procedure",
-    header: "Storitev",
+    id: 'procedure',
+    header: HEADER_TEXT_MAP.procedure,
     enableHiding: false,
     columns: [
       {
-        id: "code",
+        id: 'code',
         accessorFn: (originalRow) => originalRow.procedure.code,
         header: ({ column }) => {
           return (
             <DataTableColumnHeader
               column={column}
-              title={headerText.code}
+              title={HEADER_TEXT_MAP.code}
               className="justify-center"
             />
           );
         },
-        sortingFn: "alphanumericCaseSensitive",
+        sortingFn: 'alphanumericCaseSensitive',
       },
       {
-        id: "name",
+        id: 'name',
         accessorFn: (originalRow) => originalRow.procedure.name,
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
-            title={headerText.name}
+            title={HEADER_TEXT_MAP.name}
             className="justify-center"
           />
         ),
-        sortingFn: "text",
+        sortingFn: 'text',
       },
     ],
   }),
   columnHelper.group({
-    id: "facility",
+    id: 'facility',
+    header: HEADER_TEXT_MAP.facility,
     enableHiding: false,
     columns: [
       {
-        id: "facilityName",
+        id: 'facilityName',
 
         accessorFn: (originalRow) => originalRow.facility,
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
-            title={headerText.facility}
+            title={HEADER_TEXT_MAP.facilityName}
             className="justify-center"
           />
         ),
-        sortingFn: "text",
+        sortingFn: 'text',
       },
     ],
   }),
   columnHelper.group({
-    id: "waitingPeriods",
-    header: "Stopnja nujnosti",
+    id: 'waitingPeriods',
+    header: HEADER_TEXT_MAP.waitingPeriods,
     enableHiding: false,
     columns: [
       {
-        id: "regular",
+        id: 'regular',
         accessorFn: (originalRow) => originalRow.waitingPeriods.regular,
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
-            title={headerText.regular}
+            title={HEADER_TEXT_MAP.regular}
             className="justify-center"
           />
         ),
         cell: ({ row, table }) => {
           const maxAllowedDays =
             table.options.meta?.findProcedureMaxAllowedDays?.(
-              row.original.procedure.code,
+              row.original.procedure.code
             );
           const maxDays = maxAllowedDays?.regular;
           const days = row.original.waitingPeriods.regular;
           const isExceeded = days && maxDays ? days > maxDays : false;
           return (
-            <div className={cn(isExceeded && "text-red-600", "text-center")}>
-              {days ? days : "-"}
+            <div className={cn(isExceeded && 'text-red-600', 'text-center')}>
+              {days ? days : '-'}
             </div>
           );
         },
-        sortingFn: "alphanumeric",
+        sortingFn: 'alphanumeric',
       },
       {
-        id: "fast",
+        id: 'fast',
         accessorFn: (originalRow) => originalRow.waitingPeriods.fast,
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
-            title={headerText.fast}
+            title={HEADER_TEXT_MAP.fast}
             className="justify-center"
           />
         ),
         cell: ({ row, table }) => {
           const maxAllowedDays =
             table.options.meta?.findProcedureMaxAllowedDays?.(
-              row.original.procedure.code,
+              row.original.procedure.code
             );
           const maxDays = maxAllowedDays?.fast;
           const days = row.original.waitingPeriods.fast;
           const isExceeded = days && maxDays ? days > maxDays : false;
           return (
-            <div className={cn(isExceeded && "text-red-600", "text-center")}>
-              {days ? days : "-"}
+            <div className={cn(isExceeded && 'text-red-600', 'text-center')}>
+              {days ? days : '-'}
             </div>
           );
         },
-        sortingFn: "alphanumeric",
+        sortingFn: 'alphanumeric',
       },
       {
-        id: "veryFast",
+        id: 'veryFast',
         accessorFn: (originalRow) => originalRow.waitingPeriods.veryFast,
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
-            title={headerText.veryFast}
+            title={HEADER_TEXT_MAP.veryFast}
             className="justify-center"
           />
         ),
         cell: ({ row, table }) => {
           const maxAllowedDays =
             table.options.meta?.findProcedureMaxAllowedDays?.(
-              row.original.procedure.code,
+              row.original.procedure.code
             );
           const maxDays = maxAllowedDays?.veryFast;
           const days = row.original.waitingPeriods.veryFast;
           const isExceeded = days && maxDays ? days > maxDays : false;
           return (
-            <div className={cn(isExceeded && "text-red-600", "text-center")}>
-              {days ? days : "-"}
+            <div className={cn(isExceeded && 'text-red-600', 'text-center')}>
+              {days ? days : '-'}
             </div>
           );
         },
-        sortingFn: "alphanumeric",
+        sortingFn: 'alphanumeric',
       },
     ],
   }),
 ];
 
 export function groupByParent<TData, TValue>(
-  columns: TColumn<TData, TValue>[],
+  columns: TColumn<TData, TValue>[]
 ) {
   const groupedColumns = columns.reduce(
     (acc, column) => {
@@ -191,7 +192,7 @@ export function groupByParent<TData, TValue>(
     {} as Record<
       string,
       { column: TColumn<TData, unknown>; children: TColumn<TData, unknown>[] }
-    >,
+    >
   );
 
   return groupedColumns;

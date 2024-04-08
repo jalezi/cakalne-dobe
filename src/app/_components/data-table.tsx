@@ -37,7 +37,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { groupByParent, headerText, isKeyOfHeaderText } from './columns';
+import { groupByParent, HEADER_TEXT_MAP, isKeyOfHeaderText } from './columns';
 import { DropdownMenuGroup } from '@radix-ui/react-dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { DebouncedInput } from '@/components/debounced-input';
@@ -187,7 +187,7 @@ export function DataTable<TData, TValue>({
                 <Fragment key={key}>
                   <DropdownMenuGroup>
                     <DropdownMenuLabel>
-                      {isParentKey ? headerText[key] : key}
+                      {isParentKey ? HEADER_TEXT_MAP[key] : key}
                     </DropdownMenuLabel>
                     {columns.children.map((column) => {
                       const { id } = column;
@@ -201,7 +201,7 @@ export function DataTable<TData, TValue>({
                             column.toggleVisibility(!!value)
                           }
                         >
-                          {isChildKey ? headerText[id] : id}
+                          {isChildKey ? HEADER_TEXT_MAP[id] : id}
                         </DropdownMenuCheckboxItem>
                       );
                     })}
@@ -227,7 +227,7 @@ export function DataTable<TData, TValue>({
                         leafColumn.toggleVisibility(!!value)
                       }
                     >
-                      {isKey ? headerText[id] : id}
+                      {isKey ? HEADER_TEXT_MAP[id] : id}
                     </DropdownMenuCheckboxItem>
                   );
                 });
