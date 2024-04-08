@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   ColumnDef,
@@ -14,9 +14,9 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
-} from "@tanstack/react-table";
+} from '@tanstack/react-table';
 
-import { rankItem } from "@tanstack/match-sorter-utils";
+import { rankItem } from '@tanstack/match-sorter-utils';
 
 import {
   Table,
@@ -25,9 +25,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { DataTablePagination } from "@/components/pagination";
-import { Fragment, useState } from "react";
+} from '@/components/ui/table';
+import { DataTablePagination } from '@/components/pagination';
+import { Fragment, useState } from 'react';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -35,12 +35,19 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { groupByParent, headerText, isKeyOfHeaderText } from "./columns";
-import { DropdownMenuGroup } from "@radix-ui/react-dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { DebouncedInput } from "@/components/debounced-input";
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import { groupByParent, headerText, isKeyOfHeaderText } from './columns';
+import { DropdownMenuGroup } from '@radix-ui/react-dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { DebouncedInput } from '@/components/debounced-input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
   // Rank the item
@@ -77,9 +84,9 @@ export function DataTable<TData, TValue>({
   const [sorting, setSorting] = useState<SortingState>(initialSortingState);
   const initialVisibilityState = initialState?.columnVisibility || {};
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
-    initialVisibilityState,
+    initialVisibilityState
   );
-  const initialGlobalFilter = initialState?.globalFilter || "";
+  const initialGlobalFilter = initialState?.globalFilter || '';
   const [globalFilter, setGlobalFilter] = useState(initialGlobalFilter);
 
   const table = useReactTable({
@@ -106,7 +113,7 @@ export function DataTable<TData, TValue>({
       ...meta,
       findProcedureMaxAllowedDays: (code: string) => {
         return meta?.allowedMaxWaitingTimes?.find(
-          (procedure) => procedure.code === code,
+          (procedure) => procedure.code === code
         )?.maxAllowedDays;
       },
     },
@@ -121,7 +128,7 @@ export function DataTable<TData, TValue>({
 
   return (
     <>
-      <div className="flex items-center py-4">
+      <div className="flex flex-wrap items-center gap-y-2">
         <div className="grid w-full max-w-sm items-center gap-1.5">
           <label htmlFor="global-table-filter" className="sr-only">
             išči po vseh stolpcih
@@ -137,9 +144,30 @@ export function DataTable<TData, TValue>({
             debounceTime={500}
           />
         </div>
+
+        <div className="flex items-center space-x-2 sm:ml-auto">
+          <p className="text-sm font-medium">Rows per page</p>
+          <Select
+            value={`${table.getState().pagination.pageSize}`}
+            onValueChange={(value) => {
+              table.setPageSize(Number(value));
+            }}
+          >
+            <SelectTrigger className="h-9 w-[70px]">
+              <SelectValue placeholder={table.getState().pagination.pageSize} />
+            </SelectTrigger>
+            <SelectContent side="top">
+              {[10, 20, 30, 40, 50].map((pageSize) => (
+                <SelectItem key={pageSize} value={`${pageSize}`}>
+                  {pageSize}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
+            <Button variant="outline" size="sm" className="ml-auto sm:ml-2">
               Stolpci
             </Button>
           </DropdownMenuTrigger>
@@ -206,7 +234,9 @@ export function DataTable<TData, TValue>({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div className="rounded-md border">
+
+      <div className="space-y-2 rounded-md border">
+        <DataTablePagination table={table} />
         <Table>
           <caption className="sr-only">Čakalne dobe</caption>
           <TableHeader>
@@ -223,7 +253,7 @@ export function DataTable<TData, TValue>({
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext(),
+                            header.getContext()
                           )}
                     </TableHead>
                   );
@@ -236,13 +266,13 @@ export function DataTable<TData, TValue>({
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
+                  data-state={row.getIsSelected() && 'selected'}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext(),
+                        cell.getContext()
                       )}
                     </TableCell>
                   ))}
@@ -252,7 +282,7 @@ export function DataTable<TData, TValue>({
               <TableRow>
                 <TableCell
                   colSpan={table.getVisibleLeafColumns().length}
-                  className="h-24 text-center bg-red-200"
+                  className="h-24 bg-red-200 text-center"
                 >
                   No results.
                 </TableCell>
