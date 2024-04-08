@@ -3,25 +3,38 @@
 import { cn } from "@/lib/utils";
 import { FacilityProcedureWaitingTimes } from "@/lib/zod-schemas/data-schemas";
 import type { ColumnDef } from "@tanstack/react-table";
+import { DataTableColumnHeader } from "./table-header";
 
 export type Column = FacilityProcedureWaitingTimes;
 
 export const columns: ColumnDef<Column>[] = [
   {
+    id: "code",
     accessorFn: (originalRow) => originalRow.procedure.code,
-    header: "Koda",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Koda" />
+    ),
   },
   {
+    id: "name",
     accessorFn: (originalRow) => originalRow.procedure.name,
-    header: "Naziv",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Naziv" />
+    ),
   },
   {
+    id: "facility",
     accessorFn: (originalRow) => originalRow.facility,
-    header: "Ustanova",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Ustanova" />
+    ),
   },
   {
+    id: "regular",
     accessorFn: (originalRow) => originalRow.waitingPeriods.regular,
-    header: "Običajno",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Običajno" />
+    ),
     cell: ({ row, table }) => {
       const maxAllowedDays = table.options.meta?.findProcedureMaxAllowedDays?.(
         row.original.procedure.code,
@@ -37,8 +50,11 @@ export const columns: ColumnDef<Column>[] = [
     },
   },
   {
+    id: "fast",
     accessorFn: (originalRow) => originalRow.waitingPeriods.fast,
-    header: "Hitro",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Hitro" />
+    ),
     cell: ({ row, table }) => {
       const maxAllowedDays = table.options.meta?.findProcedureMaxAllowedDays?.(
         row.original.procedure.code,
@@ -54,8 +70,11 @@ export const columns: ColumnDef<Column>[] = [
     },
   },
   {
+    id: "veryFast",
     accessorFn: (originalRow) => originalRow.waitingPeriods.veryFast,
-    header: "Zelo hitro",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Zelo hitro" />
+    ),
     cell: ({ row, table }) => {
       const maxAllowedDays = table.options.meta?.findProcedureMaxAllowedDays?.(
         row.original.procedure.code,
