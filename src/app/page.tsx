@@ -1,11 +1,43 @@
-import { ThemeToggler } from "@/components/theme-toggler";
-import Image from "next/image";
+import { promises as fs } from "fs";
 
-export default function Home() {
+import { ThemeToggler } from "@/components/theme-toggler";
+import { allDataSchema } from "@/lib/zod-schemas/data-schemas";
+import { DataTable } from "./_components/data-table";
+import { columns } from "./_components/columns";
+
+export default async function Home() {
+  const file = await fs.readFile(
+    process.cwd() + "/mock-data/cakalne-dobe.json",
+    "utf8",
+  );
+
+  const data = JSON.parse(file);
+  const parsedData = allDataSchema.safeParse(data);
+  if (!parsedData.success) {
+    console.error(parsedData.error.errors);
+    throw new Error("Invalid data");
+  }
+
+  const allData = parsedData.data;
+  const { start, procedures } = allData;
+  const startDate = new Date(start);
+  const formatedStartDate = Intl.DateTimeFormat("sl-SI", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    second: "numeric",
+  }).format(startDate);
+
   return (
     <main>
       <h1>Čakalne dobe</h1>
+      <p>
+        <time dateTime={start}>{formatedStartDate}</time>
+      </p>
       <ThemeToggler />
+      <DataTable data={procedures} columns={columns} />
     </main>
   );
 }
