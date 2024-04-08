@@ -136,6 +136,7 @@ export function DataTable<TData, TValue>({
           <DebouncedInput
             type="search"
             id="global-table-filter"
+            name="global-table-filter"
             placeholder="Išči po vseh stolpcih..."
             defaultValue={globalFilter}
             onChange={(event) => {
