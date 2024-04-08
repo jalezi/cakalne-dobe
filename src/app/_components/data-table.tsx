@@ -37,6 +37,11 @@ export function DataTable<TData, TValue>({
     getPaginationRowModel: getPaginationRowModel(),
     meta: {
       ...meta,
+      findProcedureMaxAllowedDays: (code: string) => {
+        return meta?.allowedMaxWaitingTimes?.find(
+          (procedure) => procedure.code === code,
+        )?.maxAllowedDays;
+      },
     },
   });
 
