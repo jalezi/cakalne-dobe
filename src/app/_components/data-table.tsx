@@ -22,7 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { DataTablePagination } from "@/components/pagination";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -39,15 +39,24 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   meta?: TableMeta<TData>;
+  initialState?: {
+    sorting?: SortingState;
+    columnVisibility?: VisibilityState;
+  };
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
   meta,
+  initialState,
 }: DataTableProps<TData, TValue>) {
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const initialSortingState = initialState?.sorting || [];
+  const [sorting, setSorting] = useState<SortingState>(initialSortingState);
+  const initialVisibilityState = initialState?.columnVisibility || {};
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
+    initialVisibilityState,
+  );
   const table = useReactTable({
     data,
     columns,
@@ -98,7 +107,7 @@ export function DataTable<TData, TValue>({
             {Object.entries(groupedColumns).map(([key, columns]) => {
               const isParentKey = isKeyOfHeaderText(key);
               return (
-                <>
+                <Fragment key={key}>
                   <DropdownMenuGroup>
                     <DropdownMenuLabel>
                       {isParentKey ? headerText[key] : key}
@@ -108,7 +117,7 @@ export function DataTable<TData, TValue>({
                       const isChildKey = isKeyOfHeaderText(id);
                       return (
                         <DropdownMenuCheckboxItem
-                          key={column.id}
+                          key={id}
                           className="capitalize"
                           checked={column.getIsVisible()}
                           onCheckedChange={(value) =>
@@ -121,7 +130,7 @@ export function DataTable<TData, TValue>({
                     })}
                     <DropdownMenuSeparator />
                   </DropdownMenuGroup>
-                </>
+                </Fragment>
               );
             })}
             {table

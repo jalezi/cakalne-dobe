@@ -32,9 +32,7 @@ export default async function Home() {
     second: "numeric",
   }).format(startDate);
 
-  const rows = makeFacilityRows(procedures).sort((a, b) =>
-    a.procedure.code < b.procedure.code ? 1 : 0,
-  );
+  const rows = makeFacilityRows(procedures);
 
   const allowedMaxWaitingTimes = makeProcedureMaxAllowedWaiting(procedures);
 
@@ -52,6 +50,9 @@ export default async function Home() {
           data={rows}
           columns={columns}
           meta={{ allowedMaxWaitingTimes }}
+          initialState={{
+            sorting: [{ id: "code", desc: false }],
+          }}
         />
       </main>
     </>

@@ -17,6 +17,7 @@ export const headerText = {
   code: "Koda",
   name: "Naziv",
   facility: "Ustanova",
+  facilityName: "Ustanova",
   regular: "Običajno",
   fast: "Hitro",
   veryFast: "Zelo hitro",
@@ -65,7 +66,7 @@ export const columns: ColumnDef<Column>[] = [
     enableHiding: false,
     columns: [
       {
-        id: "facility",
+        id: "facilityName",
 
         accessorFn: (originalRow) => originalRow.facility,
         header: ({ column }) => (
