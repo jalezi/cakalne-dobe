@@ -8,9 +8,9 @@ export const waitingPeriodSchema = z.object({
 export type WaitingPeriod = z.infer<typeof waitingPeriodSchema>;
 
 export const waitingPeriodsByUrgencySchema = z.object({
-  regular: z.array(waitingPeriodSchema),
-  fast: z.array(waitingPeriodSchema),
-  veryFast: z.array(waitingPeriodSchema),
+  regular: z.array(waitingPeriodSchema).nullable(),
+  fast: z.array(waitingPeriodSchema).nullable(),
+  veryFast: z.array(waitingPeriodSchema).nullable(),
 });
 
 export type WaitingPeriodsByUrgency = z.infer<
@@ -39,8 +39,8 @@ export type ProcedureWithWaitingPeriod = z.infer<
 >;
 
 export const allDataSchema = z.object({
-  startDate: z.string(),
-  endDate: z.string(),
+  start: z.string(),
+  end: z.string(),
   procedures: z.array(procedureWithWaitingPeriodSchema),
 });
 
