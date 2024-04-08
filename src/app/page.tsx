@@ -4,6 +4,8 @@ import { ThemeToggler } from "@/components/theme-toggler";
 import { allDataSchema } from "@/lib/zod-schemas/data-schemas";
 import { DataTable } from "./_components/data-table";
 import { columns } from "./_components/columns";
+import { makeFacilityRows } from "@/lib/make-facility-row";
+import { makeProcedureMaxAllowedWaiting } from "@/lib/make-procedure-max-allowed-waiting";
 
 export default async function Home() {
   const file = await fs.readFile(
@@ -30,6 +32,12 @@ export default async function Home() {
     second: "numeric",
   }).format(startDate);
 
+  const rows = makeFacilityRows(procedures).sort((a, b) =>
+    a.procedure.code < b.procedure.code ? 1 : 0,
+  );
+
+  const allowedMaxWaitingTimes = makeProcedureMaxAllowedWaiting(procedures);
+
   return (
     <>
       <header className="flex p-4">
@@ -40,7 +48,11 @@ export default async function Home() {
         <p>
           Podatki pridobljeni: <time dateTime={start}>{formatedStartDate}</time>
         </p>
-        <DataTable data={procedures} columns={columns} />
+        <DataTable
+          data={rows}
+          columns={columns}
+          meta={{ allowedMaxWaitingTimes }}
+        />
       </main>
     </>
   );

@@ -2,6 +2,7 @@
 
 import {
   ColumnDef,
+  TableMeta,
   flexRender,
   getCoreRowModel,
   getPaginationRowModel,
@@ -21,17 +22,22 @@ import { DataTablePagination } from "@/components/pagination";
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  meta?: TableMeta<TData>;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  meta,
 }: DataTableProps<TData, TValue>) {
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    meta: {
+      ...meta,
+    },
   });
 
   return (

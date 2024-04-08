@@ -1,19 +1,33 @@
 "use client";
 
+import { FacilityProcedureWaitingTimes } from "@/lib/zod-schemas/data-schemas";
 import type { ColumnDef } from "@tanstack/react-table";
 
-export type SomeColumn = {
-  code: string;
-  name: string;
-};
+export type Column = FacilityProcedureWaitingTimes;
 
-export const columns: ColumnDef<SomeColumn>[] = [
+export const columns: ColumnDef<Column>[] = [
   {
-    accessorKey: "code",
+    accessorFn: (originalRow) => originalRow.procedure.code,
     header: "Koda",
   },
   {
-    accessorKey: "name",
+    accessorFn: (originalRow) => originalRow.procedure.name,
     header: "Naziv",
+  },
+  {
+    accessorFn: (originalRow) => originalRow.facility,
+    header: "Ustanova",
+  },
+  {
+    accessorFn: (originalRow) => originalRow.waitingPeriods.regular,
+    header: "Običajno",
+  },
+  {
+    accessorFn: (originalRow) => originalRow.waitingPeriods.fast,
+    header: "Hitro",
+  },
+  {
+    accessorFn: (originalRow) => originalRow.waitingPeriods.veryFast,
+    header: "Zelo hitro",
   },
 ];
