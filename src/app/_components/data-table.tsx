@@ -2,10 +2,12 @@
 
 import {
   ColumnDef,
+  SortingState,
   TableMeta,
   flexRender,
   getCoreRowModel,
   getPaginationRowModel,
+  getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 
@@ -18,6 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { DataTablePagination } from "@/components/pagination";
+import { useState } from "react";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -30,11 +33,18 @@ export function DataTable<TData, TValue>({
   data,
   meta,
 }: DataTableProps<TData, TValue>) {
+  const [sorting, setSorting] = useState<SortingState>([]);
+
   const table = useReactTable({
     data,
     columns,
+    state: {
+      sorting,
+    },
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    onSortingChange: setSorting,
     meta: {
       ...meta,
       findProcedureMaxAllowedDays: (code: string) => {
@@ -43,6 +53,7 @@ export function DataTable<TData, TValue>({
         )?.maxAllowedDays;
       },
     },
+    debugTable: true,
   });
 
   return (

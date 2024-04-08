@@ -24,6 +24,7 @@ export const columns: ColumnDef<Column>[] = [
             className="justify-center"
           />
         ),
+        sortingFn: "alphanumericCaseSensitive",
       },
       {
         id: "name",
@@ -35,12 +36,12 @@ export const columns: ColumnDef<Column>[] = [
             className="justify-center"
           />
         ),
+        sortingFn: "text",
       },
     ],
   }),
   columnHelper.group({
     id: "facility",
-    // header: "Ustanova",
     columns: [
       {
         id: "facility",
@@ -52,6 +53,7 @@ export const columns: ColumnDef<Column>[] = [
             className="justify-center"
           />
         ),
+        sortingFn: "text",
       },
     ],
   }),
@@ -83,6 +85,7 @@ export const columns: ColumnDef<Column>[] = [
             </div>
           );
         },
+        sortingFn: "alphanumeric",
       },
       {
         id: "fast",
@@ -108,6 +111,7 @@ export const columns: ColumnDef<Column>[] = [
             </div>
           );
         },
+        sortingFn: "alphanumeric",
       },
       {
         id: "veryFast",
@@ -133,6 +137,7 @@ export const columns: ColumnDef<Column>[] = [
             </div>
           );
         },
+        sortingFn: "alphanumeric",
       },
     ],
   }),
