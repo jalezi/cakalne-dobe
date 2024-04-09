@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useDebouncedCallback } from "use-debounce";
+import { useDebouncedCallback } from 'use-debounce';
 
-import { Input, InputProps } from "./ui/input";
-import { ChangeEvent, ChangeEventHandler } from "react";
+import type { InputProps } from './ui/input';
+import { Input } from './ui/input';
 
 export type DebouncedInputProps = InputProps & {
   debounceTime?: number;
@@ -15,7 +15,7 @@ export function DebouncedInput({
   ...props
 }: DebouncedInputProps) {
   if (!onChange) {
-    throw new Error("onChange is required");
+    throw new Error('onChange is required');
   }
 
   const debounced = useDebouncedCallback((e) => onChange(e), debounceTime);

@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { FacilityProcedureWaitingTimes } from '@/lib/zod-schemas/data-schemas';
+import type { FacilityProcedureWaitingTimes } from '@/lib/zod-schemas/data-schemas';
 import { createColumnHelper, type ColumnDef } from '@tanstack/react-table';
 import { DataTableColumnHeader } from './table-header';
 

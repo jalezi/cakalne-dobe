@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 const envServerVarsSchema = z.object({
   NODE_ENV: z.string(),
@@ -14,6 +14,7 @@ type Env = z.infer<typeof envServerVarsSchema> &
   z.infer<typeof envClientVarsSchema>;
 
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace NodeJS {
     interface ProcessEnv extends Env {}
   }

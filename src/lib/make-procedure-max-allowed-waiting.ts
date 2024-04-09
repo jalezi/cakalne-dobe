@@ -1,4 +1,4 @@
-import {
+import type {
   ProcedureWithMaxAllowedDays,
   ProcedureWithWaitingPeriod,
 } from "./zod-schemas/data-schemas";

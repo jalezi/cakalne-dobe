@@ -1,15 +1,15 @@
 'use client';
 
-import {
+import type {
   ColumnDef,
   FilterFn,
   SortingState,
   TableMeta,
   VisibilityState,
+} from '@tanstack/react-table';
+import {
   flexRender,
   getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
@@ -39,7 +39,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { groupByParent, HEADER_TEXT_MAP, isKeyOfHeaderText } from './columns';
 import { DropdownMenuGroup } from '@radix-ui/react-dropdown-menu';
-import { Input } from '@/components/ui/input';
 import { DebouncedInput } from '@/components/debounced-input';
 import {
   Select,
@@ -49,7 +48,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
+const fuzzyFilter: FilterFn<unknown> = (row, columnId, value, addMeta) => {
   // Rank the item
   console.log(row);
   const itemRank = rankItem(row.getValue(columnId), value);

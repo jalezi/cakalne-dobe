@@ -1,4 +1,4 @@
-import {
+import type {
   FacilityProcedureWaitingTimes,
   ProcedureWithWaitingPeriod,
 } from "./zod-schemas/data-schemas";
