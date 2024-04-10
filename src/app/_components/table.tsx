@@ -21,7 +21,7 @@ export async function Table({ jsonId }: TableProps) {
     }
     data = await fileResponse.json();
   } catch (error) {
-    return <div>Failed to fetch data</div>;
+    throw new Error('Unknown error');
   }
 
   const parsedData = allDataSchema.safeParse(data);
