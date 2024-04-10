@@ -16,7 +16,7 @@ export const projectJobsQueryVariablesSchema = z.object({
 
 const jobSchema = z.object({
   name: z.string(),
-  finishedAt: z.string().nullable(),
+  finishedAt: z.string(),
   detailedStatus: z.object({
     detailsPath: z.string(),
   }),

@@ -21,6 +21,7 @@ export async function Table({ jsonId }: TableProps) {
     }
     data = await fileResponse.json();
   } catch (error) {
+    console.log(error);
     throw new Error('Unknown error');
   }
 
