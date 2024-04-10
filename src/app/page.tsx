@@ -1,34 +1,18 @@
 import { Suspense } from 'react';
 
 import { Table } from '@/components/table';
-import {
-  type ProjectJobs,
-  graphQLClient,
-  projectJobsQuery,
-  requiredVars,
-  JOB_NAME,
-} from '@/lib/gql';
+import { JOB_NAME } from '@/lib/gql';
 import { SelectDataset } from '@/components/select-dataset';
+import { getJobs, preload as getJobsPreload } from '@/utils/get-jobs';
+import { preload as getJsonPreload } from '@/utils/get-json';
 
 export default async function Home({
   searchParams,
 }: {
   searchParams: Record<string, string>;
 }) {
-  let project: ProjectJobs['project'] | undefined;
-  try {
-    const response = await graphQLClient.request<ProjectJobs>(
-      projectJobsQuery,
-      {
-        ...requiredVars,
-        first: 100,
-      }
-    );
-
-    project = response.project;
-  } catch (error) {
-    console.error(error);
-  }
+  getJobsPreload();
+  const project = await getJobs();
 
   const jobsOptions = project?.jobs.nodes
     .filter((job) => job.name === JOB_NAME)
@@ -63,7 +47,7 @@ export default async function Home({
       second: 'numeric',
     }).format(startDate);
 
-  console.log(startDate, searchParamJob, selectedJob, noJob);
+  !noJob && getJsonPreload(selectedJob.value);
 
   return (
     <main className="space-y-2 p-4">

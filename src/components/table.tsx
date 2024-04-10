@@ -3,27 +3,16 @@ import { DataTable } from './data-table';
 import { makeProcedureMaxAllowedWaiting } from '@/lib/make-procedure-max-allowed-waiting';
 import { allDataSchema } from '@/lib/zod-schemas/data-schemas';
 import { columns } from '@/app/_components/columns';
-
-const BASE_URL = 'https://mitar.gitlab.io/-/cakalne-dobe/-/jobs';
-const JSON_OUT_PATH = '/artifacts/out.json';
+import { getJson, preload } from '@/utils/get-json';
 
 interface TableProps {
   jsonId: string;
 }
 
 export async function Table({ jsonId }: TableProps) {
-  let fileResponse: Response | undefined;
-  let data: unknown | undefined;
-  try {
-    fileResponse = await fetch(`${BASE_URL}/${jsonId}${JSON_OUT_PATH}`);
-    if (!fileResponse.ok) {
-      throw new Error('Failed to fetch data');
-    }
-    data = await fileResponse.json();
-  } catch (error) {
-    console.log(error);
-    throw new Error('Unknown error');
-  }
+  preload(jsonId);
+  const data = await getJson(jsonId);
+  console.log(data);
 
   const parsedData = allDataSchema.safeParse(data);
   if (!parsedData.success) {
