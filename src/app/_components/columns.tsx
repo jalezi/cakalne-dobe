@@ -3,7 +3,7 @@
 import { cn } from '@/lib/utils';
 import type { FacilityProcedureWaitingTimes } from '@/lib/zod-schemas/data-schemas';
 import { createColumnHelper, type ColumnDef } from '@tanstack/react-table';
-import { DataTableColumnHeader } from './table-header';
+import { DataTableColumnHeader } from '@/components/table-header';
 
 import type { Column as TColumn } from '@tanstack/react-table';
 

@@ -1,3 +1,6 @@
+import { Suspense } from 'react';
+
+import { Table } from '@/components/table';
 import {
   type ProjectJobs,
   graphQLClient,
@@ -5,8 +8,6 @@ import {
   requiredVars,
   JOB_NAME,
 } from '@/lib/gql';
-import { Table } from './_components/table';
-import { Suspense } from 'react';
 
 export default async function Home({
   searchParams,

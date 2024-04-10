@@ -2,7 +2,7 @@ import { makeFacilityRows } from '@/lib/make-facility-row';
 import { DataTable } from './data-table';
 import { makeProcedureMaxAllowedWaiting } from '@/lib/make-procedure-max-allowed-waiting';
 import { allDataSchema } from '@/lib/zod-schemas/data-schemas';
-import { columns } from './columns';
+import { columns } from '@/app/_components/columns';
 
 const BASE_URL = 'https://mitar.gitlab.io/-/cakalne-dobe/-/jobs';
 const JSON_OUT_PATH = '/artifacts/out.json';

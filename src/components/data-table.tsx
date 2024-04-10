@@ -37,7 +37,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { groupByParent, HEADER_TEXT_MAP, isKeyOfHeaderText } from './columns';
+import {
+  groupByParent,
+  HEADER_TEXT_MAP,
+  isKeyOfHeaderText,
+} from '../app/_components/columns';
 import { DropdownMenuGroup } from '@radix-ui/react-dropdown-menu';
 import { DebouncedInput } from '@/components/debounced-input';
 import {
