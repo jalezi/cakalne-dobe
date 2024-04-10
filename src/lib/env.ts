@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 const envServerVarsSchema = z.object({
   NODE_ENV: z.string(),
-  WAITING_TIMES_URL: z.string(),
+  GIT_LAB_GRAPHQL_API_URL: z.string(),
 });
 
 const envClientVarsSchema = z.object({});
