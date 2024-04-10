@@ -6,6 +6,8 @@ import { SelectDataset } from '@/components/select-dataset';
 import { getJobs, preload as getJobsPreload } from '@/utils/get-jobs';
 import { preload as getJsonPreload } from '@/utils/get-json';
 
+export const revalidate = 0;
+
 export default async function Home({
   searchParams,
 }: {
