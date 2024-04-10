@@ -37,11 +37,6 @@ export default async function Home() {
   const allowedMaxWaitingTimes = makeProcedureMaxAllowedWaiting(procedures);
 
   return (
-    <>
-      <header className="flex p-4">
-        <h1>Čakalne dobe</h1>
-        <ThemeToggler className="ml-auto" />
-      </header>
       <main className="space-y-2 p-4">
         <p>
           Podatki pridobljeni: <time dateTime={start}>{formatedStartDate}</time>
@@ -55,6 +50,5 @@ export default async function Home() {
           }}
         />
       </main>
-    </>
   );
 }

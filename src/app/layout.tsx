@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
 import './globals.css';
+import { ThemeToggler } from '@/components/theme-toggler';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -26,6 +27,10 @@ export default function RootLayout({ children }: RootLayoutProps) {
             enableSystem
             disableTransitionOnChange
           >
+            <header className="flex p-4">
+              <h1>Čakalne dobe</h1>
+              <ThemeToggler className="ml-auto" />
+            </header>
             {children}
           </ThemeProvider>
         </body>
