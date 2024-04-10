@@ -54,7 +54,6 @@ import {
 
 const fuzzyFilter: FilterFn<unknown> = (row, columnId, value, addMeta) => {
   // Rank the item
-  console.log(row);
   const itemRank = rankItem(row.getValue(columnId), value);
 
   // Store the itemRank info

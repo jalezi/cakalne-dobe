@@ -12,7 +12,6 @@ interface TableProps {
 export async function Table({ jsonId }: TableProps) {
   preload(jsonId);
   const data = await getJson(jsonId);
-  console.log(data);
 
   const parsedData = allDataSchema.safeParse(data);
   if (!parsedData.success) {
