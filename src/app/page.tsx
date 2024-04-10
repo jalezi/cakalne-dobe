@@ -5,6 +5,7 @@ import { JOB_NAME } from '@/lib/gql';
 import { SelectDataset } from '@/components/select-dataset';
 import { getJobs, preload as getJobsPreload } from '@/utils/get-jobs';
 import { preload as getJsonPreload } from '@/utils/get-json';
+import { Time } from '@/components/time';
 
 export const revalidate = 0;
 
@@ -37,18 +38,6 @@ export default async function Home({
       ? foundJob
       : jobsOptions?.[0];
 
-  const startDate = selectedJob?.label ? new Date(selectedJob?.label) : null;
-  const formatedStartDate =
-    startDate &&
-    Intl.DateTimeFormat('sl-SI', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: 'numeric',
-      second: 'numeric',
-    }).format(startDate);
-
   !noJob && getJsonPreload(selectedJob.value);
 
   return (
@@ -64,13 +53,7 @@ export default async function Home({
         ) : null}
         <p>
           Podatki pridobljeni:{' '}
-          {startDate ? (
-            <time dateTime={startDate.toLocaleString()}>
-              {formatedStartDate}
-            </time>
-          ) : (
-            'ni podatka'
-          )}
+          {selectedJob.label ? <Time time={selectedJob.label} /> : 'ni podatka'}
         </p>
       </div>
       {noJob ? (
