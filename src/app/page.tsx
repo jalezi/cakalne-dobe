@@ -1,54 +1,73 @@
-import { promises as fs } from 'fs';
+import {
+  type ProjectJobs,
+  graphQLClient,
+  projectJobsQuery,
+  requiredVars,
+  JOB_NAME,
+} from '@/lib/gql';
+import { Table } from './_components/table';
+import { Suspense } from 'react';
 
-import { ThemeToggler } from '@/components/theme-toggler';
-import { allDataSchema } from '@/lib/zod-schemas/data-schemas';
-import { DataTable } from './_components/data-table';
-import { columns } from './_components/columns';
-import { makeFacilityRows } from '@/lib/make-facility-row';
-import { makeProcedureMaxAllowedWaiting } from '@/lib/make-procedure-max-allowed-waiting';
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Record<string, string>;
+}) {
+  let project: ProjectJobs['project'] | undefined;
+  try {
+    const response = await graphQLClient.request<ProjectJobs>(
+      projectJobsQuery,
+      {
+        ...requiredVars,
+        first: 100,
+      }
+    );
 
-export default async function Home() {
-  const file = await fs.readFile(
-    process.cwd() + '/mock-data/cakalne-dobe.json',
-    'utf8'
-  );
-
-  const data = JSON.parse(file);
-  const parsedData = allDataSchema.safeParse(data);
-  if (!parsedData.success) {
-    console.error(parsedData.error.errors);
-    throw new Error('Invalid data');
+    project = response.project;
+  } catch (error) {
+    console.error(error);
   }
 
-  const allData = parsedData.data;
-  const { start, procedures } = allData;
-  const startDate = new Date(start);
-  const formatedStartDate = Intl.DateTimeFormat('sl-SI', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: 'numeric',
-    second: 'numeric',
-  }).format(startDate);
+  const jobsOptions = project?.jobs.nodes
+    .filter((job) => job.name === JOB_NAME)
+    .map((job) => ({
+      value: job.detailedStatus.detailsPath.split('/').pop(),
+      label: job.finishedAt,
+    }));
 
-  const rows = makeFacilityRows(procedures);
+  const foundJob = jobsOptions?.find((job) => job.value === searchParams.job);
 
-  const allowedMaxWaitingTimes = makeProcedureMaxAllowedWaiting(procedures);
+  const selectedJob = foundJob ?? jobsOptions?.[0];
+
+  const startDate = selectedJob?.label ? new Date(selectedJob?.label) : null;
+  const formatedStartDate =
+    startDate &&
+    Intl.DateTimeFormat('sl-SI', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric',
+    }).format(startDate);
 
   return (
-      <main className="space-y-2 p-4">
-        <p>
-          Podatki pridobljeni: <time dateTime={start}>{formatedStartDate}</time>
-        </p>
-        <DataTable
-          data={rows}
-          columns={columns}
-          meta={{ allowedMaxWaitingTimes }}
-          initialState={{
-            sorting: [{ id: 'code', desc: false }],
-          }}
-        />
-      </main>
+    <main className="space-y-2 p-4">
+      <p>
+        Podatki pridobljeni:{' '}
+        {startDate ? (
+          <time dateTime={startDate.toLocaleString()}>{formatedStartDate}</time>
+        ) : (
+          'ni podatka'
+        )}
+      </p>
+      <Suspense fallback={<div>Še malo...</div>}>
+        {selectedJob?.value ? (
+          <Table jsonId={selectedJob.value} />
+        ) : (
+          <div>žal ni podatka</div>
+        )}
+      </Suspense>
+    </main>
   );
 }
