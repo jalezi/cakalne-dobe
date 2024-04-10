@@ -132,6 +132,7 @@ function OptionList({
               key={option.value}
               value={option.value}
               onSelect={onSelectChange}
+              disabled={option.value === selectedOption?.value}
             >
               <Check
                 className={cn(
