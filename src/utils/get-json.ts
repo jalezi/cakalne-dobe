@@ -11,7 +11,7 @@ export const getJson = async (id: string) => {
     const data = await fileResponse.json();
     return data;
   } catch (error) {
-    console.log(error);
+    console.error(error);
     throw new Error('Unknown error');
   }
 };

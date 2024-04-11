@@ -18,15 +18,12 @@ export function DebouncedInput({
     throw new Error('onChange is required');
   }
 
-  console.log('DebouncedInput');
-
   const debounced = useDebouncedCallback((e) => onChange(e), debounceTime);
 
   return (
     <Input
       {...props}
       onChange={(e) => {
-        console.log(e.target.value);
         debounced(e);
       }}
     />
