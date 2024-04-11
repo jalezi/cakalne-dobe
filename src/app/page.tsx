@@ -1,18 +1,10 @@
-import { Suspense } from 'react';
-
-import { Table } from '@/components/table';
 import { JOB_NAME } from '@/lib/gql';
 import { SelectDataset } from '@/components/select-dataset';
 import { getJobs } from '@/utils/get-jobs';
-import { Time } from '@/components/time';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
-export const revalidate = 0;
-
-export default async function Home({
-  searchParams,
-}: {
-  searchParams: Record<string, string>;
-}) {
+export default async function Home() {
   const project = await getJobs();
 
   const jobsOptions = project?.jobs.nodes
@@ -23,19 +15,6 @@ export default async function Home({
     }));
   const hasOptions = jobsOptions && jobsOptions?.length > 0;
 
-  const searchParamJob = searchParams.job;
-  const foundJob = jobsOptions?.find((job) => job.value === searchParamJob);
-  const noJob = !!searchParamJob && !foundJob;
-  if (noJob) {
-    console.error('Job not found:', searchParamJob);
-  }
-
-  const selectedJob = noJob
-    ? { value: '', label: '' }
-    : foundJob
-      ? foundJob
-      : jobsOptions?.[0];
-
   return (
     <main className="space-y-2 p-4">
       <div className="mb-4 space-y-2">
@@ -43,28 +22,22 @@ export default async function Home({
           <>
             <SelectDataset
               jobsOptions={jobsOptions}
-              selectedJob={selectedJob}
+              selectedJob={jobsOptions[0]}
             />
           </>
         ) : null}
-        <p>
-          Podatki pridobljeni:{' '}
-          {selectedJob.label ? <Time time={selectedJob.label} /> : 'ni podatka'}
-        </p>
       </div>
-      {noJob ? (
-        <div>
-          Dataset z id: <code>{searchParamJob}</code> ne obstaja.
-        </div>
-      ) : (
-        <Suspense fallback={<div>Še malo...</div>}>
-          {selectedJob?.value ? (
-            <Table jsonId={selectedJob.value} />
-          ) : (
-            <div>Žal ni podatkov</div>
-          )}
-        </Suspense>
-      )}
+      <nav>
+        <ul>
+          {jobsOptions.map((job) => (
+            <li key={job.value}>
+              <Button asChild variant="link">
+                <Link href={`/${job.value}`}>{job.label}</Link>
+              </Button>
+            </li>
+          ))}
+        </ul>
+      </nav>
     </main>
   );
 }

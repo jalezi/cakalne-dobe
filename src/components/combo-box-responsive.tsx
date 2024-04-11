@@ -18,9 +18,10 @@ import {
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { cn } from '@/lib/utils';
 import { Check } from 'lucide-react';
+import Link from 'next/link';
 import { useState } from 'react';
 
-type SelectOption = {
+export type SelectOption = {
   value: string;
   label: string;
 };
@@ -133,16 +134,19 @@ function OptionList({
               value={option.value}
               onSelect={onSelectChange}
               disabled={option.value === selectedOption?.value}
+              asChild
             >
-              <Check
-                className={cn(
-                  'mr-2 h-4 w-4',
-                  option.value === selectedOption?.value
-                    ? 'opacity-100'
-                    : 'opacity-0'
-                )}
-              />
-              {option.label}
+              <Link href={`/${option.value}`}>
+                <Check
+                  className={cn(
+                    'mr-2 h-4 w-4',
+                    option.value === selectedOption?.value
+                      ? 'opacity-100'
+                      : 'opacity-0'
+                  )}
+                />
+                {option.label}
+              </Link>
             </CommandItem>
           ))}
         </CommandGroup>

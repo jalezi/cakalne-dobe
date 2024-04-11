@@ -1,9 +1,10 @@
-const BASE_URL = 'https://mitar.gitlab.io/-/cakalne-dobe/-/jobs';
+const BASE_URL = new URL('https://mitar.gitlab.io');
+export const BASE_JOBS_URL = new URL('-/cakalne-dobe/-/jobs', BASE_URL);
 const JSON_OUT_PATH = '/artifacts/out.json';
 
 export const getJson = async (id: string) => {
   try {
-    const fileResponse = await fetch(`${BASE_URL}/${id}${JSON_OUT_PATH}`);
+    const fileResponse = await fetch(`${BASE_JOBS_URL}/${id}${JSON_OUT_PATH}`);
     if (!fileResponse.ok) {
       throw new Error('Failed to fetch data');
     }
