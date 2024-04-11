@@ -24,22 +24,9 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { DataTablePagination } from '@/components/pagination';
-import { Fragment, useState } from 'react';
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
-import {
-  groupByParent,
-  HEADER_TEXT_MAP,
-  isKeyOfHeaderText,
-} from '../app/_components/columns';
-import { DropdownMenuGroup } from '@radix-ui/react-dropdown-menu';
+import { useState } from 'react';
+
+import { groupByParent } from '../app/_components/columns';
 import { DebouncedInput } from '@/components/debounced-input';
 import {
   Select,
@@ -49,6 +36,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { fuzzyFilter } from '@/lib/fuzzy-filter';
+import { ColumnsToggler } from './columns-toggler';
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -153,74 +141,7 @@ export function DataTable<TData, TValue>({
             </SelectContent>
           </Select>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="ml-auto sm:ml-2">
-              Stolpci
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuCheckboxItem
-              className="capitalize"
-              checked={table.getIsAllColumnsVisible()}
-              onCheckedChange={table.getToggleAllColumnsVisibilityHandler()}
-            >
-              Vsi
-            </DropdownMenuCheckboxItem>
-            <DropdownMenuSeparator />
-            {Object.entries(groupedColumns).map(([key, columns]) => {
-              const isParentKey = isKeyOfHeaderText(key);
-              return (
-                <Fragment key={key}>
-                  <DropdownMenuGroup>
-                    <DropdownMenuLabel>
-                      {isParentKey ? HEADER_TEXT_MAP[key] : key}
-                    </DropdownMenuLabel>
-                    {columns.children.map((column) => {
-                      const { id } = column;
-                      const isChildKey = isKeyOfHeaderText(id);
-                      return (
-                        <DropdownMenuCheckboxItem
-                          key={id}
-                          className="capitalize"
-                          checked={column.getIsVisible()}
-                          onCheckedChange={(value) =>
-                            column.toggleVisibility(!!value)
-                          }
-                        >
-                          {isChildKey ? HEADER_TEXT_MAP[id] : id}
-                        </DropdownMenuCheckboxItem>
-                      );
-                    })}
-                    <DropdownMenuSeparator />
-                  </DropdownMenuGroup>
-                </Fragment>
-              );
-            })}
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => {
-                // console.log(column.getLeafColumns());
-                return column.getLeafColumns().map((leafColumn) => {
-                  const { id } = leafColumn;
-                  const isKey = isKeyOfHeaderText(id);
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={leafColumn.id}
-                      className="capitalize"
-                      checked={leafColumn.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        leafColumn.toggleVisibility(!!value)
-                      }
-                    >
-                      {isKey ? HEADER_TEXT_MAP[id] : id}
-                    </DropdownMenuCheckboxItem>
-                  );
-                });
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <ColumnsToggler groupedColumns={groupedColumns} table={table} />
       </div>
 
       <div className="space-y-2 rounded-md border">

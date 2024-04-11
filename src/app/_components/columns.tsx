@@ -158,32 +158,31 @@ export const columns: ColumnDef<Column>[] = [
   }),
 ];
 
+export type GroupedByParent<TData, TValue> = Record<
+  string,
+  { column: TColumn<TData, TValue>; children: TColumn<TData, unknown>[] }
+>;
 export function groupByParent<TData, TValue>(
   columns: TColumn<TData, TValue>[]
 ) {
-  const groupedColumns = columns.reduce(
-    (acc, column) => {
-      const parentColumn = column.parent;
-      if (!parentColumn) {
-        return acc;
-      }
-
-      if (!acc[parentColumn.id]) {
-        acc[parentColumn.id] = {
-          column: parentColumn,
-          children: [],
-        };
-      }
-
-      acc[parentColumn.id].children.push(column);
-
+  const result: GroupedByParent<TData, TValue> = {};
+  const groupedColumns = columns.reduce((acc, column) => {
+    const parentColumn = column.parent;
+    if (!parentColumn) {
       return acc;
-    },
-    {} as Record<
-      string,
-      { column: TColumn<TData, unknown>; children: TColumn<TData, unknown>[] }
-    >
-  );
+    }
+
+    if (!acc[parentColumn.id]) {
+      acc[parentColumn.id] = {
+        column: parentColumn,
+        children: [],
+      };
+    }
+
+    acc[parentColumn.id].children.push(column);
+
+    return acc;
+  }, result);
 
   return groupedColumns;
 }
