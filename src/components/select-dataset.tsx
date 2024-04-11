@@ -26,6 +26,7 @@ export function SelectDataset({
       key={selectedOption?.value}
       options={jobsOptions ?? []}
       defaultSelected={selectedJob ?? selectedOption}
+      asLink
     />
   );
 }

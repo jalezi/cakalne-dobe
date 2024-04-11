@@ -30,12 +30,14 @@ export interface ComboBoxResponsiveProps {
   options: SelectOption[];
   defaultSelected?: SelectOption | null;
   onSelect?: (value: string) => void;
+  asLink?: boolean;
 }
 
 export function ComboBoxResponsive({
   options,
   defaultSelected,
   onSelect,
+  asLink,
 }: ComboBoxResponsiveProps) {
   const [open, setOpen] = useState(false);
   const isDesktop = useMediaQuery('(min-width: 768px)');
@@ -62,6 +64,7 @@ export function ComboBoxResponsive({
             setSelectedStatus={setSelectedOption}
             onSelect={onSelect}
             selectedOption={selectedOption}
+            asLink={asLink}
           />
         </PopoverContent>
       </Popover>
@@ -87,6 +90,7 @@ export function ComboBoxResponsive({
             setSelectedStatus={setSelectedOption}
             onSelect={onSelect}
             selectedOption={selectedOption}
+            asLink={asLink}
           />
         </div>
       </DrawerContent>
@@ -100,7 +104,16 @@ interface OptionListProps {
   setSelectedStatus: (option: SelectOption | null) => void;
   onSelect?: (value: string) => void;
   selectedOption?: SelectOption | null;
+  asLink?: boolean;
 }
+
+const CheckIcon = ({ isSelected }: { isSelected?: boolean | undefined }) => {
+  return (
+    <Check
+      className={cn('mr-2 h-4 w-4', isSelected ? 'opacity-100' : 'opacity-0')}
+    />
+  );
+};
 
 function OptionList({
   setOpen,
@@ -108,6 +121,7 @@ function OptionList({
   options,
   onSelect,
   selectedOption,
+  asLink,
 }: OptionListProps) {
   const onSelectChange = (value: string) => {
     onSelect?.(value);
@@ -134,19 +148,23 @@ function OptionList({
               value={option.value}
               onSelect={onSelectChange}
               disabled={option.value === selectedOption?.value}
-              asChild
+              asChild={asLink}
             >
-              <Link href={option.value}>
-                <Check
-                  className={cn(
-                    'mr-2 h-4 w-4',
-                    option.value === selectedOption?.value
-                      ? 'opacity-100'
-                      : 'opacity-0'
-                  )}
-                />
-                {option.label}
-              </Link>
+              {asLink ? (
+                <Link href={option.value}>
+                  <CheckIcon
+                    isSelected={option.value === selectedOption?.value}
+                  />
+                  {option.label}
+                </Link>
+              ) : (
+                <>
+                  <CheckIcon
+                    isSelected={option.value === selectedOption?.value}
+                  />
+                  {option.label}
+                </>
+              )}
             </CommandItem>
           ))}
         </CommandGroup>
