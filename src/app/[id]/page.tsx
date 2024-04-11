@@ -2,11 +2,10 @@ import { Suspense } from 'react';
 
 import { Table } from '@/components/table';
 import { JOB_NAME } from '@/lib/gql';
-import { SelectDataset } from '@/components/select-dataset';
 import { getJobs } from '@/utils/get-jobs';
-import { Time } from '@/components/time';
 import { notFound } from 'next/navigation';
-import { type SelectOption } from '@/components/combo-box-responsive';
+
+export const revalidate = 0; // json file is over 2MB, nextjs can not cache it
 
 export default async function Home({
   params: { id },
@@ -14,21 +13,7 @@ export default async function Home({
   params: { id: string };
 }) {
   const project = await getJobs();
-
-  const jobsOptions: SelectOption[] = [];
-  for (const job of project.jobs.nodes) {
-    if (job.name !== JOB_NAME) continue;
-
-    const value = job.detailedStatus.detailsPath.split('/').pop();
-    if (!value) continue;
-    const label = job.finishedAt;
-
-    jobsOptions.push({ value, label });
-  }
-
-  const hasOptions = jobsOptions && jobsOptions?.length > 0;
-
-  const foundJob = jobsOptions?.find((job) => job.value === id);
+  const foundJob = project.jobs.nodes.find((job) => job.name === JOB_NAME);
 
   if (!foundJob) {
     return notFound();
@@ -36,26 +21,8 @@ export default async function Home({
 
   return (
     <main className="space-y-2 p-4">
-      <div className="mb-4 space-y-2">
-        {hasOptions ? (
-          <>
-            <SelectDataset
-              jobsOptions={jobsOptions.map((opt) => {
-                return {
-                  value: `/${opt.value}`,
-                  label: opt.label,
-                };
-              })}
-              selectedJob={{ ...foundJob, value: `/${foundJob.value}` }}
-            />
-          </>
-        ) : null}
-        <p>
-          Podatki pridobljeni: <Time time={foundJob.label} />
-        </p>
-      </div>
       <Suspense fallback={<div>Še malo...</div>}>
-        <Table jsonId={foundJob.value} />
+        <Table jsonId={id} />
       </Suspense>
     </main>
   );

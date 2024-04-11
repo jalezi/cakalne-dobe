@@ -4,6 +4,7 @@ import { makeProcedureMaxAllowedWaiting } from '@/lib/make-procedure-max-allowed
 import { allDataSchema } from '@/lib/zod-schemas/data-schemas';
 import { columns } from '@/app/_components/columns';
 import { getJson } from '@/utils/get-json';
+import { Time } from './time';
 
 interface TableProps {
   jsonId: string;
@@ -24,13 +25,20 @@ export async function Table({ jsonId }: TableProps) {
   const allowedMaxWaitingTimes = makeProcedureMaxAllowedWaiting(procedures);
 
   return (
-    <DataTable
-      data={rows}
-      columns={columns}
-      meta={{ allowedMaxWaitingTimes }}
-      initialState={{
-        sorting: [{ id: 'code', desc: false }],
-      }}
-    />
+    <>
+      <div className="mb-4 space-y-2">
+        <p>
+          Podatki pridobljeni: <Time time={parsedData.data.end} />
+        </p>
+      </div>
+      <DataTable
+        data={rows}
+        columns={columns}
+        meta={{ allowedMaxWaitingTimes }}
+        initialState={{
+          sorting: [{ id: 'code', desc: false }],
+        }}
+      />
+    </>
   );
 }

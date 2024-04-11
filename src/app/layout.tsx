@@ -2,8 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
 import './globals.css';
-import { ThemeToggler } from '@/components/theme-toggler';
-import Link from 'next/link';
+import { Header } from '@/components/header';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -14,9 +13,10 @@ export const metadata: Metadata = {
 
 interface RootLayoutProps {
   children: React.ReactNode;
+  params: { id?: string };
 }
 
-export default function RootLayout({ children }: RootLayoutProps) {
+export default function RootLayout({ children, params }: RootLayoutProps) {
   return (
     <>
       <html lang="en" suppressHydrationWarning>
@@ -28,12 +28,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
             enableSystem
             disableTransitionOnChange
           >
-            <header className="flex p-4">
-              <Link href="/">
-                <h1>Čakalne dobe</h1>
-              </Link>
-              <ThemeToggler className="ml-auto" />
-            </header>
+            <Header id={params.id} />
             {children}
           </ThemeProvider>
         </body>
