@@ -191,7 +191,7 @@ export function DataTable<TData, TValue>({
               <TableRow>
                 <TableCell
                   colSpan={table.getVisibleLeafColumns().length}
-                  className="h-24 bg-red-200 text-center"
+                  className="h-24 text-center"
                 >
                   No results.
                 </TableCell>
