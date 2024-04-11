@@ -2,6 +2,7 @@
 
 import type {
   ColumnDef,
+  ColumnFiltersState,
   SortingState,
   TableMeta,
   VisibilityState,
@@ -9,6 +10,8 @@ import type {
 import {
   flexRender,
   getCoreRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
@@ -46,6 +49,7 @@ interface DataTableProps<TData, TValue> {
     sorting?: SortingState;
     columnVisibility?: VisibilityState;
     globalFilter?: string;
+    columnFilters?: ColumnFiltersState;
   };
 }
 
@@ -61,6 +65,9 @@ export function DataTable<TData, TValue>({
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
     initialVisibilityState
   );
+  const initialColumnFilters = initialState?.columnFilters || [];
+  const [columnFilters, setColumnFilters] =
+    useState<ColumnFiltersState>(initialColumnFilters);
   const initialGlobalFilter = initialState?.globalFilter || '';
   const [globalFilter, setGlobalFilter] = useState(initialGlobalFilter);
 
@@ -74,6 +81,7 @@ export function DataTable<TData, TValue>({
       sorting,
       columnVisibility,
       globalFilter,
+      columnFilters,
     },
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -81,9 +89,10 @@ export function DataTable<TData, TValue>({
     getFilteredRowModel: getFilteredRowModel(),
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
+    onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
-    // getFacetedRowModel: getFacetedRowModel(),
-    // getFacetedUniqueValues: getFacetedUniqueValues(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
     meta: {
       ...meta,
       findProcedureMaxAllowedDays: (code: string) => {
@@ -145,6 +154,32 @@ export function DataTable<TData, TValue>({
       </div>
 
       <div className="space-y-2 rounded-md border">
+        <div className="m-2">
+          <datalist id={table.getColumn('codeWithName')?.id + 'list'}>
+            {...Array.from(
+              table
+                .getColumn('codeWithName')
+                ?.getFacetedUniqueValues()
+                ?.keys() ?? []
+            )
+              .sort()
+              .map((value) => <option key={value} value={value} />)}
+          </datalist>
+          <DebouncedInput
+            placeholder="Išči postopek..."
+            type="search"
+            defaultValue={
+              (table.getColumn('codeWithName')?.getFilterValue() as string) ??
+              ''
+            }
+            onChange={(event) => {
+              table
+                .getColumn('codeWithName')
+                ?.setFilterValue(event.target.value);
+            }}
+            list={table.getColumn('codeWithName')?.id + 'list'}
+          />
+        </div>
         <DataTablePagination table={table} />
         <Table>
           <caption className="sr-only">Čakalne dobe</caption>

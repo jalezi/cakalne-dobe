@@ -29,7 +29,7 @@ export async function Table({ jsonId }: TableProps) {
       columns={columns}
       meta={{ allowedMaxWaitingTimes }}
       initialState={{
-        sorting: [{ id: 'code', desc: false }],
+        sorting: [{ id: 'codeWithName', desc: false }],
       }}
     />
   );
