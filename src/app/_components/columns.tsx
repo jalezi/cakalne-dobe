@@ -6,6 +6,7 @@ import { createColumnHelper, type ColumnDef } from '@tanstack/react-table';
 import { DataTableColumnHeader } from '@/components/table-header';
 
 import type { Column as TColumn } from '@tanstack/react-table';
+import { fuzzySort } from '@/lib/fuzzy-filter';
 
 export type Column = FacilityProcedureWaitingTimes;
 
@@ -21,6 +22,7 @@ export const HEADER_TEXT_MAP = {
   regular: 'Običajno',
   fast: 'Hitro',
   veryFast: 'Zelo hitro',
+  codeWithName: 'Postopek',
 } as const;
 
 export const isKeyOfHeaderText = (
@@ -34,30 +36,18 @@ export const columns: ColumnDef<Column>[] = [
     enableHiding: false,
     columns: [
       {
-        id: 'code',
-        accessorFn: (originalRow) => originalRow.procedure.code,
-        header: ({ column }) => {
-          return (
-            <DataTableColumnHeader
-              column={column}
-              title={HEADER_TEXT_MAP.code}
-              className="justify-center"
-            />
-          );
-        },
-        sortingFn: 'alphanumericCaseSensitive',
-      },
-      {
-        id: 'name',
-        accessorFn: (originalRow) => originalRow.procedure.name,
+        id: 'codeWithName',
+        accessorFn: (originalRow) =>
+          `${originalRow.procedure.code} - ${originalRow.procedure.name}`,
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
-            title={HEADER_TEXT_MAP.name}
+            title={HEADER_TEXT_MAP.codeWithName}
             className="justify-center"
           />
         ),
-        sortingFn: 'text',
+        filterFn: 'fuzzy',
+        sortingFn: fuzzySort,
       },
     ],
   }),

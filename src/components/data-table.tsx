@@ -2,7 +2,6 @@
 
 import type {
   ColumnDef,
-  FilterFn,
   SortingState,
   TableMeta,
   VisibilityState,
@@ -15,8 +14,6 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-
-import { rankItem } from '@tanstack/match-sorter-utils';
 
 import {
   Table,
@@ -51,19 +48,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-
-const fuzzyFilter: FilterFn<unknown> = (row, columnId, value, addMeta) => {
-  // Rank the item
-  const itemRank = rankItem(row.getValue(columnId), value);
-
-  // Store the itemRank info
-  addMeta({
-    itemRank,
-  });
-
-  // Return if the item should be filtered in/out
-  return itemRank.passed;
-};
+import { fuzzyFilter } from '@/lib/fuzzy-filter';
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
