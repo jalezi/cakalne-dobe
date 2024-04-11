@@ -4,6 +4,7 @@ import { getJobs } from '@/utils/get-jobs';
 import { type SelectOption } from './combo-box-responsive';
 import { JOB_NAME } from '@/lib/gql';
 import { SelectDataset } from './select-dataset';
+import { Button } from './ui/button';
 
 export async function Header({ id }: { id?: string }) {
   const project = await getJobs();
@@ -22,9 +23,11 @@ export async function Header({ id }: { id?: string }) {
 
   return (
     <header className="flex items-center p-4">
-      <Link href="/">
-        <h1>Domov</h1>
-      </Link>
+      <Button asChild variant="link">
+        <Link href="/" className="px-0">
+          Domov
+        </Link>
+      </Button>
       <div className="ml-auto flex items-center">
         <SelectDataset jobsOptions={jobsOptions} selectedJob={selectedJob} />
         <ThemeToggler className="ml-2" />
