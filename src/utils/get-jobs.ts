@@ -1,6 +1,3 @@
-import { cache } from 'react';
-import 'server-only';
-
 import {
   type ProjectJobs,
   graphQLClient,
@@ -8,11 +5,7 @@ import {
   requiredVars,
 } from '@/lib/gql';
 
-export const preload = () => {
-  void getJobs();
-};
-
-export const getJobs = cache(async () => {
+export const getJobs = async () => {
   try {
     const response = await graphQLClient.request<ProjectJobs>(
       projectJobsQuery,
@@ -26,4 +19,4 @@ export const getJobs = cache(async () => {
   } catch (error) {
     throw new Error('Failed to fetch jobs');
   }
-});
+};

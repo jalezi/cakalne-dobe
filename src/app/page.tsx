@@ -3,8 +3,7 @@ import { Suspense } from 'react';
 import { Table } from '@/components/table';
 import { JOB_NAME } from '@/lib/gql';
 import { SelectDataset } from '@/components/select-dataset';
-import { getJobs, preload as getJobsPreload } from '@/utils/get-jobs';
-import { preload as getJsonPreload } from '@/utils/get-json';
+import { getJobs } from '@/utils/get-jobs';
 import { Time } from '@/components/time';
 
 export const revalidate = 0;
@@ -14,7 +13,6 @@ export default async function Home({
 }: {
   searchParams: Record<string, string>;
 }) {
-  getJobsPreload();
   const project = await getJobs();
 
   const jobsOptions = project?.jobs.nodes
@@ -37,8 +35,6 @@ export default async function Home({
     : foundJob
       ? foundJob
       : jobsOptions?.[0];
-
-  !noJob && getJsonPreload(selectedJob.value);
 
   return (
     <main className="space-y-2 p-4">

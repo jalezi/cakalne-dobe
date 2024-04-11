@@ -3,14 +3,13 @@ import { DataTable } from './data-table';
 import { makeProcedureMaxAllowedWaiting } from '@/lib/make-procedure-max-allowed-waiting';
 import { allDataSchema } from '@/lib/zod-schemas/data-schemas';
 import { columns } from '@/app/_components/columns';
-import { getJson, preload } from '@/utils/get-json';
+import { getJson } from '@/utils/get-json';
 
 interface TableProps {
   jsonId: string;
 }
 
 export async function Table({ jsonId }: TableProps) {
-  preload(jsonId);
   const data = await getJson(jsonId);
 
   const parsedData = allDataSchema.safeParse(data);
