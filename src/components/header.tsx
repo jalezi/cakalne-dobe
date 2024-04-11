@@ -21,12 +21,14 @@ export async function Header({ id }: { id?: string }) {
   const selectedJob = jobsOptions.find((job) => job.value === `/${id}`);
 
   return (
-    <header className="flex items-center justify-between p-4">
+    <header className="flex items-center p-4">
       <Link href="/">
-        <h1>Čakalne dobe</h1>
+        <h1>Domov</h1>
       </Link>
-      <SelectDataset jobsOptions={jobsOptions} selectedJob={selectedJob} />
-      <ThemeToggler />
+      <div className="ml-auto flex items-center">
+        <SelectDataset jobsOptions={jobsOptions} selectedJob={selectedJob} />
+        <ThemeToggler className="ml-2" />
+      </div>
     </header>
   );
 }
