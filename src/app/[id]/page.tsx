@@ -39,7 +39,15 @@ export default async function Home({
       <div className="mb-4 space-y-2">
         {hasOptions ? (
           <>
-            <SelectDataset jobsOptions={jobsOptions} selectedJob={foundJob} />
+            <SelectDataset
+              jobsOptions={jobsOptions.map((opt) => {
+                return {
+                  value: `/${opt.value}`,
+                  label: opt.label,
+                };
+              })}
+              selectedJob={{ ...foundJob, value: `/${foundJob.value}` }}
+            />
           </>
         ) : null}
         <p>

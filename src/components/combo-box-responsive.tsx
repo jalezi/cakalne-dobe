@@ -136,7 +136,7 @@ function OptionList({
               disabled={option.value === selectedOption?.value}
               asChild
             >
-              <Link href={`/${option.value}`}>
+              <Link href={option.value}>
                 <Check
                   className={cn(
                     'mr-2 h-4 w-4',
