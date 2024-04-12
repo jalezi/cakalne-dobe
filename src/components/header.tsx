@@ -16,7 +16,16 @@ export async function Header({ id }: { id?: string }) {
     if (!value) continue;
     const label = job.finishedAt;
 
-    jobsOptions.push({ value: `/${value}`, label });
+    jobsOptions.push({
+      value: `/${value}`,
+      label: Intl.DateTimeFormat('sl-SI', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+      }).format(new Date(label)),
+    });
   }
 
   const selectedJob = jobsOptions.find((job) => job.value === `/${id}`);

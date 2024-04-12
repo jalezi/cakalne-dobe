@@ -2,7 +2,7 @@ import { JOB_NAME } from '@/lib/gql';
 import { getJobs } from '@/utils/get-jobs';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { TimeRange } from '@/components/time';
+import { Time, TimeRange } from '@/components/time';
 
 export default async function Home() {
   const project = await getJobs();
@@ -32,12 +32,25 @@ export default async function Home() {
           </p>
         </div>
       ) : null}
-      <nav>
+      <nav className="px-4 py-2">
         <ul>
           {jobsOptions.map((job) => (
             <li key={job.value}>
-              <Button asChild variant="link">
-                <Link href={`/${job.value}`}>{job.label}</Link>
+              <Button asChild variant="link" className="px-0">
+                <Link href={`/${job.value}`}>
+                  <Time
+                    date={job.label}
+                    options={{
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: 'numeric',
+                      minute: 'numeric',
+                      second: 'numeric',
+                    }}
+                  />
+                </Link>
               </Button>
             </li>
           ))}
