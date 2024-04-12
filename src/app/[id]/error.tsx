@@ -14,14 +14,15 @@ export default function Error({
     console.error(error);
   }, [error]);
 
+  const isConnectionClosed = error.message.includes('Connection closed');
+
   return (
     <div>
       <h2>Nekaj je šlo narobe</h2>
-      <h3>{error.message}</h3>
       <button
         onClick={
           // Attempt to recover by trying to re-render the segment
-          () => reset()
+          () => (isConnectionClosed ? document.location.reload() : reset())
         }
       >
         Poskusi znova
