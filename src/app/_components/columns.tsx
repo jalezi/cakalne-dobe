@@ -12,6 +12,8 @@ export type Column = FacilityProcedureWaitingTimes;
 
 const columnHelper = createColumnHelper<Column>();
 
+const isNumber = (value: unknown): value is number => typeof value === 'number';
+
 export const HEADER_TEXT_MAP = {
   procedure: 'Storitev',
   waitingPeriods: 'Stopnja nujnosti',
@@ -96,7 +98,7 @@ export const columns: ColumnDef<Column>[] = [
           const isExceeded = days && maxDays ? days > maxDays : false;
           return (
             <div className={cn(isExceeded && 'text-red-600', 'text-center')}>
-              {days ? days : '-'}
+              {isNumber(days) ? days : '-'}
             </div>
           );
         },
@@ -122,7 +124,7 @@ export const columns: ColumnDef<Column>[] = [
           const isExceeded = days && maxDays ? days > maxDays : false;
           return (
             <div className={cn(isExceeded && 'text-red-600', 'text-center')}>
-              {days ? days : '-'}
+              {isNumber(days) ? days : '-'}
             </div>
           );
         },
@@ -148,7 +150,7 @@ export const columns: ColumnDef<Column>[] = [
           const isExceeded = days && maxDays ? days > maxDays : false;
           return (
             <div className={cn(isExceeded && 'text-red-600', 'text-center')}>
-              {days ? days : '-'}
+              {isNumber(days) ? days : '-'}
             </div>
           );
         },
