@@ -1,22 +1,19 @@
 import { Suspense } from 'react';
 
 import { Table } from '@/components/table';
-import { JOB_NAME } from '@/lib/gql';
-import { getJobs } from '@/utils/get-jobs';
+import { getJob } from '@/utils/get-jobs';
 import { notFound } from 'next/navigation';
 import { Time } from '@/components/time';
 
+type HomeProps = {
+  params: { id: string };
+};
+
 export const revalidate = 0; // json file is over 2MB, nextjs can not cache it
 
-export default async function Home({
-  params: { id },
-}: {
-  params: { id: string };
-}) {
-  const project = await getJobs();
-  const foundJob = project.jobs.nodes.find((job) => job.name === JOB_NAME);
-
-  if (!foundJob) {
+export default async function Home({ params: { id } }: HomeProps) {
+  const job = await getJob(id);
+  if (!job) {
     return notFound();
   }
 
@@ -33,7 +30,7 @@ export default async function Home({
         <p id="attr-data-fetched-on">
           Podatki pridobljeni:{' '}
           <Time
-            date={foundJob.finishedAt}
+            date={job.finishedAt}
             options={{
               year: '2-digit',
               month: 'short',
