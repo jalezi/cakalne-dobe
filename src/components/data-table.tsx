@@ -131,7 +131,7 @@ export function DataTable<TData, TValue>({
         </div>
 
         <div className="flex items-center space-x-2 sm:ml-auto">
-          <p className="text-sm font-medium">Rows per page</p>
+          <p className="text-sm font-medium">Vrstic na stran</p>
           <Select
             value={`${table.getState().pagination.pageSize}`}
             onValueChange={(value) => {
