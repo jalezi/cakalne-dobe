@@ -1,5 +1,6 @@
 'use client'; // Error components must be Client Components
 
+import { revalidatePath } from 'next/cache';
 import { useEffect } from 'react';
 
 export default function Error({
@@ -15,18 +16,20 @@ export default function Error({
   }, [error]);
 
   const isConnectionClosed = error.message.includes('Connection closed');
+  const handleClick = () => {
+    // Attempt to recover by trying to re-render the segment
+    if (isConnectionClosed) {
+      revalidatePath('/[id]', 'page');
+      document.location.reload();
+    } else {
+      reset();
+    }
+  };
 
   return (
     <div>
       <h2>Nekaj je šlo narobe</h2>
-      <button
-        onClick={
-          // Attempt to recover by trying to re-render the segment
-          () => (isConnectionClosed ? document.location.reload() : reset())
-        }
-      >
-        Poskusi znova
-      </button>
+      <button onClick={handleClick}>Poskusi znova</button>
     </div>
   );
 }
