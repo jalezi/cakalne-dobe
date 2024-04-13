@@ -37,7 +37,7 @@ export async function Header({ id }: { id?: string }) {
       </Button>
       <div className="ml-auto flex items-center">
         <SelectDataset jobsOptions={jobsOptions} selectedJob={selectedJob} />
-        <ThemeToggler className="ml-2" />
+        <ThemeToggler className="ml-2 aspect-square" />
       </div>
     </header>
   );
