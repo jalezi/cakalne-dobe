@@ -4,12 +4,10 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Time, TimeRange } from '@/components/time';
 
-export const revalidate = 3600;
-
 export default async function Home() {
   const project = await getJobs();
 
-  const jobs = project?.jobs.nodes;
+  const jobs = project?.jobs.nodes.filter((job) => job.name === JOB_NAME) ?? [];
 
   const toDate = jobs[0]?.finishedAt;
   const formDate = jobs.at(-1)?.finishedAt;
