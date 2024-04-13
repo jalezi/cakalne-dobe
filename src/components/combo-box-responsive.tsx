@@ -31,6 +31,8 @@ export interface ComboBoxResponsiveProps {
   defaultSelected?: SelectOption | null;
   onSelect?: (value: string) => void;
   asLink?: boolean;
+  placeholder?: string;
+  inputPlaceholder?: string;
 }
 
 export function ComboBoxResponsive({
@@ -38,6 +40,8 @@ export function ComboBoxResponsive({
   defaultSelected,
   onSelect,
   asLink,
+  placeholder = 'Izberi',
+  inputPlaceholder,
 }: ComboBoxResponsiveProps) {
   const [open, setOpen] = useState(false);
   const isDesktop = useMediaQuery('(min-width: 768px)');
@@ -45,19 +49,23 @@ export function ComboBoxResponsive({
     defaultSelected ?? null
   );
 
+  const selectedOptionLabel = !!selectedOption?.label ? (
+    <span className="truncate">{selectedOption.label}</span>
+  ) : (
+    <>{placeholder}</>
+  );
+
+  const triggerButton = (
+    <Button variant="outline" className="w-full justify-start">
+      {selectedOptionLabel}
+    </Button>
+  );
+
   if (isDesktop) {
     return (
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button variant="outline" className="min-w-[22ch] justify-start">
-            {!!selectedOption?.label ? (
-              <>{selectedOption.label}</>
-            ) : (
-              <>Izberi dataset</>
-            )}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-[200px] p-0" align="start">
+        <PopoverTrigger asChild>{triggerButton}</PopoverTrigger>
+        <PopoverContent className="max-w-full p-0" align="start">
           <OptionList
             options={options}
             setOpen={setOpen}
@@ -65,6 +73,7 @@ export function ComboBoxResponsive({
             onSelect={onSelect}
             selectedOption={selectedOption}
             asLink={asLink}
+            inputPlaceholder={inputPlaceholder}
           />
         </PopoverContent>
       </Popover>
@@ -73,15 +82,7 @@ export function ComboBoxResponsive({
 
   return (
     <Drawer open={open} onOpenChange={setOpen}>
-      <DrawerTrigger asChild>
-        <Button variant="outline" className="min-w-[22ch] justify-start">
-          {!!selectedOption?.label ? (
-            <>{selectedOption.label}</>
-          ) : (
-            <>Izberi dataset</>
-          )}
-        </Button>
-      </DrawerTrigger>
+      <DrawerTrigger asChild>{triggerButton}</DrawerTrigger>
       <DrawerContent>
         <div className="mt-4 border-t">
           <OptionList
@@ -91,6 +92,7 @@ export function ComboBoxResponsive({
             onSelect={onSelect}
             selectedOption={selectedOption}
             asLink={asLink}
+            inputPlaceholder={inputPlaceholder}
           />
         </div>
       </DrawerContent>
@@ -105,13 +107,16 @@ interface OptionListProps {
   onSelect?: (value: string) => void;
   selectedOption?: SelectOption | null;
   asLink?: boolean;
+  inputPlaceholder?: string;
 }
 
 const CheckIcon = ({ isSelected }: { isSelected?: boolean | undefined }) => {
   return (
-    <Check
-      className={cn('mr-2 h-4 w-4', isSelected ? 'opacity-100' : 'opacity-0')}
-    />
+    <span className="mr-2">
+      <Check
+        className={cn('h-4 w-4', isSelected ? 'opacity-100' : 'opacity-0')}
+      />
+    </span>
   );
 };
 
@@ -122,6 +127,7 @@ function OptionList({
   onSelect,
   selectedOption,
   asLink,
+  inputPlaceholder = 'Išči...',
 }: OptionListProps) {
   const onSelectChange = (value: string) => {
     onSelect?.(value);
@@ -138,10 +144,21 @@ function OptionList({
         return isMatch ? 1 : 0;
       }}
     >
-      <CommandInput placeholder="Išči dataset..." />
+      <CommandInput placeholder={inputPlaceholder} typeof="search" />
       <CommandList>
         <CommandEmpty>Žal, nisem našel iskanega.</CommandEmpty>
         <CommandGroup>
+          {asLink ? null : (
+            <CommandItem
+              key="empty"
+              value=""
+              onSelect={onSelectChange}
+              disabled={!selectedOption}
+            >
+              <CheckIcon isSelected={!selectedOption} />
+              Vsi
+            </CommandItem>
+          )}
           {options.map((option) => (
             <CommandItem
               key={option.value}

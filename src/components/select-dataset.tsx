@@ -27,6 +27,8 @@ export function SelectDataset({
       options={jobsOptions ?? []}
       defaultSelected={selectedJob ?? selectedOption}
       asLink
+      placeholder="Izberi dataset"
+      inputPlaceholder="Išči dataset..."
     />
   );
 }

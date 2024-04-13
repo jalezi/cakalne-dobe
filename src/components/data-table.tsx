@@ -27,7 +27,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { DataTablePagination } from '@/components/pagination';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { groupByParent } from '../app/_components/columns';
 import { DebouncedInput } from '@/components/debounced-input';
@@ -40,6 +40,7 @@ import {
 } from '@/components/ui/select';
 import { fuzzyFilter } from '@/lib/fuzzy-filter';
 import { ColumnsToggler } from './columns-toggler';
+import { ComboBoxResponsive } from './combo-box-responsive';
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -110,6 +111,17 @@ export function DataTable<TData, TValue>({
 
   const groupedColumns = groupByParent(flatColumns);
 
+  const procedureOptions = useMemo(() => {
+    return Array.from(
+      table.getColumn('codeWithName')?.getFacetedUniqueValues()?.keys() ?? []
+    )
+      .sort()
+      .map((value) => ({
+        value,
+        label: value,
+      }));
+  }, [table]);
+
   return (
     <>
       <div className="flex flex-wrap items-center gap-y-2">
@@ -155,29 +167,16 @@ export function DataTable<TData, TValue>({
 
       <div className="space-y-2 rounded-md border">
         <div className="m-2">
-          <datalist id={table.getColumn('codeWithName')?.id + 'list'}>
-            {...Array.from(
-              table
-                .getColumn('codeWithName')
-                ?.getFacetedUniqueValues()
-                ?.keys() ?? []
-            )
-              .sort()
-              .map((value) => <option key={value} value={value} />)}
-          </datalist>
-          <DebouncedInput
-            placeholder="Išči postopek..."
-            type="search"
-            defaultValue={
-              (table.getColumn('codeWithName')?.getFilterValue() as string) ??
-              ''
+          <ComboBoxResponsive
+            options={procedureOptions}
+            onSelect={(value) =>
+              setColumnFilters((prev) => [
+                ...prev,
+                { id: 'codeWithName', value },
+              ])
             }
-            onChange={(event) => {
-              table
-                .getColumn('codeWithName')
-                ?.setFilterValue(event.target.value);
-            }}
-            list={table.getColumn('codeWithName')?.id + 'list'}
+            placeholder="Izberi postopek"
+            inputPlaceholder="Išči po imenu ali kodi postopka"
           />
         </div>
         <DataTablePagination table={table} />
