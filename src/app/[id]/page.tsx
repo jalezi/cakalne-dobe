@@ -4,6 +4,7 @@ import { Table } from '@/components/table';
 import { getJob } from '@/utils/get-jobs';
 import { notFound } from 'next/navigation';
 import { Time } from '@/components/time';
+import { DataTableSkeleton } from '@/components/skeleton/data-table';
 
 type HomeProps = {
   params: { id: string };
@@ -41,7 +42,7 @@ export default async function Home({ params: { id } }: HomeProps) {
           />
         </p>
       </div>
-      <Suspense fallback={<div>Še malo...</div>}>
+      <Suspense fallback={<DataTableSkeleton />}>
         <Table jsonId={id} />
       </Suspense>
     </main>

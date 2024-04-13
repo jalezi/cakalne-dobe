@@ -138,7 +138,7 @@ export function DataTable<TData, TValue>({
               table.setPageSize(Number(value));
             }}
           >
-            <SelectTrigger className="h-9 w-[70px]">
+            <SelectTrigger className="h-9 w-[4.375rem]">
               <SelectValue placeholder={table.getState().pagination.pageSize} />
             </SelectTrigger>
             <SelectContent side="top">
