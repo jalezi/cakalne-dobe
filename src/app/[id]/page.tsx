@@ -60,7 +60,7 @@ export default async function Home({
             }}
           />
           <Button asChild variant="link" size="icon">
-            <a href={getJsonPath(id)} target="_blank" rel="norefferer noopener">
+            <a href={getJsonPath(id)} target="_blank" rel="noreferrer noopener">
               <ExternalLink size={16} />
               <span className="sr-only">povezava na vir</span>
             </a>
