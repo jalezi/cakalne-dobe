@@ -41,6 +41,7 @@ import {
 import { fuzzyFilter } from '@/lib/fuzzy-filter';
 import { ColumnsToggler } from './columns-toggler';
 import { ComboBoxResponsive } from './combo-box-responsive';
+import { MaxUrgency } from './max-urgency';
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -122,6 +123,12 @@ export function DataTable<TData, TValue>({
       }));
   }, [table]);
 
+  const codeWithNameFilterValue = table
+    .getColumn('codeWithName')
+    ?.getFilterValue() as string | undefined;
+  const isFilteredByCodeWithName = !!codeWithNameFilterValue;
+  const procedureCode = codeWithNameFilterValue?.split(' - ')?.[0].trim();
+
   return (
     <>
       <div className="flex flex-wrap items-center gap-y-2">
@@ -186,6 +193,23 @@ export function DataTable<TData, TValue>({
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
+                  const isParentWaitingPeriods =
+                    header.column.parent?.id === 'waitingPeriods';
+                  const showMaxAllowedDays =
+                    isFilteredByCodeWithName && isParentWaitingPeriods;
+
+                  let urgencyNaxAllowedDays: number | undefined;
+                  if (showMaxAllowedDays && procedureCode) {
+                    const maxAllowedDays =
+                      table.options.meta?.findProcedureMaxAllowedDays?.(
+                        procedureCode
+                      );
+                    urgencyNaxAllowedDays =
+                      maxAllowedDays?.[
+                        header.id as keyof typeof maxAllowedDays
+                      ];
+                  }
+
                   return (
                     <TableHead
                       key={header.id}
@@ -198,6 +222,9 @@ export function DataTable<TData, TValue>({
                             header.column.columnDef.header,
                             header.getContext()
                           )}
+                      {urgencyNaxAllowedDays ? (
+                        <MaxUrgency days={urgencyNaxAllowedDays} />
+                      ) : null}
                     </TableHead>
                   );
                 })}
