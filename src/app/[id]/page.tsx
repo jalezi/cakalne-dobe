@@ -8,6 +8,8 @@ import { DataTableSkeleton } from '@/components/skeleton/data-table';
 import { Button } from '@/components/ui/button';
 import { getJsonPath } from '@/utils/get-json';
 import { ExternalLink } from 'lucide-react';
+import { JobsPagination } from '@/components/jobs-pagination';
+import { JobsPaginationSkeleton } from '@/components/skeleton/jobs-pagination';
 
 const SEARCH_PARAMS = {
   procedureCode: 'procedureCode',
@@ -41,6 +43,9 @@ export default async function Home({
       >
         Čakalne dobe
       </h1>
+      <Suspense fallback={<JobsPaginationSkeleton />}>
+        <JobsPagination id={id} />
+      </Suspense>
       <div className="mb-4 space-y-2">
         <p id="attr-data-fetched-on">
           Podatki pridobljeni:{' '}
