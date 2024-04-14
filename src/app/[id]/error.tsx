@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { revalidatePath } from 'next/cache';
+import { revalidateGetJson } from '@/actions/revalidate-tag';
 
 export default function Error({
   error,
@@ -19,10 +19,10 @@ export default function Error({
   }, [error]);
 
   const isConnectionClosed = error.message.includes('Connection closed');
-  const handleClick = () => {
+  const handleClick = async () => {
     // Attempt to recover by trying to re-render the segment
     if (isConnectionClosed) {
-      revalidatePath('/[id]', 'page');
+      await revalidateGetJson();
       router.refresh();
     } else {
       reset();
