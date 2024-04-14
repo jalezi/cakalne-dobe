@@ -1,7 +1,7 @@
 'use client'; // Error components must be Client Components
 
-import { revalidatePath } from 'next/cache';
 import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Error({
   error,
@@ -10,6 +10,8 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const router = useRouter();
+
   useEffect(() => {
     // Log the error to an error reporting service
     console.error(error);
@@ -19,8 +21,7 @@ export default function Error({
   const handleClick = () => {
     // Attempt to recover by trying to re-render the segment
     if (isConnectionClosed) {
-      revalidatePath('/[id]', 'page');
-      document.location.reload();
+      router.refresh();
     } else {
       reset();
     }
