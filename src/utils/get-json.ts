@@ -11,6 +11,7 @@ export const getJson = async (id: string): Promise<AllData> => {
   try {
     const fileResponse = await fetch(`${BASE_JOBS_URL}/${id}${JSON_OUT_PATH}`, {
       next: { tags: ['getJson'] },
+      cache: 'no-store',
     });
     if (!fileResponse.ok) {
       throw new Error('Failed to fetch data');
