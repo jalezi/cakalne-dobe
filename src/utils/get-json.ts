@@ -4,6 +4,9 @@ const BASE_URL = new URL('https://mitar.gitlab.io');
 export const BASE_JOBS_URL = new URL('-/cakalne-dobe/-/jobs', BASE_URL);
 const JSON_OUT_PATH = '/artifacts/out.json';
 
+export const getJsonPath = (id: string) =>
+  `${BASE_JOBS_URL}/${id}${JSON_OUT_PATH}`;
+
 export const getJson = async (id: string): Promise<AllData> => {
   try {
     const fileResponse = await fetch(`${BASE_JOBS_URL}/${id}${JSON_OUT_PATH}`, {

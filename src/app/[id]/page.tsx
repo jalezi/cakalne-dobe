@@ -5,6 +5,9 @@ import { getJob } from '@/utils/get-jobs';
 import { notFound } from 'next/navigation';
 import { Time } from '@/components/time';
 import { DataTableSkeleton } from '@/components/skeleton/data-table';
+import { Button } from '@/components/ui/button';
+import { getJsonPath } from '@/utils/get-json';
+import { ExternalLink } from 'lucide-react';
 
 type HomeProps = {
   params: { id: string };
@@ -40,6 +43,12 @@ export default async function Home({ params: { id } }: HomeProps) {
               minute: '2-digit',
             }}
           />
+          <Button asChild variant="link" size="icon">
+            <a href={getJsonPath(id)} target="_blank" rel="norefferer noopener">
+              <ExternalLink size={16} />
+              <span className="sr-only">povezava na vir</span>
+            </a>
+          </Button>
         </p>
       </div>
       <Suspense fallback={<DataTableSkeleton />}>
