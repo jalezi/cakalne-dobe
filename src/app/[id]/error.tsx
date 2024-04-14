@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { revalidatePath } from 'next/cache';
 
 export default function Error({
   error,
@@ -21,6 +22,7 @@ export default function Error({
   const handleClick = () => {
     // Attempt to recover by trying to re-render the segment
     if (isConnectionClosed) {
+      revalidatePath('/[id]', 'page');
       router.refresh();
     } else {
       reset();
