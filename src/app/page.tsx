@@ -4,6 +4,9 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Time, TimeRange } from '@/components/time';
 
+// This is the same as in next.config.ts, but somehow it works only on deployed (Vercel) version and not when build and start locally
+export const revalidate = 60; // 1 minute
+
 export default async function Home() {
   const project = await getJobs();
 
