@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { revalidateGetJson } from '@/actions/revalidate-tag';
+import { revalidatePathId } from '@/actions/revalidate-tag';
 
 export default function Error({
   error,
@@ -22,7 +22,7 @@ export default function Error({
   const handleClick = async () => {
     // Attempt to recover by trying to re-render the segment
     if (isConnectionClosed) {
-      await revalidateGetJson();
+      await revalidatePathId();
       router.refresh();
     } else {
       reset();

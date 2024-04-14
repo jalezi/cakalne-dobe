@@ -1,5 +1,7 @@
 'use server';
 
-import { revalidateTag } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 
 export const revalidateGetJson = async () => revalidateTag('getJson');
+
+export const revalidatePathId = async () => revalidatePath(`/[id]`, 'page');
