@@ -9,13 +9,24 @@ import { Button } from '@/components/ui/button';
 import { getJsonPath } from '@/utils/get-json';
 import { ExternalLink } from 'lucide-react';
 
+const SEARCH_PARAMS = {
+  procedureCode: 'procedureCode',
+} as const;
+
 type HomeProps = {
   params: { id: string };
+  searchParams: Record<string, string>;
 };
 
 export const revalidate = 0; // json file is over 2MB, nextjs can not cache it
 
-export default async function Home({ params: { id } }: HomeProps) {
+export default async function Home({
+  params: { id },
+  searchParams,
+}: HomeProps) {
+  const urlSearchParams = new URLSearchParams(searchParams);
+  const procedureCode = urlSearchParams.get(SEARCH_PARAMS.procedureCode);
+
   const job = await getJob(id);
   if (!job) {
     return notFound();
@@ -52,7 +63,7 @@ export default async function Home({ params: { id } }: HomeProps) {
         </p>
       </div>
       <Suspense fallback={<DataTableSkeleton />}>
-        <Table jsonId={id} />
+        <Table jsonId={id} procedureCode={procedureCode} />
       </Suspense>
     </main>
   );

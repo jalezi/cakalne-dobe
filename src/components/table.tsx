@@ -6,12 +6,16 @@ import { getJson } from '@/utils/get-json';
 
 interface TableProps {
   jsonId: string;
+  procedureCode?: string | null;
 }
 
-export async function Table({ jsonId }: TableProps) {
+export async function Table({ jsonId, procedureCode }: TableProps) {
   const { procedures } = await getJson(jsonId);
   const rows = makeFacilityRows(procedures);
   const allowedMaxWaitingTimes = makeProcedureMaxAllowedWaiting(procedures);
+  const procedureName = procedures.find((procedure) => {
+    return procedure.code === procedureCode;
+  })?.name;
 
   return (
     <DataTable
@@ -20,6 +24,14 @@ export async function Table({ jsonId }: TableProps) {
       meta={{ allowedMaxWaitingTimes }}
       initialState={{
         sorting: [{ id: 'codeWithName', desc: false }],
+        columnFilters: procedureName
+          ? [
+              {
+                id: 'codeWithName',
+                value: `${procedureCode} - ${procedureName}`,
+              },
+            ]
+          : undefined,
       }}
     />
   );

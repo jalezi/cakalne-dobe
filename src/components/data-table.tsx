@@ -42,6 +42,11 @@ import { fuzzyFilter } from '@/lib/fuzzy-filter';
 import { ColumnsToggler } from './columns-toggler';
 import { ComboBoxResponsive } from './combo-box-responsive';
 import { MaxUrgency } from './max-urgency';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+
+const SEARCH_PARAMS = {
+  procedureCode: 'procedureCode',
+} as const;
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -61,6 +66,10 @@ export function DataTable<TData, TValue>({
   meta,
   initialState,
 }: DataTableProps<TData, TValue>) {
+  const urlSearchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
   const initialSortingState = initialState?.sorting || [];
   const [sorting, setSorting] = useState<SortingState>(initialSortingState);
   const initialVisibilityState = initialState?.columnVisibility || {};
@@ -176,14 +185,34 @@ export function DataTable<TData, TValue>({
         <div className="m-2">
           <ComboBoxResponsive
             options={procedureOptions}
-            onSelect={(value) =>
+            onSelect={(value) => {
+              const procedureCode = value.split(' - ')[0].trim();
+              const newUrlSearchParams = new URLSearchParams(urlSearchParams);
+              value
+                ? newUrlSearchParams.set(
+                    SEARCH_PARAMS.procedureCode,
+                    procedureCode
+                  )
+                : newUrlSearchParams.delete(SEARCH_PARAMS.procedureCode);
+              router.replace(`${pathname}?${newUrlSearchParams.toString()}`);
+
               setColumnFilters((prev) => [
                 ...prev,
                 { id: 'codeWithName', value },
-              ])
-            }
+              ]);
+
+              setColumnVisibility((prev) => ({
+                ...prev,
+                codeWithName: !value ? true : false,
+              }));
+            }}
             placeholder="Izberi postopek"
             inputPlaceholder="Išči po imenu ali kodi postopka"
+            defaultSelected={procedureOptions.find(
+              (filter) =>
+                filter.value ===
+                columnFilters.find((f) => f.id === 'codeWithName')?.value
+            )}
           />
         </div>
         <DataTablePagination table={table} />
