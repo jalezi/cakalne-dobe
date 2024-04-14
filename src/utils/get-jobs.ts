@@ -14,6 +14,11 @@ export const getJobs = async (options?: JobsArgs) => {
     ...options,
   };
 
+  graphQLClient.setHeader(
+    'Cache-Control',
+    'max-age=60, stale-while-revalidate=59'
+  );
+
   try {
     const response = await graphQLClient.request<ProjectJobs>(
       projectJobsQuery,
