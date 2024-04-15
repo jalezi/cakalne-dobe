@@ -32,6 +32,11 @@ export async function Table({ jsonId, procedureCode }: TableProps) {
               },
             ]
           : undefined,
+        columnVisibility: procedureName
+          ? {
+              codeWithName: false,
+            }
+          : undefined,
       }}
     />
   );
