@@ -5,11 +5,11 @@ import { getJob } from '@/utils/get-jobs';
 import { notFound } from 'next/navigation';
 import { Time } from '@/components/time';
 import { DataTableSkeleton } from '@/components/skeleton/data-table';
-import { Button } from '@/components/ui/button';
-import { getJsonPath } from '@/utils/get-json';
-import { ExternalLink } from 'lucide-react';
+
 import { JobsPagination } from '@/components/jobs-pagination';
 import { JobsPaginationSkeleton } from '@/components/skeleton/jobs-pagination';
+
+import { JsonDropDownMenu } from '@/components/json-dropdown-menu';
 
 const SEARCH_PARAMS = {
   procedureCode: 'procedureCode',
@@ -46,7 +46,7 @@ export default async function Home({
       <Suspense fallback={<JobsPaginationSkeleton />}>
         <JobsPagination id={id} />
       </Suspense>
-      <div className="mb-4 space-y-2">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
         <p id="attr-data-fetched-on">
           Podatki pridobljeni:{' '}
           <Time
@@ -59,13 +59,8 @@ export default async function Home({
               minute: '2-digit',
             }}
           />
-          <Button asChild variant="link" size="icon">
-            <a href={getJsonPath(id)} target="_blank" rel="noreferrer noopener">
-              <ExternalLink size={16} />
-              <span className="sr-only">povezava na vir</span>
-            </a>
-          </Button>
         </p>
+        <JsonDropDownMenu jsonId={id} />
       </div>
       <Suspense fallback={<DataTableSkeleton />}>
         <Table jsonId={id} procedureCode={procedureCode} />
