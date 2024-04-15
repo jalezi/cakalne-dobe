@@ -6,9 +6,10 @@ import { Download } from 'lucide-react';
 
 interface DownloadableJsonProps {
   jsonId: string;
+  fileName?: string;
 }
 
-export const downloadJson = async (jsonId: string) => {
+export const downloadJson = async (jsonId: string, fileName?: string) => {
   try {
     const job = await getJson(jsonId);
     const blob = new Blob([JSON.stringify(job, null, 2)], {
@@ -17,7 +18,7 @@ export const downloadJson = async (jsonId: string) => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${jsonId}.json`;
+    a.download = fileName || `${jsonId}.json`;
     a.click();
     URL.revokeObjectURL(url);
     return { success: true, data: 'ok' };
@@ -29,9 +30,9 @@ export const downloadJson = async (jsonId: string) => {
   }
 };
 
-export function DownloadableJson({ jsonId }: DownloadableJsonProps) {
+export function DownloadableJson({ jsonId, fileName }: DownloadableJsonProps) {
   const handleDownload = () => {
-    downloadJson(jsonId);
+    downloadJson(jsonId, fileName);
   };
 
   return (

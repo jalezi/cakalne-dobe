@@ -14,10 +14,14 @@ import { getJsonPath } from '@/utils/get-json';
 
 interface JsonDropDownMenuProps {
   jsonId: string;
+  fileName?: string;
 }
-export function JsonDropDownMenu({ jsonId: id }: JsonDropDownMenuProps) {
+export function JsonDropDownMenu({
+  jsonId: id,
+  fileName,
+}: JsonDropDownMenuProps) {
   const handleDownload = () => {
-    downloadJson(id);
+    downloadJson(id, fileName);
   };
 
   return (

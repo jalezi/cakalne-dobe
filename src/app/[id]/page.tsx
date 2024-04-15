@@ -34,6 +34,8 @@ export default async function Home({
     return notFound();
   }
 
+  const fileName = `wp-${job.finishedAt}-${id}`;
+
   return (
     <main className="space-y-2 p-4">
       <h1
@@ -60,7 +62,7 @@ export default async function Home({
             }}
           />
         </p>
-        <JsonDropDownMenu jsonId={id} />
+        <JsonDropDownMenu jsonId={id} fileName={fileName} />
       </div>
       <Suspense fallback={<DataTableSkeleton />}>
         <Table jsonId={id} procedureCode={procedureCode} />
