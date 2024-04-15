@@ -1,10 +1,10 @@
 import type {
   ProcedureWithMaxAllowedDays,
   ProcedureWithWaitingPeriod,
-} from "./zod-schemas/data-schemas";
+} from './zod-schemas/data-schemas';
 
 export function makeProcedureMaxAllowedWaiting(
-  procedures: ProcedureWithWaitingPeriod[],
+  procedures: ProcedureWithWaitingPeriod[]
 ): ProcedureWithMaxAllowedDays[] {
   return procedures.map((procedure) => {
     return {

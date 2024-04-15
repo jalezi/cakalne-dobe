@@ -1,7 +1,7 @@
 import type {
   FacilityProcedureWaitingTimes,
   ProcedureWithWaitingPeriod,
-} from "./zod-schemas/data-schemas";
+} from './zod-schemas/data-schemas';
 
 /**
  * Converts an array of procedures with waiting periods into an array of facility procedure waiting times.
@@ -10,7 +10,7 @@ import type {
  * @returns An array of facility procedure waiting times.
  */
 export function makeFacilityRows(
-  procedures: ProcedureWithWaitingPeriod[],
+  procedures: ProcedureWithWaitingPeriod[]
 ): FacilityProcedureWaitingTimes[] {
   return procedures.reduce((acc, procedure) => {
     const { code, name, waitingPeriods } = procedure;
@@ -24,7 +24,7 @@ export function makeFacilityRows(
 
       for (const { facility, days } of waitingPeriod) {
         const facilityRow = acc.find(
-          (row) => row.facility === facility && row.procedure.code === code,
+          (row) => row.facility === facility && row.procedure.code === code
         );
         if (!facilityRow) {
           acc.push({
@@ -42,7 +42,7 @@ export function makeFacilityRows(
         }
 
         const row = acc.find(
-          (row) => row.facility === facility && row.procedure.code === code,
+          (row) => row.facility === facility && row.procedure.code === code
         );
         if (!row) continue;
 
