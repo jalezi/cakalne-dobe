@@ -24,7 +24,7 @@ export default async function Home() {
     }));
 
   return (
-    <main className="space-y-2 p-4">
+    <main className="z-0 space-y-2 p-4">
       <h1 id="attr-h1" className="text-2xl font-bold" aria-labelledby="attr-h1">
         Čakalne dobe
       </h1>
