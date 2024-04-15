@@ -17,3 +17,20 @@ declare module '@tanstack/table-core' {
     itemRank: RankingInfo;
   }
 }
+
+export type FetchResponse<
+  TData = string | undefined,
+  TError = 'Unknown error' | string | undefined,
+  TMeta extends unknown | undefined = undefined,
+> = {
+  meta?: TMeta;
+} & (
+  | {
+      success: true;
+      data?: TData;
+    }
+  | {
+      success: false;
+      error: TError;
+    }
+);

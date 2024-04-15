@@ -11,6 +11,7 @@ import {
 import { Button } from './ui/button';
 import { Download, ExternalLink, MoreHorizontal } from 'lucide-react';
 import { getJsonPath } from '@/utils/get-json';
+import { toast } from 'sonner';
 
 interface JsonDropDownMenuProps {
   jsonId: string;
@@ -21,7 +22,11 @@ export function JsonDropDownMenu({
   fileName,
 }: JsonDropDownMenuProps) {
   const handleDownload = () => {
-    downloadJson(id, fileName);
+    toast.promise(downloadJson(id, fileName), {
+      loading: 'Prenašam...',
+      success: 'Datoteka je bila prenesena.',
+      error: () => `Nekaj je šlo narobe. Poskusi znova.`,
+    });
   };
 
   return (
