@@ -31,7 +31,7 @@ export async function Header({ id }: { id?: string }) {
   const selectedJob = jobsOptions.find((job) => job.value === `/${id}`);
 
   return (
-    <header className="sticky left-0 top-0 z-50 flex items-center bg-inherit p-4">
+    <header className="sticky left-0 top-0 z-50 flex items-center bg-transparent p-4 backdrop-blur-lg">
       <Button asChild variant="link" className="px-0">
         <Link href="/">Domov</Link>
       </Button>
