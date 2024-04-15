@@ -1,70 +1,37 @@
 export function Footer() {
   return (
-    <footer className="border-t-[1px] border-dashed p-4 text-sm">
+    <footer className="border-t-[1px] border-dashed p-4 text-sm text-muted-foreground">
       <div className="space-y-4">
         <div>
           <p>
             Podatke zbral{' '}
-            <a
-              href="https://gitlab.com/mitar"
-              target="_blank"
-              rel="noreferrer"
-              className="underline underline-offset-4"
-            >
-              Mitar
-            </a>
-            . Izvorna koda na{' '}
-            <a
-              href="https://gitlab.com/mitar/cakalne-dobe"
-              target="_blank"
-              rel="noreferrer"
-              className="underline underline-offset-4"
-            >
+            <ExternalLink href="https://gitlab.com/mitar">Mitar</ExternalLink>.
+            Izvorna koda na{' '}
+            <ExternalLink href="https://gitlab.com/mitar/cakalne-dobe">
               GitLab
-            </a>
+            </ExternalLink>
+            .
           </p>
           <p>
             Podatki pridobljeni iz{' '}
-            <a
-              href="https://cakalnedobe.ezdrav.si/"
-              target="_blank"
-              rel="noreferrer"
-              className="underline underline-offset-4"
-            >
+            <ExternalLink href="https://cakalnedobe.ezdrav.si/">
               eZdrav
-            </a>{' '}
+            </ExternalLink>{' '}
             in{' '}
-            <a
-              href="https://nijz.si/podatki/klasifikacije-in-sifranti/sifrant-vrst-zdravstvenih-storitev-vzs/"
-              target="_blank"
-              rel="noreferrer"
-              className="underline underline-offset-4"
-            >
+            <ExternalLink href="https://nijz.si/podatki/klasifikacije-in-sifranti/sifrant-vrst-zdravstvenih-storitev-vzs/">
               <abbr title="Šifrant vrst zdravstvenih storitev ">VZS</abbr>
-            </a>
+            </ExternalLink>
             .
           </p>
         </div>
         <div>
           <p>
             Izdelal{' '}
-            <a
-              href="https://github.com/jalezi"
-              target="_blank"
-              rel="noreferrer"
-              className="underline underline-offset-4"
-            >
-              jalezi
-            </a>
+            <ExternalLink href="https://github.com/jalezi">jalezi</ExternalLink>
             . Izvorna koda na{' '}
-            <a
-              href="https://github.com/jalezi/cakalne-dobe"
-              target="_blank"
-              rel="noreferrer"
-              className="underline underline-offset-4"
-            >
+            <ExternalLink href="https://github.com/jalezi/cakalne-dobe">
               GitHub
-            </a>
+            </ExternalLink>
             .
           </p>
           <p>
@@ -73,5 +40,25 @@ export function Footer() {
         </div>
       </div>
     </footer>
+  );
+}
+
+interface ExternalLinkProps
+  extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
+  href: string;
+  children: React.ReactNode;
+}
+
+function ExternalLink({ href, children, ...props }: ExternalLinkProps) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className="font-medium underline underline-offset-4"
+      {...props}
+    >
+      {children}
+    </a>
   );
 }
