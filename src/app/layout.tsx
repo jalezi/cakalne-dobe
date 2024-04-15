@@ -29,7 +29,7 @@ export default function RootLayout({ children, params }: RootLayoutProps) {
             enableSystem
             disableTransitionOnChange
           >
-            <div className="relative grid min-h-[100svh] grid-rows-[min-content_1fr_min-content] bg-inherit">
+            <div className="relative grid min-h-[100svh] grid-cols-1 grid-rows-[min-content_1fr_min-content] bg-inherit">
               <Header id={params.id} />
               {children}
               <Footer />
