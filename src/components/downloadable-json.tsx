@@ -27,7 +27,7 @@ export const downloadJson = async (
     a.download = fileName || `${jsonId}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    return { success: true };
+    return { success: true, data: null };
   } catch (error) {
     if (error instanceof Error) {
       return { success: false, error: error.message };

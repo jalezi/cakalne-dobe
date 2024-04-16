@@ -19,7 +19,7 @@ declare module '@tanstack/table-core' {
 }
 
 export type FetchResponse<
-  TData = string | undefined,
+  TData = null,
   TError = 'Unknown error' | string | undefined,
   TMeta extends unknown | undefined = undefined,
 > = {
@@ -27,7 +27,7 @@ export type FetchResponse<
 } & (
   | {
       success: true;
-      data?: TData;
+      data: TData extends undefined ? null : TData;
     }
   | {
       success: false;

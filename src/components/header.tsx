@@ -7,7 +7,13 @@ import { SelectDataset } from './select-dataset';
 import { Button } from './ui/button';
 
 export async function Header({ id }: { id?: string }) {
-  const project = await getJobs();
+  const response = await getJobs();
+
+  if (!response.success) {
+    throw new Error(response.error);
+  }
+
+  const project = response.data;
   const jobsOptions: SelectOption[] = [];
   for (const job of project.jobs.nodes) {
     if (job.name !== JOB_NAME) continue;

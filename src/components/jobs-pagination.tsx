@@ -12,7 +12,13 @@ interface JobsPaginationProps {
 }
 
 export async function JobsPagination({ id }: JobsPaginationProps) {
-  const project = await getJobs();
+  const response = await getJobs();
+
+  if (!response.success) {
+    throw new Error(response.error);
+  }
+
+  const project = response.data;
 
   const jobs = project?.jobs.nodes.filter((job) => job.name === JOB_NAME) ?? [];
   const jobsOptions = jobs

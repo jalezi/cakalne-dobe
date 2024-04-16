@@ -7,7 +7,13 @@ import { DateRangeJobLinks } from '@/components/date-range-job-links';
 export const revalidate = 60; // 1 minute
 
 export default async function Home() {
-  const project = await getJobs();
+  const response = await getJobs();
+
+  if (response.success === false) {
+    throw new Error(response.error);
+  }
+
+  const project = response.data;
 
   const jobs = project?.jobs.nodes.filter((job) => job.name === JOB_NAME) ?? [];
 

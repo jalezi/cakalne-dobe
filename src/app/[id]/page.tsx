@@ -29,10 +29,12 @@ export default async function Home({
   const urlSearchParams = new URLSearchParams(searchParams);
   const procedureCode = urlSearchParams.get(SEARCH_PARAMS.procedureCode);
 
-  const job = await getJob(id);
-  if (!job) {
+  const response = await getJob(id);
+  if (!response.success) {
     return notFound();
   }
+
+  const job = response.data;
 
   const fileName = `wp-${job.finishedAt}-${id}`;
 
