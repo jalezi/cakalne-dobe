@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
 const envServerVarsSchema = z.object({
-  NODE_ENV: z.string(),
-  GIT_LAB_GRAPHQL_API_URL: z.string(),
+  DATABASE_URL: z.string(),
+  DATABASE_AUTH_TOKEN: z.string(),
 });
 
 const envClientVarsSchema = z.object({});
