@@ -90,7 +90,7 @@ export function DateRangeJobLinks({
                 <Time date={date.from} />
               )
             ) : (
-              <span>Pick a date</span>
+              <span>Izberi časovno obdobje</span>
             )}
           </Button>
         </PopoverTrigger>
@@ -120,7 +120,7 @@ export function DateRangeJobLinks({
             }}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select" />
+              <SelectValue placeholder="Izberi časovno obdobje" />
             </SelectTrigger>
             <SelectContent position="popper">
               <SelectItem value="0">Ta teden</SelectItem>
