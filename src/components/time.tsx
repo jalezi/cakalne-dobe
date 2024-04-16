@@ -87,6 +87,7 @@ type DateTimeComponentOptions = Pick<
   | 'minute'
   | 'second'
   | 'fractionalSecondDigits'
+  | 'timeZone'
   | 'timeZoneName'
   | 'formatMatcher'
 >;

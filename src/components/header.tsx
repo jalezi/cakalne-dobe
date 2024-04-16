@@ -14,7 +14,6 @@ export async function Header({ id }: { id?: string }) {
 
     const value = job.detailedStatus.detailsPath.split('/').pop();
     if (!value) continue;
-    const label = job.finishedAt;
 
     jobsOptions.push({
       value: `/${value}`,
@@ -24,7 +23,8 @@ export async function Header({ id }: { id?: string }) {
         day: 'numeric',
         hour: 'numeric',
         minute: 'numeric',
-      }).format(new Date(label)),
+        timeZone: 'Europe/Ljubljana',
+      }).format(new Date(job.finishedAt)),
     });
   }
 

@@ -59,6 +59,7 @@ export default async function Home({
               day: 'numeric',
               hour: 'numeric',
               minute: '2-digit',
+              timeZone: 'Europe/Ljubljana',
             }}
           />
         </p>

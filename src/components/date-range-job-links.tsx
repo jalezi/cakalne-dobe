@@ -1,7 +1,5 @@
 'use client';
 
-'use client';
-
 import * as React from 'react';
 import { addDays, isAfter, isBefore, isSameDay } from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';
@@ -160,6 +158,7 @@ export function DateRangeJobLinks({
                       hour: 'numeric',
                       minute: 'numeric',
                       second: 'numeric',
+                      timeZone: 'Europe/Ljubljana',
                     }}
                   />
                 </Link>
