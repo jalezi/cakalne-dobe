@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 const envServerVarsSchema = z.object({
   DATABASE_URL: z.string(),
-  DATABASE_AUTH_TOKEN: z.string(),
+  DATABASE_AUTH_TOKEN: z.string().nullish(),
 });
 
 const envClientVarsSchema = z.object({});

@@ -123,6 +123,9 @@ devDependencies:
   drizzle-kit:
     specifier: ^0.20.14
     version: 0.20.14
+  esbuild-register:
+    specifier: ^3.5.0
+    version: 3.5.0(esbuild@0.20.2)
   eslint:
     specifier: ^8
     version: 8.57.0
@@ -3512,6 +3515,17 @@ packages:
     dependencies:
       debug: 4.3.4
       esbuild: 0.19.12
+    transitivePeerDependencies:
+      - supports-color
+    dev: true
+
+  /esbuild-register@3.5.0(esbuild@0.20.2):
+    resolution: {integrity: sha512-+4G/XmakeBAsvJuDugJvtyF1x+XJT4FMocynNpxrvEBViirpfUn2PgNpCHedfWhF4WokNsO/OvMKrmJOIJsI5A==}
+    peerDependencies:
+      esbuild: '>=0.12 <1'
+    dependencies:
+      debug: 4.3.4
+      esbuild: 0.20.2
     transitivePeerDependencies:
       - supports-color
     dev: true
