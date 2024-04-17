@@ -9,9 +9,9 @@ export const maxWaitingPeriods = sqliteTable('max_waiting_periods', {
   id: text('id')
     .primaryKey()
     .$defaultFn(() => createId()),
-  maxRegularWaitingPeriod: integer('max_regular_waiting_period').notNull(),
-  maxFastWaitingPeriod: integer('max_fast_waiting_period').notNull(),
-  maxVeryFastWaitingPeriod: integer('max_very_fast_waiting_period').notNull(),
+  regular: integer('regular').notNull(),
+  fast: integer('fast').notNull(),
+  veryFast: integer('very_fast').notNull(),
   jobId: text('job_id')
     .notNull()
     .references(() => jobs.id),
