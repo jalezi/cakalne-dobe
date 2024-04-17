@@ -14,7 +14,7 @@ export async function insertJobs(jobs: [string, AllData][]) {
       const result = await db
         .insert(jobsTable)
         .values({
-          jobId,
+          gitLabJobId: jobId,
           startDate: jobData.start,
           endDate: jobData.end,
         })

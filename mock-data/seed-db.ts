@@ -1,6 +1,5 @@
 /* eslint-disable drizzle/enforce-delete-with-where */
 /* eslint-disable no-console */
-import { type InsertProcedure } from '@/db/schema/procedures';
 import fs from 'fs/promises';
 import { cwd } from 'process';
 
@@ -46,10 +45,9 @@ const seedDB = async () => {
 
   // INSERT PROCEDURES
   console.info('--- Inserting procedures...');
-  const procedures: Map<
-    string,
-    Pick<InsertProcedure, 'code' | 'name'>
-  > = seedHelpers.getProceduresToInsert(Array.from(dataMap.values()));
+  const procedures = seedHelpers.getProceduresToInsert(
+    Array.from(dataMap.values())
+  );
 
   const { errors: insertProcedureErrors } = await seedHelpers.insertProcedures(
     Array.from(procedures.values())

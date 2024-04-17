@@ -3,9 +3,15 @@ import { timestamps } from '../schema-common-fields';
 import { relations } from 'drizzle-orm';
 import { maxWaitingPeriods } from './max-waiting-periods';
 import { waitingPeriods } from './waiting-periods';
+import { createId } from '@paralleldrive/cuid2';
 
 export const jobs = sqliteTable('jobs', {
-  jobId: text('job_id').primaryKey(),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  gitLabJobId: text('git_lab_job_id')
+    .$default(() => '')
+    .notNull(),
   startDate: text('start_date').notNull(),
   endDate: text('end_date').notNull(),
   ...timestamps,

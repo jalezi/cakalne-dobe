@@ -18,7 +18,7 @@ export const waitingPeriods = sqliteTable(
     veryFast: integer('very_fast'),
     jobId: text('job_id')
       .notNull()
-      .references(() => jobs.jobId),
+      .references(() => jobs.id),
     institutionId: text('institution_id')
       .notNull()
       .references(() => institutions.id),
@@ -39,7 +39,7 @@ export const waitingPeriods = sqliteTable(
 export const waitingPeriodsRelations = relations(waitingPeriods, ({ one }) => ({
   job: one(jobs, {
     fields: [waitingPeriods.jobId],
-    references: [jobs.jobId],
+    references: [jobs.id],
     relationName: 'jobWP',
   }),
   institution: one(institutions, {
