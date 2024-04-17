@@ -1,9 +1,9 @@
 import type { DataMap } from './types';
 import { db } from '@/db';
-import { maxWaitingPeriods as maxWaitingPeriodsTable } from '@/db/schema';
+import { maxAllowedDays as maxAllowedDaysTable } from '@/db/schema';
 import { seedHelpers } from '.';
 
-export async function insertMaxWaitingPeriods(input: DataMap) {
+export async function insertMaxAllowedDays(input: DataMap) {
   const dataMapEntries = Array.from(input.entries());
   const procedures = seedHelpers.getProceduresToInsert(
     Array.from(input.values())
@@ -34,15 +34,15 @@ export async function insertMaxWaitingPeriods(input: DataMap) {
         continue;
       }
 
-      const maxWaitingPeriodData = {
+      const maxAllowedDays = {
         jobId,
         procedureId: dbProcedure.id,
         regular: procedure.maxAllowedDays.regular,
         fast: procedure.maxAllowedDays.fast,
         veryFast: procedure.maxAllowedDays.veryFast,
       };
-      db.insert(maxWaitingPeriodsTable)
-        .values(maxWaitingPeriodData)
+      db.insert(maxAllowedDaysTable)
+        .values(maxAllowedDays)
         .onConflictDoNothing()
         .run();
     }

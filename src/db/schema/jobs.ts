@@ -1,7 +1,7 @@
 import { sqliteTable, text, unique } from 'drizzle-orm/sqlite-core';
 import { timestamps } from '../schema-common-fields';
 import { relations } from 'drizzle-orm';
-import { maxWaitingPeriods } from './max-waiting-periods';
+import { maxAllowedDays } from './max-allowed-days';
 import { waitingPeriods } from './waiting-periods';
 import { createId } from '@paralleldrive/cuid2';
 
@@ -26,8 +26,8 @@ export const jobs = sqliteTable(
 );
 
 export const jobRelations = relations(jobs, ({ many }) => ({
-  maxWaitingPeriods: many(maxWaitingPeriods, {
-    relationName: 'jobMWP',
+  maxAllowedDays: many(maxAllowedDays, {
+    relationName: 'jobMAD',
   }),
   waitingPeriods: many(waitingPeriods, {
     relationName: 'jobWP',

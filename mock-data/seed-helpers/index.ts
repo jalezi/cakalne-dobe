@@ -1,18 +1,20 @@
 /* eslint-disable drizzle/enforce-delete-with-where */
 /* eslint-disable no-console */
 import { db } from '@/db';
-import { jobs as jobsTable } from '@/db/schema/jobs';
-import { procedures as proceduresTable } from '@/db/schema/procedures';
+import { jobs } from '@/db/schema/jobs';
+import { procedures } from '@/db/schema/procedures';
 import { handleError } from './handle-error';
 import { getDataFromFiles } from './get-data-from-file';
 import { getProceduresToInsert, insertProcedures } from './seed-procedures';
 import { insertJobs } from './seed-jobs';
-import { insertMaxWaitingPeriods } from './seed-max-waiting-periods';
+import { insertMaxAllowedDays } from './seed-max-allowed-days';
+import { maxAllowedDays } from '@/db/schema';
 
 export async function deleteTables() {
   try {
-    await db.delete(jobsTable).run();
-    await db.delete(proceduresTable).run();
+    await db.delete(jobs).run();
+    await db.delete(procedures).run();
+    await db.delete(maxAllowedDays).run();
 
     return { success: true, error: null } as const;
   } catch (error) {
@@ -28,5 +30,5 @@ export const seedHelpers = {
   handleError,
   insertJobs,
   insertProcedures,
-  insertMaxWaitingPeriods,
+  insertMaxAllowedDays,
 };

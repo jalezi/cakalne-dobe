@@ -60,9 +60,9 @@ const seedDB = async () => {
     process.exit(1);
   }
 
-  // INSERT MAX WAITING PERIODS
+  // INSERT MAX ALLOWED DAYS
   console.info('--- Inserting max waiting periods...');
-  await seedHelpers.insertMaxWaitingPeriods(dataMap);
+  await seedHelpers.insertMaxAllowedDays(dataMap);
 
   console.info('--- Database seeded successfully!');
   process.exit(0);

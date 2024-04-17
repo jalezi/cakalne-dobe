@@ -5,8 +5,8 @@ import { procedures } from './procedures';
 import { relations } from 'drizzle-orm';
 import { createId } from '@paralleldrive/cuid2';
 
-export const maxWaitingPeriods = sqliteTable(
-  'max_waiting_periods',
+export const maxAllowedDays = sqliteTable(
+  'max_allowed_days',
   {
     id: text('id')
       .primaryKey()
@@ -24,23 +24,20 @@ export const maxWaitingPeriods = sqliteTable(
   },
   (table) => {
     return {
-      maxWaitingPeriodsIndex: unique().on(table.jobId, table.procedureId),
+      maxAllowedDaysIndex: unique().on(table.jobId, table.procedureId),
     };
   }
 );
 
-export const maxWaitingPeriodsRelations = relations(
-  maxWaitingPeriods,
-  ({ one }) => ({
-    job: one(jobs, {
-      fields: [maxWaitingPeriods.jobId],
-      references: [jobs.id],
-      relationName: 'jobMWP',
-    }),
-    procedure: one(procedures, {
-      fields: [maxWaitingPeriods.procedureId],
-      references: [procedures.id],
-      relationName: 'procedureMWP',
-    }),
-  })
-);
+export const maxAllowedDaysRelations = relations(maxAllowedDays, ({ one }) => ({
+  job: one(jobs, {
+    fields: [maxAllowedDays.jobId],
+    references: [jobs.id],
+    relationName: 'jobMAD',
+  }),
+  procedure: one(procedures, {
+    fields: [maxAllowedDays.procedureId],
+    references: [procedures.id],
+    relationName: 'procedureMAD',
+  }),
+}));
