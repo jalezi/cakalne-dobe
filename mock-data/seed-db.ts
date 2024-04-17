@@ -59,6 +59,13 @@ const seedDB = async () => {
     }
     process.exit(1);
   }
+
+  // INSERT MAX WAITING PERIODS
+  console.info('--- Inserting max waiting periods...');
+  await seedHelpers.insertMaxWaitingPeriods(dataMap);
+
+  console.info('--- Database seeded successfully!');
+  process.exit(0);
 };
 
 seedDB();

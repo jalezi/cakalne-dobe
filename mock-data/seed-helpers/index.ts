@@ -7,6 +7,7 @@ import { handleError } from './handle-error';
 import { getDataFromFiles } from './get-data-from-file';
 import { getProceduresToInsert, insertProcedures } from './seed-procedures';
 import { insertJobs } from './seed-jobs';
+import { insertMaxWaitingPeriods } from './seed-max-waiting-periods';
 
 export async function deleteTables() {
   try {
@@ -27,4 +28,5 @@ export const seedHelpers = {
   handleError,
   insertJobs,
   insertProcedures,
+  insertMaxWaitingPeriods,
 };
