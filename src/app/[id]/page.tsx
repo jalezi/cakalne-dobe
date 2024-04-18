@@ -1,7 +1,6 @@
 import { Suspense } from 'react';
 
 import { Table } from '@/components/table';
-import { getJob } from '@/utils/get-jobs';
 import { notFound } from 'next/navigation';
 import { Time } from '@/components/time';
 import { DataTableSkeleton } from '@/components/skeleton/data-table';
@@ -10,6 +9,7 @@ import { JobsPagination } from '@/components/jobs-pagination';
 import { JobsPaginationSkeleton } from '@/components/skeleton/jobs-pagination';
 
 import { JsonDropDownMenu } from '@/components/json-dropdown-menu';
+import { db } from '@/db';
 
 const SEARCH_PARAMS = {
   procedureCode: 'procedureCode',
@@ -29,14 +29,16 @@ export default async function Home({
   const urlSearchParams = new URLSearchParams(searchParams);
   const procedureCode = urlSearchParams.get(SEARCH_PARAMS.procedureCode);
 
-  const response = await getJob(id);
-  if (!response.success) {
+  const job = await db.query.jobs.findFirst({
+    where: (job, operators) => operators.eq(job.id, id),
+    columns: { gitLabJobId: true, startDate: true },
+  });
+
+  if (!job) {
     return notFound();
   }
 
-  const job = response.data;
-
-  const fileName = `wp-${job.finishedAt}-${id}`;
+  const fileName = `wp-${job.startDate}-${job.gitLabJobId}`;
 
   return (
     <main className="space-y-2 p-4">
@@ -54,7 +56,7 @@ export default async function Home({
         <p id="attr-data-fetched-on">
           Podatki pridobljeni:{' '}
           <Time
-            date={job.finishedAt}
+            date={job.startDate}
             options={{
               year: '2-digit',
               month: 'short',
@@ -65,10 +67,10 @@ export default async function Home({
             }}
           />
         </p>
-        <JsonDropDownMenu jsonId={id} fileName={fileName} />
+        <JsonDropDownMenu jsonId={job.gitLabJobId} fileName={fileName} />
       </div>
       <Suspense fallback={<DataTableSkeleton />}>
-        <Table jsonId={id} procedureCode={procedureCode} />
+        <Table jsonId={job.gitLabJobId} procedureCode={procedureCode} />
       </Suspense>
     </main>
   );

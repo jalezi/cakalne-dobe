@@ -1,10 +1,11 @@
-import { JOB_NAME } from '@/lib/gql';
-import { getJobs } from '@/utils/get-jobs';
 import { Button } from './ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { JobLink } from './job-link';
 import { cn } from '@/lib/utils';
 import { Time } from './time';
+import { desc } from 'drizzle-orm';
+import { db } from '@/db';
+import { jobs as jobsTable } from '@/db/schema';
 
 interface JobsPaginationProps {
   id: string;
@@ -12,21 +13,14 @@ interface JobsPaginationProps {
 }
 
 export async function JobsPagination({ id }: JobsPaginationProps) {
-  const response = await getJobs();
-
-  if (!response.success) {
-    throw new Error(response.error);
-  }
-
-  const project = response.data;
-
-  const jobs = project?.jobs.nodes.filter((job) => job.name === JOB_NAME) ?? [];
-  const jobsOptions = jobs
-    .filter((job) => job.name === JOB_NAME)
-    .map((job) => ({
-      value: job.detailedStatus.detailsPath.split('/').pop() ?? 'unknown',
-      label: job.finishedAt,
-    }));
+  const jobs = await db.query.jobs.findMany({
+    columns: { id: true, startDate: true },
+    orderBy: [desc(jobsTable.startDate)],
+  });
+  const jobsOptions = jobs.map((job) => ({
+    value: job.id,
+    label: job.startDate,
+  }));
 
   const jobIndex = jobsOptions.findIndex((job) => job.value === id);
 
