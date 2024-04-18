@@ -12,8 +12,8 @@
     "drizzle:prod:push": "drizzle-kit push:sqlite --config=./drizzle/config/prod.ts",
     "drizzle:local:studio": "drizzle-kit studio --config=./drizzle/config/local.ts --port 4000",
     "drizzle:prod:studio": "drizzle-kit studio --config=./drizzle/config/prod.ts --port 4001",
-    "db:local:seed": "node -r dotenv/config  -r esbuild-register mock-data/seed-db.ts dotenv_config_path=.env.development.local",
-    "db:prod:seed": "node -r dotenv/config  -r esbuild-register mock-data/seed-db.ts dotenv_config_path=.env.production.local",
+    "db:local:seed": "node -r dotenv/config  -r esbuild-register seed/seed-db.ts dotenv_config_path=.env.development.local",
+    "db:prod:seed": "node -r dotenv/config  -r esbuild-register seed/seed-db.ts dotenv_config_path=.env.production.local",
     "turso:dev": "turso dev",
     "turso:dev:file": "turso dev --db-file dev.db"
   },

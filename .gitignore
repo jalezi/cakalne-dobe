@@ -41,3 +41,6 @@ next-env.d.ts
 
 // DB
 dev.*
+
+//
+/mock-data
