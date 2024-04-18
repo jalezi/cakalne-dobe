@@ -1,16 +1,17 @@
-import { integer, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core';
+import {
+  integer,
+  primaryKey,
+  sqliteTable,
+  text,
+} from 'drizzle-orm/sqlite-core';
 import { timestamps } from '../schema-common-fields';
 import { jobs } from './jobs';
 import { procedures } from './procedures';
 import { relations } from 'drizzle-orm';
-import { createId } from '@paralleldrive/cuid2';
 
 export const maxAllowedDays = sqliteTable(
   'max_allowed_days',
   {
-    id: text('id')
-      .primaryKey()
-      .$defaultFn(() => createId()),
     regular: integer('regular').notNull(),
     fast: integer('fast').notNull(),
     veryFast: integer('very_fast').notNull(),
@@ -24,7 +25,9 @@ export const maxAllowedDays = sqliteTable(
   },
   (table) => {
     return {
-      maxAllowedDaysIndex: unique().on(table.jobId, table.procedureId),
+      pk: primaryKey({
+        columns: [table.jobId, table.procedureId],
+      }),
     };
   }
 );

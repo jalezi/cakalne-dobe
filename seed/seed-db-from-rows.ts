@@ -55,27 +55,30 @@ const proceduresDBRowSchema = commonDBRowSchema.merge(
   })
 );
 
-const maxAllowedDaysDBRowSchema = commonDBRowSchema.merge(
-  z.object({
-    regular: z.number(),
-    fast: z.number(),
-    very_fast: z.number(),
-    job_id: z.string(),
-    procedure_id: z.string(),
-  })
-);
+const maxAllowedDaysDBRowSchema = commonDBRowSchema
+  .merge(
+    z.object({
+      regular: z.number(),
+      fast: z.number(),
+      very_fast: z.number(),
+      job_id: z.string(),
+      procedure_id: z.string(),
+    })
+  )
+  .omit({ id: true });
 
-const waitingPeriodsDBRowSchema = commonDBRowSchema.merge(
-  z.object({
-    id: z.string().nullish(),
-    regular: z.number().nullable(),
-    fast: z.number().nullable(),
-    very_fast: z.number().nullable(),
-    job_id: z.string(),
-    institution_id: z.string(),
-    procedure_id: z.string(),
-  })
-);
+const waitingPeriodsDBRowSchema = commonDBRowSchema
+  .merge(
+    z.object({
+      regular: z.number().nullable(),
+      fast: z.number().nullable(),
+      very_fast: z.number().nullable(),
+      job_id: z.string(),
+      institution_id: z.string(),
+      procedure_id: z.string(),
+    })
+  )
+  .omit({ id: true });
 
 export const seedDBFromRows = async (input: boolean = false) => {
   console.info('--- Seeding database from rows...');
@@ -202,7 +205,6 @@ export const seedDBFromRows = async (input: boolean = false) => {
     const safeChunk = chunk.map((maxAllowedDay) => {
       return maxAllowedDaysDBRowSchema
         .transform((val) => ({
-          id: val.id,
           regular: val.regular,
           fast: val.fast,
           veryFast: val.very_fast,
