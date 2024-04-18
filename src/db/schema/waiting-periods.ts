@@ -53,3 +53,6 @@ export const waitingPeriodsRelations = relations(waitingPeriods, ({ one }) => ({
     relationName: 'procedureWP',
   }),
 }));
+
+export type SelectWaitingPeriods = typeof waitingPeriods.$inferSelect;
+export type InsertWaitingPeriods = typeof waitingPeriods.$inferInsert;

@@ -41,3 +41,6 @@ export const maxAllowedDaysRelations = relations(maxAllowedDays, ({ one }) => ({
     relationName: 'procedureMAD',
   }),
 }));
+
+export type SelectMaxAllowedDays = typeof maxAllowedDays.$inferSelect;
+export type InsertMaxAllowedDays = typeof maxAllowedDays.$inferInsert;

@@ -48,14 +48,18 @@ export async function insertWaitingTimes(input: DataMap) {
         continue;
       }
 
-      await db.insert(waitingPeriods).values({
-        jobId: job.id,
-        procedureId: procedure.id,
-        institutionId: facility.id,
-        regular: row.waitingPeriods.regular,
-        fast: row.waitingPeriods.fast,
-        veryFast: row.waitingPeriods.veryFast,
-      });
+      await db
+        .insert(waitingPeriods)
+        .values({
+          jobId: job.id,
+          procedureId: procedure.id,
+          institutionId: facility.id,
+          regular: row.waitingPeriods.regular,
+          fast: row.waitingPeriods.fast,
+          veryFast: row.waitingPeriods.veryFast,
+        })
+        .onConflictDoNothing()
+        .run();
     }
   }
 }

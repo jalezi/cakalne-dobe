@@ -33,3 +33,6 @@ export const jobRelations = relations(jobs, ({ many }) => ({
     relationName: 'jobWP',
   }),
 }));
+
+export type SelectJob = typeof jobs.$inferSelect;
+export type InsertJob = typeof jobs.$inferInsert;

@@ -25,3 +25,6 @@ export const institutionsRelations = relations(institutions, ({ many }) => ({
     relationName: 'institutionWP',
   }),
 }));
+
+export type SelectInstitution = typeof institutions.$inferSelect;
+export type InsertInstitution = typeof institutions.$inferInsert;
