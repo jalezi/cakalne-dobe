@@ -69,6 +69,8 @@ const seedDB = async () => {
   await seedHelpers.insertInstitutions(dataMap);
 
   // INSERT WAITING PERIODS
+  console.info('--- Inserting waiting periods...');
+  await seedHelpers.insertWaitingTimes(dataMap);
 
   console.info('--- Database seeded successfully!');
   process.exit(0);

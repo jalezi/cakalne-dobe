@@ -18,13 +18,13 @@ export const waitingPeriods = sqliteTable(
     veryFast: integer('very_fast'),
     jobId: text('job_id')
       .notNull()
-      .references(() => jobs.id),
+      .references(() => jobs.id, { onDelete: 'cascade' }),
     institutionId: text('institution_id')
       .notNull()
-      .references(() => institutions.id),
+      .references(() => institutions.id, { onDelete: 'cascade' }),
     procedureId: text('procedure_id')
       .notNull()
-      .references(() => procedures.id),
+      .references(() => procedures.id, { onDelete: 'cascade' }),
     ...timestamps,
   },
   (table) => {

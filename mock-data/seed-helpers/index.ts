@@ -13,6 +13,7 @@ import {
   getInstitutionsToInsert,
   insertInstitutions,
 } from './seed-institutions';
+import { insertWaitingTimes } from './seed-waiting-times';
 
 export async function deleteTables() {
   try {
@@ -24,6 +25,7 @@ export async function deleteTables() {
     await db.delete(maxAllowedDays).run();
     console.log('\tDeleting institutions table...');
     await db.delete(institutions).run();
+    console.log('\tDeleting waitingTimes table...');
 
     return { success: true, error: null } as const;
   } catch (error) {
@@ -42,4 +44,5 @@ export const seedHelpers = {
   insertJobs,
   insertProcedures,
   insertMaxAllowedDays,
+  insertWaitingTimes,
 };

@@ -4,6 +4,7 @@ import type { CustomError, ProcedureInsertData } from './types';
 import { db } from '@/db';
 import { procedures as proceduresTable } from '@/db/schema/procedures';
 import { handleError } from './handle-error';
+import { trimStringWithDashes } from '@/lib/zod-schemas/helpers-schema';
 
 export function getProceduresToInsert(
   jobs: AllData[]
@@ -15,7 +16,7 @@ export function getProceduresToInsert(
       if (!hasProcedure) {
         procedures.set(procedure.code, {
           code: procedure.code,
-          name: procedure.name,
+          name: trimStringWithDashes.parse(procedure.name),
         });
       }
     }
