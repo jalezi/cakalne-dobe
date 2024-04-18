@@ -64,8 +64,24 @@ const seedDB = async () => {
   console.info('--- Inserting max waiting periods...');
   await seedHelpers.insertMaxAllowedDays(dataMap);
 
+  // INSERT INSTITUTIONS AKA FACILITIES
+  console.info('--- Inserting institutions...');
+  await seedHelpers.insertInstitutions(dataMap);
+
+  // INSERT WAITING PERIODS
+
   console.info('--- Database seeded successfully!');
   process.exit(0);
 };
 
 seedDB();
+
+// const getJobRows = (data: DataMap) => {
+//   const jobRows: Map<string, FacilityProcedureWaitingTimes[]> = new Map();
+
+//   for (const [gitLabJobId, jobData] of Array.from(data.entries())) {
+//     const rows = makeFacilityRows(jobData.procedures);
+//     jobRows.set(gitLabJobId, rows);
+//   }
+//   return jobRows;
+// };

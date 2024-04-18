@@ -8,13 +8,22 @@ import { getDataFromFiles } from './get-data-from-file';
 import { getProceduresToInsert, insertProcedures } from './seed-procedures';
 import { insertJobs } from './seed-jobs';
 import { insertMaxAllowedDays } from './seed-max-allowed-days';
-import { maxAllowedDays } from '@/db/schema';
+import { institutions, maxAllowedDays } from '@/db/schema';
+import {
+  getInstitutionsToInsert,
+  insertInstitutions,
+} from './seed-institutions';
 
 export async function deleteTables() {
   try {
+    console.info('\tDeleting jobs table...');
     await db.delete(jobs).run();
+    console.info('\tDeleting procedures table...');
     await db.delete(procedures).run();
+    console.info('\tDeleting maxAllowedDays table...');
     await db.delete(maxAllowedDays).run();
+    console.log('\tDeleting institutions table...');
+    await db.delete(institutions).run();
 
     return { success: true, error: null } as const;
   } catch (error) {
@@ -26,8 +35,10 @@ export async function deleteTables() {
 export const seedHelpers = {
   deleteTables,
   getDataFromFiles,
+  getInstitutionsToInsert,
   getProceduresToInsert,
   handleError,
+  insertInstitutions,
   insertJobs,
   insertProcedures,
   insertMaxAllowedDays,
