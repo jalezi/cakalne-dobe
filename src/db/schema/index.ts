@@ -1,5 +1,5 @@
-export { jobs } from './jobs';
-export { institutions } from './institution';
-export { maxAllowedDays } from './max-allowed-days';
-export { procedures } from './procedures';
-export { waitingPeriods } from './waiting-periods';
+export * from './jobs';
+export * from './institution';
+export * from './max-allowed-days';
+export * from './procedures';
+export * from './waiting-periods';
