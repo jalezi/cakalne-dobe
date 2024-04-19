@@ -20,14 +20,31 @@ type HomeProps = {
   searchParams: Record<string, string>;
 };
 
-export const revalidate = 0; // json file is over 2MB, nextjs can not cache it
-
 export default async function Home({
   params: { id },
   searchParams,
 }: HomeProps) {
   const urlSearchParams = new URLSearchParams(searchParams);
-  const procedureCode = urlSearchParams.get(SEARCH_PARAMS.procedureCode);
+  const procedureCodeSearchParam =
+    urlSearchParams.get(SEARCH_PARAMS.procedureCode) ?? '';
+
+  const foundProcedureCodeObj = await db.query.procedures.findFirst({
+    columns: { code: true },
+    where: (procedures, operators) =>
+      operators.eq(procedures.code, procedureCodeSearchParam),
+  });
+
+  const defaultProcedureCodeObj = await db.query.procedures.findFirst({
+    columns: { code: true },
+    orderBy: (procedures, operators) => operators.asc(procedures.code),
+  });
+
+  const procedureCode =
+    foundProcedureCodeObj?.code ?? defaultProcedureCodeObj?.code;
+
+  if (!procedureCode) {
+    return notFound();
+  }
 
   const job = await db.query.jobs.findFirst({
     where: (job, operators) => operators.eq(job.id, id),

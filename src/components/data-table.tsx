@@ -42,7 +42,7 @@ import { fuzzyFilter } from '@/lib/fuzzy-filter';
 import { ColumnsToggler } from './columns-toggler';
 import { ComboBoxResponsive } from './combo-box-responsive';
 import { MaxUrgency } from './max-urgency';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 
 const SEARCH_PARAMS = {
   procedureCode: 'procedureCode',
@@ -58,6 +58,7 @@ interface DataTableProps<TData, TValue> {
     globalFilter?: string;
     columnFilters?: ColumnFiltersState;
   };
+  visibleProcedures: { code: string; name: string }[];
 }
 
 export function DataTable<TData, TValue>({
@@ -65,9 +66,9 @@ export function DataTable<TData, TValue>({
   data,
   meta,
   initialState,
+  visibleProcedures,
 }: DataTableProps<TData, TValue>) {
   const urlSearchParams = useSearchParams();
-  const router = useRouter();
   const pathname = usePathname();
 
   const initialSortingState = initialState?.sorting || [];
@@ -122,15 +123,15 @@ export function DataTable<TData, TValue>({
   const groupedColumns = groupByParent(flatColumns);
 
   const procedureOptions = useMemo(() => {
-    return Array.from(
-      table.getColumn('codeWithName')?.getFacetedUniqueValues()?.keys() ?? []
-    )
-      .sort()
-      .map((value) => ({
-        value,
-        label: value,
-      }));
-  }, [table]);
+    return visibleProcedures.sort().map((value) => {
+      const newUrlSearchParams = new URLSearchParams(urlSearchParams);
+      newUrlSearchParams.set(SEARCH_PARAMS.procedureCode, value.code);
+      return {
+        value: `${pathname}?${newUrlSearchParams.toString()}`,
+        label: `${value.code} - ${value.name}`,
+      };
+    });
+  }, [pathname, urlSearchParams, visibleProcedures]);
 
   const codeWithNameFilterValue = table
     .getColumn('codeWithName')
@@ -184,21 +185,17 @@ export function DataTable<TData, TValue>({
       <div className="space-y-2 rounded-md border">
         <div className="m-2">
           <ComboBoxResponsive
+            asLink
             options={procedureOptions}
             onSelect={(value) => {
-              const procedureCode = value.split(' - ')[0].trim();
-              const newUrlSearchParams = new URLSearchParams(urlSearchParams);
-              value
-                ? newUrlSearchParams.set(
-                    SEARCH_PARAMS.procedureCode,
-                    procedureCode
-                  )
-                : newUrlSearchParams.delete(SEARCH_PARAMS.procedureCode);
-              router.replace(`${pathname}?${newUrlSearchParams.toString()}`);
+              const procedureCode = value
+                .split(`${SEARCH_PARAMS.procedureCode}=`)
+                .pop()
+                ?.trim();
 
               setColumnFilters((prev) => [
                 ...prev,
-                { id: 'codeWithName', value },
+                { id: 'codeWithName', value: procedureCode },
               ]);
 
               setColumnVisibility((prev) => ({
@@ -208,11 +205,12 @@ export function DataTable<TData, TValue>({
             }}
             placeholder="Izberi postopek"
             inputPlaceholder="Išči po imenu ali kodi postopka"
-            defaultSelected={procedureOptions.find(
-              (filter) =>
-                filter.value ===
+            defaultSelected={procedureOptions.find((filter) => {
+              return (
+                filter.label ===
                 columnFilters.find((f) => f.id === 'codeWithName')?.value
-            )}
+              );
+            })}
           />
         </div>
         <DataTablePagination table={table} />

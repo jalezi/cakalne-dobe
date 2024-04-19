@@ -7,7 +7,7 @@ import { and, eq } from 'drizzle-orm';
 
 interface TableProps {
   dbJobId: string;
-  procedureCode?: string | null;
+  procedureCode: string;
 }
 
 export async function Table({ procedureCode, dbJobId }: TableProps) {
@@ -16,10 +16,10 @@ export async function Table({ procedureCode, dbJobId }: TableProps) {
       name: true,
     },
     where: (procedures, operators) =>
-      operators.eq(procedures.code, procedureCode ?? ''),
+      operators.eq(procedures.code, procedureCode),
   });
 
-  const procedureName = procedureNameObj?.name;
+  const procedureName = procedureNameObj?.name; // fixme -  need a fallback
 
   const rows = await db
     .select({
@@ -35,7 +35,12 @@ export async function Table({ procedureCode, dbJobId }: TableProps) {
       },
     })
     .from(waitingPeriods)
-    .where(and(eq(waitingPeriods.jobId, dbJobId)))
+    .where(
+      and(
+        eq(waitingPeriods.jobId, dbJobId),
+        eq(proceduresTable.code, procedureCode)
+      )
+    )
     .innerJoin(
       proceduresTable,
       eq(waitingPeriods.procedureId, proceduresTable.id)
@@ -59,11 +64,19 @@ export async function Table({ procedureCode, dbJobId }: TableProps) {
       eq(maxAllowedDays.procedureId, proceduresTable.id)
     );
 
+  const procedures = await db.query.procedures.findMany({
+    columns: {
+      code: true,
+      name: true,
+    },
+  });
+
   return (
     <DataTable
       data={rows}
       columns={columns}
       meta={{ allowedMaxWaitingTimes }}
+      visibleProcedures={procedures}
       initialState={{
         sorting: [{ id: 'codeWithName', desc: false }],
         columnFilters: procedureName
