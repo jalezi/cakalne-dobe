@@ -23,7 +23,12 @@ export const seedDBFromJobs = async (input: boolean = false) => {
 
   // GET DATA FROM FILES
   console.info('--- Reading data from files...');
-  const fileNames = await getDataFileNames();
+  const fileNames = await getDataFileNames().then((files) =>
+    files.filter(
+      (file) => file.endsWith('.json') && !file.startsWith('archive')
+    )
+  );
+
   const { data: dataMap, errors: readingFileErrors } =
     await seedHelpers.getDataFromFiles(fileNames, dirName);
   if (readingFileErrors && readingFileErrors.length > 0) {

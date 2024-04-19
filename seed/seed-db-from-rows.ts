@@ -26,6 +26,8 @@ const FILE_NAMES = [
 
 const FILE_EXT = 'json' as const;
 
+const validFileNames = FILE_NAMES.map((name) => `${name}.${FILE_EXT}`);
+
 const commonDBRowSchema = z.object({
   id: z.string(),
   created_at: z.string(),
@@ -95,13 +97,9 @@ export const seedDBFromRows = async (input: boolean = false) => {
 
   console.info('--- Getting data from files...');
   const dataFileNames = await getDataFileNames();
-  const areValidFiles = dataFileNames.every((fileName) => {
-    const isValidExt = fileName.endsWith(`.${FILE_EXT}`);
-    const isValidName = FILE_NAMES.includes(
-      fileName.replace(`.${FILE_EXT}`, '')
-    );
-    return isValidExt && isValidName;
-  });
+  const areValidFiles = dataFileNames.every((fileName) =>
+    validFileNames.includes(fileName)
+  );
   if (!areValidFiles) {
     console.error('Invalid file names');
     process.exit(1);
@@ -112,140 +110,150 @@ export const seedDBFromRows = async (input: boolean = false) => {
   console.info('--- Inserting data into tables...');
 
   // JOBS
-  console.info('--- Reading jobs data...');
-  const jobs = await fs.readFile(`${dirName}/jobs.${FILE_EXT}`, 'utf-8');
-  const jobsData = JSON.parse(jobs) as unknown[];
-  const jobsChunks = [];
-  console.info('--- Inserting jobs...');
-  for (let i = 0; i < jobsData.length; i += chunkSize) {
-    jobsChunks.push(jobsData.slice(i, i + chunkSize));
-  }
-  for (const chunk of jobsChunks) {
-    const safeChunk = chunk.map((job) =>
-      jobDBRowSchema
-        .transform((val) => ({
-          id: val.id,
-          startDate: val.start_date,
-          endDate: val.end_date,
-          gitLabJobId: val.git_lab_job_id,
-          createdAt: new Date(val.created_at),
-          updatedAt: new Date(val.updated_at),
-        }))
-        .parse(job)
-    );
-    await db.insert(jobsTable).values(safeChunk).run();
+  if (dataFileNames.includes('jobs.json')) {
+    console.info('--- Reading jobs data...');
+    const jobs = await fs.readFile(`${dirName}/jobs.${FILE_EXT}`, 'utf-8');
+    const jobsData = JSON.parse(jobs) as unknown[];
+    const jobsChunks = [];
+    console.info('--- Inserting jobs...');
+    for (let i = 0; i < jobsData.length; i += chunkSize) {
+      jobsChunks.push(jobsData.slice(i, i + chunkSize));
+    }
+    for (const chunk of jobsChunks) {
+      const safeChunk = chunk.map((job) =>
+        jobDBRowSchema
+          .transform((val) => ({
+            id: val.id,
+            startDate: val.start_date,
+            endDate: val.end_date,
+            gitLabJobId: val.git_lab_job_id,
+            createdAt: new Date(val.created_at),
+            updatedAt: new Date(val.updated_at),
+          }))
+          .parse(job)
+      );
+      await db.insert(jobsTable).values(safeChunk).run();
+    }
   }
 
   // INSTITUTIONS
-  console.info('--- Reading institutions data...');
-  const institutions = await fs.readFile(
-    `${dirName}/institutions.${FILE_EXT}`,
-    'utf-8'
-  );
-  const institutionsData = JSON.parse(institutions) as unknown[];
-  const institutionsChunks = [];
-  console.info('--- Inserting institutions...');
-  for (let i = 0; i < institutionsData.length; i += chunkSize) {
-    institutionsChunks.push(institutionsData.slice(i, i + chunkSize));
-  }
-  for (const chunk of institutionsChunks) {
-    const safeChunk = chunk.map((institution) =>
-      institutionsDBRowSchema
-        .transform((val) => ({
-          id: val.id,
-          name: val.name,
-          createdAt: new Date(val.created_at),
-          updatedAt: new Date(val.updated_at),
-        }))
-        .parse(institution)
+  if (dataFileNames.includes('institutions.json')) {
+    console.info('--- Reading institutions data...');
+    const institutions = await fs.readFile(
+      `${dirName}/institutions.${FILE_EXT}`,
+      'utf-8'
     );
-    await db.insert(institutionsTable).values(safeChunk).run();
+    const institutionsData = JSON.parse(institutions) as unknown[];
+    const institutionsChunks = [];
+    console.info('--- Inserting institutions...');
+    for (let i = 0; i < institutionsData.length; i += chunkSize) {
+      institutionsChunks.push(institutionsData.slice(i, i + chunkSize));
+    }
+    for (const chunk of institutionsChunks) {
+      const safeChunk = chunk.map((institution) =>
+        institutionsDBRowSchema
+          .transform((val) => ({
+            id: val.id,
+            name: val.name,
+            createdAt: new Date(val.created_at),
+            updatedAt: new Date(val.updated_at),
+          }))
+          .parse(institution)
+      );
+      await db.insert(institutionsTable).values(safeChunk).run();
+    }
   }
 
   // PROCEDURES
-  console.info('--- Reading procedures data...');
-  const procedures = await fs.readFile(
-    `${dirName}/procedures.${FILE_EXT}`,
-    'utf-8'
-  );
-  const proceduresData = JSON.parse(procedures) as unknown[];
-  const proceduresChunks = [];
-  console.info('--- Inserting procedures...');
-  for (let i = 0; i < proceduresData.length; i += chunkSize) {
-    proceduresChunks.push(proceduresData.slice(i, i + chunkSize));
-  }
-  for (const chunk of proceduresChunks) {
-    const safeChunk = chunk.map((procedure) =>
-      proceduresDBRowSchema
-        .transform((val) => ({
-          id: val.id,
-          code: val.code,
-          name: val.name,
-          createdAt: new Date(val.created_at),
-          updatedAt: new Date(val.updated_at),
-        }))
-        .parse(procedure)
+  if (dataFileNames.includes('procedures.json')) {
+    console.info('--- Reading procedures data...');
+    const procedures = await fs.readFile(
+      `${dirName}/procedures.${FILE_EXT}`,
+      'utf-8'
     );
-    await db.insert(proceduresTable).values(safeChunk).run();
+    const proceduresData = JSON.parse(procedures) as unknown[];
+    const proceduresChunks = [];
+    console.info('--- Inserting procedures...');
+    for (let i = 0; i < proceduresData.length; i += chunkSize) {
+      proceduresChunks.push(proceduresData.slice(i, i + chunkSize));
+    }
+    for (const chunk of proceduresChunks) {
+      const safeChunk = chunk.map((procedure) =>
+        proceduresDBRowSchema
+          .transform((val) => ({
+            id: val.id,
+            code: val.code,
+            name: val.name,
+            createdAt: new Date(val.created_at),
+            updatedAt: new Date(val.updated_at),
+          }))
+          .parse(procedure)
+      );
+      await db.insert(proceduresTable).values(safeChunk).run();
+    }
   }
 
   // MAX ALLOWED DAYS
-  console.info('--- Reading max allowed days data...');
-  const maxAllowedDays = await fs.readFile(
-    `${dirName}/max_allowed_days.${FILE_EXT}`,
-    'utf-8'
-  );
-  const maxAllowedDaysData = JSON.parse(maxAllowedDays) as unknown[];
-  const maxAllowedDaysChunks = [];
-  console.info('--- Inserting max allowed days...');
-  for (let i = 0; i < maxAllowedDaysData.length; i += chunkSize) {
-    maxAllowedDaysChunks.push(maxAllowedDaysData.slice(i, i + chunkSize));
-  }
-  for (const chunk of maxAllowedDaysChunks) {
-    const safeChunk = chunk.map((maxAllowedDay) => {
-      return maxAllowedDaysDBRowSchema
-        .transform((val) => ({
-          regular: val.regular,
-          fast: val.fast,
-          veryFast: val.very_fast,
-          jobId: val.job_id,
-          procedureId: val.procedure_id,
-          createdAt: new Date(val.created_at),
-          updatedAt: new Date(val.updated_at),
-        }))
-        .parse(maxAllowedDay);
-    });
-    await db.insert(maxAllowedDaysTable).values(safeChunk).run();
+  if (dataFileNames.includes('max_allowed_days.json')) {
+    console.info('--- Reading max allowed days data...');
+    const maxAllowedDays = await fs.readFile(
+      `${dirName}/max_allowed_days.${FILE_EXT}`,
+      'utf-8'
+    );
+    const maxAllowedDaysData = JSON.parse(maxAllowedDays) as unknown[];
+    const maxAllowedDaysChunks = [];
+    console.info('--- Inserting max allowed days...');
+    for (let i = 0; i < maxAllowedDaysData.length; i += chunkSize) {
+      maxAllowedDaysChunks.push(maxAllowedDaysData.slice(i, i + chunkSize));
+    }
+    for (const chunk of maxAllowedDaysChunks) {
+      const safeChunk = chunk.map((maxAllowedDay) => {
+        return maxAllowedDaysDBRowSchema
+          .transform((val) => ({
+            regular: val.regular,
+            fast: val.fast,
+            veryFast: val.very_fast,
+            jobId: val.job_id,
+            procedureId: val.procedure_id,
+            createdAt: new Date(val.created_at),
+            updatedAt: new Date(val.updated_at),
+          }))
+          .parse(maxAllowedDay);
+      });
+      await db.insert(maxAllowedDaysTable).values(safeChunk).run();
+    }
   }
 
   // WAITING PERIODS
-  console.info('--- Reading waiting periods data...');
-  const waitingPeriods = await fs.readFile(
-    `${dirName}/waiting_periods.${FILE_EXT}`,
-    'utf-8'
-  );
-  const waitingPeriodsData = JSON.parse(waitingPeriods) as unknown[];
-  const waitingPeriodsChunks = [];
-  console.info('--- Inserting waiting periods...');
-  for (let i = 0; i < waitingPeriodsData.length; i += chunkSize) {
-    waitingPeriodsChunks.push(waitingPeriodsData.slice(i, i + chunkSize));
-  }
-  for (const chunk of waitingPeriodsChunks) {
-    const safeChunk = chunk.map((waitingPeriod) =>
-      waitingPeriodsDBRowSchema
-        .transform((val) => ({
-          regular: val.regular,
-          fast: val.fast,
-          veryFast: val.very_fast,
-          jobId: val.job_id,
-          institutionId: val.institution_id,
-          procedureId: val.procedure_id,
-          createdAt: new Date(val.created_at),
-          updatedAt: new Date(val.updated_at),
-        }))
-        .parse(waitingPeriod)
+  if (dataFileNames.includes('waiting_periods.json')) {
+    console.info('--- Reading waiting periods data...');
+    const waitingPeriods = await fs.readFile(
+      `${dirName}/waiting_periods.${FILE_EXT}`,
+      'utf-8'
     );
-    await db.insert(waitingPeriodsTable).values(safeChunk).run();
+    const waitingPeriodsData = JSON.parse(waitingPeriods) as unknown[];
+    const waitingPeriodsChunks = [];
+    console.info('--- Inserting waiting periods...');
+    for (let i = 0; i < waitingPeriodsData.length; i += chunkSize) {
+      waitingPeriodsChunks.push(waitingPeriodsData.slice(i, i + chunkSize));
+    }
+    for (const chunk of waitingPeriodsChunks) {
+      const safeChunk = chunk.map((waitingPeriod) =>
+        waitingPeriodsDBRowSchema
+          .transform((val) => ({
+            regular: val.regular,
+            fast: val.fast,
+            veryFast: val.very_fast,
+            jobId: val.job_id,
+            institutionId: val.institution_id,
+            procedureId: val.procedure_id,
+            createdAt: new Date(val.created_at),
+            updatedAt: new Date(val.updated_at),
+          }))
+          .parse(waitingPeriod)
+      );
+      await db.insert(waitingPeriodsTable).values(safeChunk).run();
+    }
   }
 
   console.info('--- Done!');
