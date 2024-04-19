@@ -14,11 +14,11 @@ import { getJsonPath } from '@/utils/get-json';
 import { toast } from 'sonner';
 
 interface JsonDropDownMenuProps {
-  jsonId: string;
+  gitLabJobId: string;
   fileName?: string;
 }
 export function JsonDropDownMenu({
-  jsonId: id,
+  gitLabJobId: id,
   fileName,
 }: JsonDropDownMenuProps) {
   const handleDownload = () => {

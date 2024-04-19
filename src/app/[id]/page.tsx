@@ -31,7 +31,7 @@ export default async function Home({
 
   const job = await db.query.jobs.findFirst({
     where: (job, operators) => operators.eq(job.id, id),
-    columns: { gitLabJobId: true, startDate: true },
+    columns: { gitLabJobId: true, startDate: true, id: true },
   });
 
   if (!job) {
@@ -67,10 +67,10 @@ export default async function Home({
             }}
           />
         </p>
-        <JsonDropDownMenu jsonId={job.gitLabJobId} fileName={fileName} />
+        <JsonDropDownMenu gitLabJobId={job.gitLabJobId} fileName={fileName} />
       </div>
       <Suspense fallback={<DataTableSkeleton />}>
-        <Table jsonId={job.gitLabJobId} procedureCode={procedureCode} />
+        <Table procedureCode={procedureCode} dbJobId={job.id} />
       </Suspense>
     </main>
   );
