@@ -11,7 +11,7 @@ const JSON_OUT_PATH = '/artifacts/out.json';
 export type GetLatestData =
   | {
       success: true;
-      data: AllData;
+      data: AllData & { gitLabJobId: string };
       meta?: Record<string, unknown>;
     }
   | {
@@ -25,32 +25,58 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   const siteUrl = request.nextUrl.origin;
   const apiUrl = new URL('/api/v1/get-latest-gitlab-job-id', siteUrl);
-  const response = await fetch(apiUrl, { next: { revalidate: 0 } });
 
-  if (!response.ok) {
+  let gitLabJobId: string;
+  let jobFinishedAt: string;
+
+  try {
+    const response = await fetch(apiUrl, { next: { revalidate: 0 } });
+
+    if (!response.ok) {
+      return Response.json({
+        success: false,
+        error: 'Failed to fetch latest GitLab job ID',
+        meta: {
+          status: response.status,
+          statusText: response.statusText,
+          url: response.url,
+        },
+      });
+    }
+
+    const result = (await response.json()) as GetLatestGitLabJobId;
+    if (!result.success) {
+      return Response.json(
+        {
+          success: false,
+          error: result.error,
+        },
+        { status: response.status }
+      );
+    }
+    gitLabJobId = result.data.gitLabJobId;
+    jobFinishedAt = result.data.jobFinishedAt;
+  } catch (error) {
+    console.error(error);
+    const newError = handleError(error);
+    return Response.json({
+      success: false,
+      error: 'Failed to fetch latest GitLab job ID',
+      meta: { cause: newError.message },
+    });
+  }
+
+  if (!gitLabJobId || !jobFinishedAt) {
     return Response.json({
       success: false,
       error: 'Failed to fetch latest GitLab job ID',
       meta: {
-        status: response.status,
-        statusText: response.statusText,
-        url: response.url,
+        gitLabJobId,
+        jobFinishedAt,
+        cause: 'Unknown error, missing data',
       },
     });
   }
-
-  const result = (await response.json()) as GetLatestGitLabJobId;
-  if (!result.success) {
-    return Response.json(
-      {
-        success: false,
-        error: result.error,
-      },
-      { status: response.status }
-    );
-  }
-
-  const { gitLabJobId, jobFinishedAt } = result.data;
 
   try {
     const foundJob = await db.query.jobs.findFirst({
@@ -91,10 +117,33 @@ export async function GET(request: NextRequest) {
 
   try {
     const responseOut = await fetch(jobUrl, { next: { revalidate: 0 } });
-    const data = await responseOut.json();
+
+    if (!responseOut.ok) {
+      return Response.json(
+        {
+          success: false,
+          error: 'Failed to fetch job output',
+          meta: {
+            gitLabJobId,
+            jobFinishedAt,
+            jobUrl,
+            status: responseOut.status,
+            statusText: responseOut.statusText,
+          },
+        },
+        { status: responseOut.status }
+      );
+    }
+
+    const data = (await responseOut.json()) as AllData;
+    const jobData = { gitLabJobId } as const;
+    const combinedData: { gitLabJobId: string } & AllData = Object.assign(
+      jobData,
+      data
+    );
     return Response.json({
       success: true,
-      data,
+      data: combinedData,
       meta: {
         gitLabJobId,
         jobFinishedAt,
@@ -104,10 +153,13 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error(error);
     const newError = handleError(error);
-    return Response.json({
-      success: false,
-      error: 'Failed to fetch job output',
-      meta: { gitLabJobId, jobFinishedAt, jobUrl, cause: newError.message },
-    });
+    return Response.json(
+      {
+        success: false,
+        error: 'Failed to fetch job output',
+        meta: { gitLabJobId, jobFinishedAt, jobUrl, cause: newError.message },
+      },
+      { status: 500 }
+    );
   }
 }
