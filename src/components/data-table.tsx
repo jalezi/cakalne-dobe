@@ -180,6 +180,19 @@ export function DataTable<TData, TValue>({
         <div className="m-2">
           <ComboBoxResponsive
             asLink
+            onSelect={(value) => {
+              const newProcedureCode = value.split('=').pop();
+              if (!newProcedureCode) return;
+
+              const newUrlSearchParams = new URLSearchParams(urlSearchParams);
+              newUrlSearchParams.set(
+                SEARCH_PARAMS.procedureCode,
+                newProcedureCode
+              );
+              window.location.search = decodeURIComponent(
+                newUrlSearchParams.toString()
+              );
+            }}
             options={procedureOptions}
             placeholder="Izberi postopek"
             inputPlaceholder="Išči po imenu ali kodi postopka"
