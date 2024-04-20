@@ -46,13 +46,11 @@ export async function GET(request: NextRequest) {
 
     const result = (await response.json()) as GetLatestGitLabJobId;
     if (!result.success) {
-      return Response.json(
-        {
-          success: false,
-          error: result.error,
-        },
-        { status: response.status }
-      );
+      return Response.json({
+        success: false,
+        error: result.error,
+        meta: result,
+      });
     }
     gitLabJobId = result.data.gitLabJobId;
     jobFinishedAt = result.data.jobFinishedAt;
@@ -85,7 +83,8 @@ export async function GET(request: NextRequest) {
     if (foundJob) {
       return Response.json({
         success: false,
-        data: foundJob,
+        error: 'Job already exists in database',
+        meta: foundJob,
       });
     }
   } catch (error) {
@@ -94,22 +93,6 @@ export async function GET(request: NextRequest) {
       success: false,
       error: 'Failed to fetch job from database',
       meta: { gitLabJobId, cause: newError.message },
-    });
-  }
-
-  const now = new Date();
-  const jobFinishedAtDate = new Date(jobFinishedAt);
-
-  const isSameDay = now.toDateString() === jobFinishedAtDate.toDateString();
-  if (!isSameDay) {
-    return Response.json({
-      success: false,
-      meta: {
-        gitLabJobId,
-        jobFinishedAt,
-        now: now.toISOString(),
-        isSameDay,
-      },
     });
   }
 
@@ -153,13 +136,11 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error(error);
     const newError = handleError(error);
-    return Response.json(
-      {
-        success: false,
-        error: 'Failed to fetch job output',
-        meta: { gitLabJobId, jobFinishedAt, jobUrl, cause: newError.message },
-      },
-      { status: 500 }
-    );
+    // ? should we check what kind of error it is and return different response?
+    return Response.json({
+      success: false,
+      error: 'Failed to fetch job output',
+      meta: { gitLabJobId, jobFinishedAt, jobUrl, cause: newError.message },
+    });
   }
 }

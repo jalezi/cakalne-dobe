@@ -53,13 +53,11 @@ export async function GET(request: NextRequest) {
   }
 
   if (!latestDataJson.success) {
-    return Response.json(
-      {
-        success: false,
-        error: latestDataJson.error,
-      },
-      { status: 500 }
-    );
+    return Response.json({
+      success: false,
+      error: latestDataJson.error,
+      meta: latestDataJson,
+    });
   }
 
   // FROM HERE WE WILL INSERT THE DATA INTO THE DATABASE
@@ -343,6 +341,8 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     const newError = handleError(error);
+    console.error(newError);
+    // ? should we check what kind of error it is and return different response?
     return Response.json({
       success: false,
       error: 'Failed to insert new job data',
