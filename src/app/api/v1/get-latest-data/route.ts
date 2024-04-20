@@ -2,7 +2,7 @@ import { db } from '@/db';
 import { type GetLatestGitLabJobId } from '../get-latest-gitlab-job-id/route';
 import { handleError } from '../../../../../seed/seed-helpers/handle-error';
 import type { AllData } from '@/lib/zod-schemas/data-schemas';
-import { getSiteUrl } from '@/utils/get-site-url';
+import type { NextRequest } from 'next/server';
 
 const BASE_URL = new URL('https://mitar.gitlab.io');
 const BASE_JOBS_URL = new URL('-/cakalne-dobe/-/jobs', BASE_URL);
@@ -22,9 +22,10 @@ export type GetLatestData =
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
-  const siteUrl = getSiteUrl();
-  const response = await fetch(`${siteUrl}/api/v1/get-latest-gitlab-job-id`);
+export async function GET(request: NextRequest) {
+  const siteUrl = request.nextUrl.origin;
+  const apiUrl = new URL('/api/v1/get-latest-gitlab-job-id', siteUrl);
+  const response = await fetch(apiUrl, { next: { revalidate: 0 } });
 
   if (!response.ok) {
     return Response.json({
