@@ -367,7 +367,7 @@ type NotCompleteDataByTable = {
   >;
 };
 
-export function getNotCompleteDatabyTable(
+function getNotCompleteDatabyTable(
   input: AllData,
   jobId: string
 ): NotCompleteDataByTable {
