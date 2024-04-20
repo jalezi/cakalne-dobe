@@ -133,12 +133,6 @@ export function DataTable<TData, TValue>({
     });
   }, [pathname, urlSearchParams, visibleProcedures]);
 
-  const codeWithNameFilterValue = table
-    .getColumn('codeWithName')
-    ?.getFilterValue() as string | undefined;
-  const isFilteredByCodeWithName = !!codeWithNameFilterValue;
-  const procedureCode = codeWithNameFilterValue?.split(' - ')?.[0].trim();
-
   return (
     <>
       <div className="flex flex-wrap items-center gap-y-2">
@@ -187,29 +181,12 @@ export function DataTable<TData, TValue>({
           <ComboBoxResponsive
             asLink
             options={procedureOptions}
-            onSelect={(value) => {
-              const procedureCode = value
-                .split(`${SEARCH_PARAMS.procedureCode}=`)
-                .pop()
-                ?.trim();
-
-              setColumnFilters((prev) => [
-                ...prev,
-                { id: 'codeWithName', value: procedureCode },
-              ]);
-
-              setColumnVisibility((prev) => ({
-                ...prev,
-                codeWithName: !value ? true : false,
-              }));
-            }}
             placeholder="Izberi postopek"
             inputPlaceholder="Išči po imenu ali kodi postopka"
-            defaultSelected={procedureOptions.find((filter) => {
-              return (
-                filter.label ===
-                columnFilters.find((f) => f.id === 'codeWithName')?.value
-              );
+            defaultSelected={procedureOptions.find((option) => {
+              const optionProcedureCode = option.value.split('=').pop();
+              const procedureCode = table.options.meta?.procedureCode;
+              return optionProcedureCode === procedureCode;
             })}
           />
         </div>
@@ -220,22 +197,15 @@ export function DataTable<TData, TValue>({
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
-                  const isParentWaitingPeriods =
-                    header.column.parent?.id === 'waitingPeriods';
-                  const showMaxAllowedDays =
-                    isFilteredByCodeWithName && isParentWaitingPeriods;
+                  const maxAllowedDays =
+                    table.options.meta?.findProcedureMaxAllowedDays?.(
+                      table.options.meta?.procedureCode ?? ''
+                    );
 
-                  let urgencyNaxAllowedDays: number | undefined;
-                  if (showMaxAllowedDays && procedureCode) {
-                    const maxAllowedDays =
-                      table.options.meta?.findProcedureMaxAllowedDays?.(
-                        procedureCode
-                      );
-                    urgencyNaxAllowedDays =
-                      maxAllowedDays?.[
-                        header.id as keyof typeof maxAllowedDays
-                      ];
-                  }
+                  const days =
+                    maxAllowedDays && header.id in maxAllowedDays
+                      ? maxAllowedDays[header.id as keyof typeof maxAllowedDays]
+                      : null;
 
                   return (
                     <TableHead
@@ -249,9 +219,7 @@ export function DataTable<TData, TValue>({
                             header.column.columnDef.header,
                             header.getContext()
                           )}
-                      {urgencyNaxAllowedDays ? (
-                        <MaxUrgency days={urgencyNaxAllowedDays} />
-                      ) : null}
+                      {days ? <MaxUrgency days={days} /> : null}
                     </TableHead>
                   );
                 })}

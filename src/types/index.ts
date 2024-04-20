@@ -9,6 +9,7 @@ declare module '@tanstack/table-core' {
     findProcedureMaxAllowedDays?: (
       code: string
     ) => ProcedureWithMaxAllowedDays['maxAllowedDays'] | undefined;
+    procedureCode?: string;
   }
   interface FilterFns {
     fuzzy: FilterFn<unknown>;

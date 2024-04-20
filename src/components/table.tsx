@@ -61,7 +61,10 @@ export async function Table({ procedureCode, dbJobId }: TableProps) {
     .where(eq(maxAllowedDays.jobId, dbJobId))
     .innerJoin(
       proceduresTable,
-      eq(maxAllowedDays.procedureId, proceduresTable.id)
+      and(
+        eq(maxAllowedDays.procedureId, proceduresTable.id),
+        eq(proceduresTable.code, procedureCode)
+      )
     );
 
   const procedures = await db.query.procedures.findMany({
@@ -75,18 +78,10 @@ export async function Table({ procedureCode, dbJobId }: TableProps) {
     <DataTable
       data={rows}
       columns={columns}
-      meta={{ allowedMaxWaitingTimes }}
+      meta={{ allowedMaxWaitingTimes, procedureCode }}
       visibleProcedures={procedures}
       initialState={{
         sorting: [{ id: 'codeWithName', desc: false }],
-        columnFilters: procedureName
-          ? [
-              {
-                id: 'codeWithName',
-                value: `${procedureCode} - ${procedureName}`,
-              },
-            ]
-          : undefined,
         columnVisibility: procedureName
           ? {
               codeWithName: false,
