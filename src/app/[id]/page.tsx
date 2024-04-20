@@ -1,5 +1,7 @@
 import { Suspense } from 'react';
 
+import { format } from 'date-fns';
+
 import { Table } from '@/components/table';
 import { notFound } from 'next/navigation';
 import { Time } from '@/components/time';
@@ -55,7 +57,9 @@ export default async function Home({
     return notFound();
   }
 
-  const fileName = `wp-${job.startDate}-${job.gitLabJobId}`;
+  const formattedDate = format(new Date(job.startDate), 'yyyy-MM-dd-HH-mm-ss');
+
+  const fileName = `wp-${formattedDate}-${job.gitLabJobId}`;
 
   return (
     <main className="space-y-2 p-4">
