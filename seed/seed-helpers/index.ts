@@ -3,7 +3,7 @@
 import { db } from '@/db';
 import { jobs } from '@/db/schema/jobs';
 import { procedures } from '@/db/schema/procedures';
-import { handleError } from './handle-error';
+import { handleError } from '@/utils/handle-error';
 import { getDataFromFiles } from './get-data-from-file';
 import { getProceduresToInsert, insertProcedures } from './seed-procedures';
 import { insertJobs } from './seed-jobs';

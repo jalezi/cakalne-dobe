@@ -1,6 +1,6 @@
 import { db } from '@/db';
 import { type GetLatestGitLabJobId } from '../get-latest-gitlab-job-id/route';
-import { handleError } from '../../../../../seed/seed-helpers/handle-error';
+import { handleError } from '@/utils/handle-error';
 import type { AllData } from '@/lib/zod-schemas/data-schemas';
 import type { NextRequest } from 'next/server';
 

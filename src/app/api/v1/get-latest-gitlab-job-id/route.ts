@@ -1,6 +1,6 @@
 import { type NextRequest } from 'next/server';
 import { getJobs } from '@/utils/get-jobs';
-import { handleError } from '../../../../../seed/seed-helpers/handle-error';
+import { handleError } from '@/utils/handle-error';
 
 export type GetLatestGitLabJobId =
   | {

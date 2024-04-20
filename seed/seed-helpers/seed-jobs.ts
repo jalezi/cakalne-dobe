@@ -3,7 +3,7 @@ import { jobs as jobsTable } from '@/db/schema/jobs';
 import type { AllData } from '@/lib/zod-schemas/data-schemas';
 
 import type { CustomError } from './types';
-import { handleError } from './handle-error';
+import { handleError } from '@/utils/handle-error';
 
 export async function insertJobs(jobs: [string, AllData][]) {
   const errors: CustomError[] = [];

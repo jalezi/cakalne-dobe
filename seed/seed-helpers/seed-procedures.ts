@@ -3,7 +3,7 @@ import type { AllData } from '@/lib/zod-schemas/data-schemas';
 import type { CustomError, ProcedureInsertData } from './types';
 import { db } from '@/db';
 import { procedures as proceduresTable } from '@/db/schema/procedures';
-import { handleError } from './handle-error';
+import { handleError } from '@/utils/handle-error';
 import { trimStringWithDashes } from '@/lib/zod-schemas/helpers-schema';
 
 export function getProceduresToInsert(

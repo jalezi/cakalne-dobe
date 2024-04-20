@@ -1,5 +1,5 @@
 import { type NextRequest } from 'next/server';
-import { handleError } from '../../../../../seed/seed-helpers/handle-error';
+import { handleError } from '@/utils/handle-error';
 import { type GetLatestData } from '../get-latest-data/route';
 import {
   type InsertInstitution,
