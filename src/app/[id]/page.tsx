@@ -48,6 +48,8 @@ export default async function Home({
     return notFound();
   }
 
+  urlSearchParams.set(SEARCH_PARAMS.procedureCode, procedureCode);
+
   const job = await db.query.jobs.findFirst({
     where: (job, operators) => operators.eq(job.id, id),
     columns: { gitLabJobId: true, startDate: true, id: true },
@@ -91,7 +93,11 @@ export default async function Home({
         <JsonDropDownMenu gitLabJobId={job.gitLabJobId} fileName={fileName} />
       </div>
       <Suspense fallback={<DataTableSkeleton />}>
-        <Table procedureCode={procedureCode} dbJobId={job.id} />
+        <Table
+          procedureCode={procedureCode}
+          dbJobId={job.id}
+          urlSearchParams={urlSearchParams}
+        />
       </Suspense>
     </main>
   );

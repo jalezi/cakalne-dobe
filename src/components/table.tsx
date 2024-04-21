@@ -4,13 +4,19 @@ import { db } from '@/db';
 import { institutions, maxAllowedDays, waitingPeriods } from '@/db/schema';
 import { procedures as proceduresTable } from '@/db/schema';
 import { and, eq } from 'drizzle-orm';
+import { ProceduresPicker } from './procedures-picker';
 
 interface TableProps {
   dbJobId: string;
   procedureCode: string;
+  urlSearchParams: URLSearchParams;
 }
 
-export async function Table({ procedureCode, dbJobId }: TableProps) {
+export async function Table({
+  procedureCode,
+  dbJobId,
+  urlSearchParams,
+}: TableProps) {
   const procedureNameObj = await db.query.procedures.findFirst({
     columns: {
       name: true,
@@ -75,19 +81,26 @@ export async function Table({ procedureCode, dbJobId }: TableProps) {
   });
 
   return (
-    <DataTable
-      data={rows}
-      columns={columns}
-      meta={{ allowedMaxWaitingTimes, procedureCode }}
-      visibleProcedures={procedures}
-      initialState={{
-        sorting: [{ id: 'codeWithName', desc: false }],
-        columnVisibility: procedureName
-          ? {
-              codeWithName: false,
-            }
-          : undefined,
-      }}
-    />
+    <>
+      <ProceduresPicker
+        currentProcedureCode={procedureCode}
+        procedures={procedures}
+        pathname={`/${dbJobId}`}
+        urlSearchParams={urlSearchParams}
+      />
+      <DataTable
+        data={rows}
+        columns={columns}
+        meta={{ allowedMaxWaitingTimes, procedureCode }}
+        initialState={{
+          sorting: [{ id: 'codeWithName', desc: false }],
+          columnVisibility: procedureName
+            ? {
+                codeWithName: false,
+              }
+            : undefined,
+        }}
+      />
+    </>
   );
 }

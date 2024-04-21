@@ -27,7 +27,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { DataTablePagination } from '@/components/pagination';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 import { groupByParent } from '../app/_components/columns';
 import { DebouncedInput } from '@/components/debounced-input';
@@ -40,13 +40,7 @@ import {
 } from '@/components/ui/select';
 import { fuzzyFilter } from '@/lib/fuzzy-filter';
 import { ColumnsToggler } from './columns-toggler';
-import { ComboBoxResponsive } from './combo-box-responsive';
 import { MaxUrgency } from './max-urgency';
-import { usePathname, useSearchParams } from 'next/navigation';
-
-const SEARCH_PARAMS = {
-  procedureCode: 'procedureCode',
-} as const;
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -58,7 +52,6 @@ interface DataTableProps<TData, TValue> {
     globalFilter?: string;
     columnFilters?: ColumnFiltersState;
   };
-  visibleProcedures: { code: string; name: string }[];
 }
 
 export function DataTable<TData, TValue>({
@@ -66,11 +59,7 @@ export function DataTable<TData, TValue>({
   data,
   meta,
   initialState,
-  visibleProcedures,
 }: DataTableProps<TData, TValue>) {
-  const urlSearchParams = useSearchParams();
-  const pathname = usePathname();
-
   const initialSortingState = initialState?.sorting || [];
   const [sorting, setSorting] = useState<SortingState>(initialSortingState);
   const initialVisibilityState = initialState?.columnVisibility || {};
@@ -122,17 +111,6 @@ export function DataTable<TData, TValue>({
 
   const groupedColumns = groupByParent(flatColumns);
 
-  const procedureOptions = useMemo(() => {
-    return visibleProcedures.sort().map((value) => {
-      const newUrlSearchParams = new URLSearchParams(urlSearchParams);
-      newUrlSearchParams.set(SEARCH_PARAMS.procedureCode, value.code);
-      return {
-        value: `${pathname}?${newUrlSearchParams.toString()}`,
-        label: `${value.code} - ${value.name}`,
-      };
-    });
-  }, [pathname, urlSearchParams, visibleProcedures]);
-
   return (
     <>
       <div className="flex flex-wrap items-center gap-y-2">
@@ -177,32 +155,6 @@ export function DataTable<TData, TValue>({
       </div>
 
       <div className="space-y-2 rounded-md border">
-        <div className="m-2">
-          <ComboBoxResponsive
-            asLink
-            onSelect={(value) => {
-              const newProcedureCode = value.split('=').pop();
-              if (!newProcedureCode) return;
-
-              const newUrlSearchParams = new URLSearchParams(urlSearchParams);
-              newUrlSearchParams.set(
-                SEARCH_PARAMS.procedureCode,
-                newProcedureCode
-              );
-              window.location.search = decodeURIComponent(
-                newUrlSearchParams.toString()
-              );
-            }}
-            options={procedureOptions}
-            placeholder="Izberi postopek"
-            inputPlaceholder="Išči po imenu ali kodi postopka"
-            defaultSelected={procedureOptions.find((option) => {
-              const optionProcedureCode = option.value.split('=').pop();
-              const procedureCode = table.options.meta?.procedureCode;
-              return optionProcedureCode === procedureCode;
-            })}
-          />
-        </div>
         <DataTablePagination table={table} />
         <Table>
           <caption className="sr-only">Čakalne dobe</caption>
