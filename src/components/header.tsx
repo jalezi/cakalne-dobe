@@ -27,6 +27,7 @@ export async function Header({ id }: { id?: string }) {
         day: 'numeric',
         hour: 'numeric',
         minute: 'numeric',
+        timeZone: 'Europe/Ljubljana',
       }).format(new Date(job.startDate)),
     });
   }
