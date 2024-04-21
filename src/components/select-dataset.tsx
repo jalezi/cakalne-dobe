@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import {
   ComboBoxResponsive,
   type ComboBoxResponsiveProps,
@@ -17,6 +17,7 @@ export function SelectDataset({
 }: SelectDatasetProps) {
   const params = useParams<{ id: string }>();
   const urlSearchParams = useSearchParams();
+  const router = useRouter();
 
   const selectedOption = jobsOptions?.find((option) =>
     option.value.includes(params.id)
@@ -35,6 +36,10 @@ export function SelectDataset({
     <ComboBoxResponsive
       key={selectedOption?.value}
       options={jobOptionsWithSearchParam ?? []}
+      onSelect={(value) => {
+        router.replace(value);
+        return;
+      }}
       defaultSelected={selectedJob ?? selectedOption}
       asLink
       placeholder="Izberi dataset"

@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { ComboBoxResponsive } from './combo-box-responsive';
 
 const SEARCH_PARAMS = {
@@ -22,6 +23,7 @@ export function ProceduresPicker({
   pathname,
   urlSearchParams,
 }: ProceduresPickerProps) {
+  const router = useRouter();
   const procedureOptions = procedures.sort().map((value) => {
     const newUrlSearchParams = new URLSearchParams(urlSearchParams);
     newUrlSearchParams.set(SEARCH_PARAMS.procedureCode, value.code);
@@ -35,14 +37,8 @@ export function ProceduresPicker({
     <ComboBoxResponsive
       asLink
       onSelect={(value) => {
-        const newProcedureCode = value.split('=').pop();
-        if (!newProcedureCode) return;
-
-        const newUrlSearchParams = new URLSearchParams(urlSearchParams);
-        newUrlSearchParams.set(SEARCH_PARAMS.procedureCode, newProcedureCode);
-        window.location.search = decodeURIComponent(
-          newUrlSearchParams.toString()
-        );
+        router.replace(value);
+        return;
       }}
       options={procedureOptions}
       placeholder="Izberi postopek"
