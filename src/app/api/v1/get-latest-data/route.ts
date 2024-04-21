@@ -1,4 +1,3 @@
-import { db } from '@/db';
 import { type GetLatestGitLabJobId } from '../get-latest-gitlab-job-id/route';
 import { handleError } from '@/utils/handle-error';
 import type { AllData } from '@/lib/zod-schemas/data-schemas';
@@ -27,7 +26,6 @@ export async function GET(request: NextRequest) {
   const apiUrl = new URL('/api/v1/get-latest-gitlab-job-id', siteUrl);
 
   let gitLabJobId: string;
-  let jobFinishedAt: string;
 
   try {
     const response = await fetch(apiUrl, { next: { revalidate: 0 } });
@@ -53,46 +51,16 @@ export async function GET(request: NextRequest) {
       });
     }
     gitLabJobId = result.data.gitLabJobId;
-    jobFinishedAt = result.data.jobFinishedAt;
-  } catch (error) {
-    console.error(error);
-    const newError = handleError(error);
-    return Response.json({
-      success: false,
-      error: 'Failed to fetch latest GitLab job ID',
-      meta: { cause: newError.message },
-    });
-  }
-
-  if (!gitLabJobId || !jobFinishedAt) {
-    return Response.json({
-      success: false,
-      error: 'Failed to fetch latest GitLab job ID',
-      meta: {
-        gitLabJobId,
-        jobFinishedAt,
-        cause: 'Unknown error, missing data',
-      },
-    });
-  }
-
-  try {
-    const foundJob = await db.query.jobs.findFirst({
-      where: (jobs, operators) => operators.eq(jobs.gitLabJobId, gitLabJobId),
-    });
-    if (foundJob) {
-      return Response.json({
-        success: false,
-        error: 'Job already exists in database',
-        meta: foundJob,
-      });
+    if (!gitLabJobId) {
+      // ? should we check for empty string or undefined? It might be redundant
+      throw new Error('GitLab job ID is missing');
     }
   } catch (error) {
     const newError = handleError(error);
     return Response.json({
       success: false,
-      error: 'Failed to fetch job from database',
-      meta: { gitLabJobId, cause: newError.message },
+      error: 'Failed to fetch latest GitLab job ID',
+      meta: { cause: newError.message, message: newError.message, url: apiUrl },
     });
   }
 
@@ -108,7 +76,6 @@ export async function GET(request: NextRequest) {
           error: 'Failed to fetch job output',
           meta: {
             gitLabJobId,
-            jobFinishedAt,
             jobUrl,
             status: responseOut.status,
             statusText: responseOut.statusText,
@@ -129,7 +96,6 @@ export async function GET(request: NextRequest) {
       data: combinedData,
       meta: {
         gitLabJobId,
-        jobFinishedAt,
         jobUrl,
       },
     });
@@ -140,7 +106,7 @@ export async function GET(request: NextRequest) {
     return Response.json({
       success: false,
       error: 'Failed to fetch job output',
-      meta: { gitLabJobId, jobFinishedAt, jobUrl, cause: newError.message },
+      meta: { gitLabJobId, jobUrl, cause: newError.message },
     });
   }
 }

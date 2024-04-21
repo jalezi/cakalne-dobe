@@ -62,6 +62,23 @@ export async function GET(request: NextRequest) {
 
   // FROM HERE WE WILL INSERT THE DATA INTO THE DATABASE
   const { gitLabJobId, start, end } = latestDataJson.data;
+  const foundJob = await db.query.jobs.findFirst({
+    where: (jobs, operators) => operators.eq(jobs.gitLabJobId, gitLabJobId),
+  });
+
+  if (foundJob) {
+    return Response.json({
+      success: false,
+      error: 'Job already exists',
+      meta: {
+        gitLabJobId,
+        start,
+        end,
+        jobId: foundJob.id,
+      },
+    });
+  }
+
   const notCompleteDataObj = getNotCompleteDatabyTable(
     latestDataJson.data,
     gitLabJobId
