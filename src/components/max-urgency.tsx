@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import { Badge } from './ui/badge';
 
 const slOrdinalRules = new Intl.PluralRules('sl-SI', { type: 'ordinal' });
 
@@ -23,8 +24,20 @@ interface MaxUrgencyProps extends React.HTMLAttributes<HTMLSpanElement> {
 
 export const MaxUrgency = ({ days, className, ...props }: MaxUrgencyProps) => {
   return (
-    <span className={cn('text-xs text-gray-500', className)} {...props}>
-      <abbr title="maksimum">maks.</abbr>: {formatOrdinals(days)}
-    </span>
+    <>
+      <span id="attr-max-days" className="sr-only" {...props}>
+        <abbr className="sr-only" title="maksimum">
+          maks.
+        </abbr>
+        : {formatOrdinals(days)}
+      </span>
+      <Badge
+        className={cn('my-1', className)}
+        variant="destructive"
+        aria-labelledby="attr-max-days"
+      >
+        {days}
+      </Badge>
+    </>
   );
 };
