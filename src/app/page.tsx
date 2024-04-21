@@ -3,8 +3,7 @@ import { db } from '@/db';
 import { desc } from 'drizzle-orm';
 import { jobs as jobsTable } from '@/db/schema';
 
-// This is the same as in next.config.ts, but somehow if set only in config it works only on deployed (Vercel) version and not when build and start locally
-export const revalidate = 60; // 1 minute
+export const revalidate = 3600; // in seconds
 
 export default async function Home() {
   const jobs = await db.query.jobs.findMany({

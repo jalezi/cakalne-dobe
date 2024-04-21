@@ -27,7 +27,9 @@ export async function GET(request: NextRequest) {
 
   // Fetch the latest data from GitLab job
   try {
-    const response = await fetch(apiUrl, { next: { revalidate: 0 } });
+    const response = await fetch(apiUrl, {
+      next: { revalidate: 0, tags: ['getLatestData'] },
+    });
 
     if (!response.ok) {
       return Response.json({

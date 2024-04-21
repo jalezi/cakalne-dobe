@@ -28,7 +28,9 @@ export async function GET(request: NextRequest) {
   let gitLabJobId: string;
 
   try {
-    const response = await fetch(apiUrl, { next: { revalidate: 0 } });
+    const response = await fetch(apiUrl, {
+      next: { revalidate: 0, tags: ['getLatestGitLabJobIs'] },
+    });
 
     if (!response.ok) {
       return Response.json({
@@ -67,7 +69,9 @@ export async function GET(request: NextRequest) {
   const jobUrl = new URL(`jobs/${gitLabJobId}${JSON_OUT_PATH}`, BASE_JOBS_URL);
 
   try {
-    const responseOut = await fetch(jobUrl, { next: { revalidate: 0 } });
+    const responseOut = await fetch(jobUrl, {
+      next: { revalidate: 60, tags: ['getLatestData'] },
+    });
 
     if (!responseOut.ok) {
       return Response.json(
