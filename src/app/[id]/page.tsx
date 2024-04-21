@@ -12,6 +12,8 @@ import { JobsPaginationSkeleton } from '@/components/skeleton/jobs-pagination';
 
 import { JsonDropDownMenu } from '@/components/json-dropdown-menu';
 import { db } from '@/db';
+import { ProceduresPicker } from '@/components/procedures-picker';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const SEARCH_PARAMS = {
   procedureCode: 'procedureCode',
@@ -63,6 +65,13 @@ export default async function Home({
 
   const fileName = `wp-${formattedDate}-${job.gitLabJobId}`;
 
+  const procedures = await db.query.procedures.findMany({
+    columns: {
+      code: true,
+      name: true,
+    },
+  });
+
   return (
     <main className="space-y-2 p-4">
       <h1
@@ -92,12 +101,22 @@ export default async function Home({
         </p>
         <JsonDropDownMenu gitLabJobId={job.gitLabJobId} fileName={fileName} />
       </div>
-      <Suspense fallback={<DataTableSkeleton />}>
-        <Table
-          procedureCode={procedureCode}
-          dbJobId={job.id}
+      <Suspense
+        fallback={
+          <div>
+            <Skeleton className="h-10 w-full" />
+          </div>
+        }
+      >
+        <ProceduresPicker
+          currentProcedureCode={procedureCode}
+          procedures={procedures}
+          pathname={`/${job.id}`}
           urlSearchParams={urlSearchParams}
         />
+      </Suspense>
+      <Suspense fallback={<DataTableSkeleton />}>
+        <Table procedureCode={procedureCode} dbJobId={job.id} />
       </Suspense>
     </main>
   );

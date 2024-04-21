@@ -3,10 +3,6 @@ import { Skeleton } from '../ui/skeleton';
 export function DataTableSkeleton() {
   return (
     <>
-      {/* SEARCH PROCEDURE */}{' '}
-      <div>
-        <Skeleton className="h-10 w-full" />
-      </div>
       <div className="flex flex-wrap items-center gap-y-2">
         <div className="grid w-full max-w-sm items-center gap-1.5">
           <Skeleton className="h-10 w-full" />
