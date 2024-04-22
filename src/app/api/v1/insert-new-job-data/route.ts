@@ -16,42 +16,58 @@ import {
 import { db } from '@/db';
 import type { AllData } from '@/lib/zod-schemas/data-schemas';
 import { trimmedStringSchema } from '@/lib/zod-schemas/helpers-schema';
+import type { GetLatestGitLabJobId } from '../get-latest-gitlab-job-id/route';
 
 const MAX_CHUNK_SIZE = 50;
 const EXPECTED_NUMBER_OF_JOBS = 1;
 
 export async function GET(request: NextRequest) {
   const siteUrl = request.nextUrl.origin;
-  const apiUrl = new URL('/api/v1/get-latest-data', siteUrl);
+
+  const latestDataApiUrl = new URL('/api/v1/get-latest-data', siteUrl);
 
   let latestDataJson: GetLatestData;
 
   // Fetch the latest data from GitLab job
   try {
-    const response = await fetch(apiUrl, {
-      next: { revalidate: 0, tags: ['getLatestData'] },
-    });
-
-    if (!response.ok) {
+    if (await isLatestJobInDB(siteUrl)) {
       return Response.json({
         success: false,
-        error: 'Failed to fetch latest data',
+        error: 'Latest data is already in the database',
         meta: {
-          status: response.status,
-          statusText: response.statusText,
-          url: response.url,
+          url: latestDataApiUrl,
+          gitLabJobIdUrl: new URL('/api/v1/get-latest-gitlab-job-id', siteUrl),
         },
       });
     }
 
-    latestDataJson = (await response.json()) as GetLatestData;
+    const latestDataApiResponse = await fetch(latestDataApiUrl, {
+      next: { revalidate: 0, tags: ['getLatestData'] },
+    });
+
+    if (!latestDataApiResponse.ok) {
+      return Response.json({
+        success: false,
+        error: 'Failed to fetch latest data',
+        meta: {
+          status: latestDataApiResponse.status,
+          statusText: latestDataApiResponse.statusText,
+          url: latestDataApiResponse.url,
+        },
+      });
+    }
+
+    latestDataJson = (await latestDataApiResponse.json()) as GetLatestData;
   } catch (error) {
     console.error(error);
     const newError = handleError(error);
     return Response.json({
       success: false,
       error: 'Failed to fetch latest data',
-      meta: { cause: newError.message },
+      meta: {
+        cause: newError.cause,
+        message: newError.message,
+      },
     });
   }
 
@@ -65,22 +81,6 @@ export async function GET(request: NextRequest) {
 
   // FROM HERE WE WILL INSERT THE DATA INTO THE DATABASE
   const { gitLabJobId, start, end } = latestDataJson.data;
-  const foundJob = await db.query.jobs.findFirst({
-    where: (jobs, operators) => operators.eq(jobs.gitLabJobId, gitLabJobId),
-  });
-
-  if (foundJob) {
-    return Response.json({
-      success: false,
-      error: 'Job already exists',
-      meta: {
-        gitLabJobId,
-        start,
-        end,
-        jobId: foundJob.id,
-      },
-    });
-  }
 
   const notCompleteDataObj = getNotCompleteDatabyTable(
     latestDataJson.data,
@@ -474,4 +474,37 @@ function getNotCompleteDatabyTable(
     maxAllowedDays,
     waitingPeriods,
   };
+}
+
+async function getLatestGitLabJobId(
+  siteUrl: string
+): Promise<GetLatestGitLabJobId> {
+  const apiUrl = new URL('/api/v1/get-latest-gitlab-job-id', siteUrl);
+
+  const response = await fetch(apiUrl, {
+    next: { revalidate: 0, tags: ['getLatestGitLabJobId'] },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch latest GitLab job id', {
+      cause: 'Response not ok',
+    });
+  }
+
+  return (await response.json()) as GetLatestGitLabJobId;
+}
+
+async function isLatestJobInDB(siteUrl: string) {
+  const latestGitLabJobId = await getLatestGitLabJobId(siteUrl);
+
+  if (!latestGitLabJobId.success) {
+    throw new Error(latestGitLabJobId.error);
+  }
+
+  const foundJob = await db.query.jobs.findFirst({
+    where: (jobs, operators) =>
+      operators.eq(jobs.gitLabJobId, latestGitLabJobId.data.gitLabJobId),
+  });
+
+  return !!foundJob;
 }

@@ -69,9 +69,7 @@ export async function GET(request: NextRequest) {
   const jobUrl = new URL(`jobs/${gitLabJobId}${JSON_OUT_PATH}`, BASE_JOBS_URL);
 
   try {
-    const responseOut = await fetch(jobUrl, {
-      next: { revalidate: 60, tags: ['getLatestData'] },
-    });
+    const responseOut = await fetch(jobUrl); // can not cache while is over 2MB
 
     if (!responseOut.ok) {
       return Response.json(
