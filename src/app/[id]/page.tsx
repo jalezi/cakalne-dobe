@@ -3,7 +3,7 @@ import { Suspense } from 'react';
 import { format } from 'date-fns';
 
 import { Table } from '@/components/table';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { Time } from '@/components/time';
 import { DataTableSkeleton } from '@/components/skeleton/data-table';
 
@@ -24,6 +24,43 @@ type HomeProps = {
   searchParams: Record<string, string>;
 };
 
+export async function generateMetadata({ params, searchParams }: HomeProps) {
+  const job = await db.query.jobs.findFirst({
+    where: (job, operators) => operators.eq(job.id, params.id),
+    columns: { startDate: true },
+  });
+
+  const date = job
+    ? new Intl.DateTimeFormat('sl-SI', {
+        dateStyle: 'full',
+        timeZone: 'Europe/Ljubljana',
+      }).format(new Date(job.startDate))
+    : null;
+
+  const dateText = date ? ` za: ${date}` : '';
+
+  const urlSearchParams = new URLSearchParams(searchParams);
+  const procedureCodeSearchParam =
+    urlSearchParams.get(SEARCH_PARAMS.procedureCode) ?? '';
+  const foundProcedure =
+    (await db.query.procedures.findFirst({
+      where: (procedure, operators) =>
+        operators.eq(procedure.code, procedureCodeSearchParam),
+      columns: { name: true },
+    })) ??
+    (await db.query.procedures.findFirst({
+      columns: { name: true },
+      orderBy(fields, operators) {
+        return operators.asc(fields.code);
+      },
+    }));
+
+  return {
+    title: `${foundProcedure?.name ?? 'Neznana procedura'}`, // ? possible too long title with too many dashes; procedure's name is long and sometimes contains dashes; title template is "Čakalne dobe - Sledilnik"
+    description: `Čakalne dobe za ${foundProcedure?.name ?? 'neznano proceduro'}${dateText}`,
+  };
+}
+
 export default async function Home({
   params: { id },
   searchParams,
@@ -32,25 +69,28 @@ export default async function Home({
   const procedureCodeSearchParam =
     urlSearchParams.get(SEARCH_PARAMS.procedureCode) ?? '';
 
-  const foundProcedureCodeObj = await db.query.procedures.findFirst({
-    columns: { code: true },
-    where: (procedures, operators) =>
-      operators.eq(procedures.code, procedureCodeSearchParam),
-  });
-
-  const defaultProcedureCodeObj = await db.query.procedures.findFirst({
-    columns: { code: true },
+  const procedures = await db.query.procedures.findMany({
+    columns: {
+      code: true,
+      name: true,
+    },
     orderBy: (procedures, operators) => operators.asc(procedures.code),
   });
 
-  const procedureCode =
-    foundProcedureCodeObj?.code ?? defaultProcedureCodeObj?.code;
+  const procedure =
+    procedures.find(
+      (procedure) => procedure.code === procedureCodeSearchParam
+    ) ?? procedures[0];
 
-  if (!procedureCode) {
+  if (!procedure) {
     return notFound();
   }
 
-  urlSearchParams.set(SEARCH_PARAMS.procedureCode, procedureCode);
+  urlSearchParams.set(SEARCH_PARAMS.procedureCode, procedure.code);
+
+  if (procedureCodeSearchParam !== procedure.code) {
+    redirect(`/${id}?${urlSearchParams.toString()}`);
+  }
 
   const job = await db.query.jobs.findFirst({
     where: (job, operators) => operators.eq(job.id, id),
@@ -65,13 +105,6 @@ export default async function Home({
 
   const fileName = `wp-${formattedDate}-${job.gitLabJobId}`;
 
-  const procedures = await db.query.procedures.findMany({
-    columns: {
-      code: true,
-      name: true,
-    },
-  });
-
   return (
     <main className="space-y-2 p-4">
       <h1
@@ -81,6 +114,7 @@ export default async function Home({
       >
         Čakalne dobe
       </h1>
+      <h2>{procedure.name}</h2>
       <Suspense fallback={<JobsPaginationSkeleton />}>
         <JobsPagination id={id} />
       </Suspense>
@@ -109,14 +143,14 @@ export default async function Home({
         }
       >
         <ProceduresPicker
-          currentProcedureCode={procedureCode}
+          currentProcedureCode={procedure.code}
           procedures={procedures}
           pathname={`/${job.id}`}
           urlSearchParams={urlSearchParams}
         />
       </Suspense>
       <Suspense fallback={<DataTableSkeleton />}>
-        <Table procedureCode={procedureCode} dbJobId={job.id} />
+        <Table procedureCode={procedure.code} dbJobId={job.id} />
       </Suspense>
     </main>
   );

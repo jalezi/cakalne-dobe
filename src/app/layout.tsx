@@ -9,7 +9,10 @@ import { Toaster } from '@/components/ui/sonner';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Čakalne dobe - Sledilnik',
+  title: {
+    template: '%s - Čakalne dobe - Sledilnik',
+    default: 'Čakalne dobe',
+  },
   description: 'Pregled čakalnih dob v slovenskem zdravstvu',
 };
 
