@@ -37,7 +37,9 @@ export async function Header({ id }: { id?: string }) {
   return (
     <header className="sticky left-0 top-0 z-50 flex items-center bg-transparent p-4 backdrop-blur-lg">
       <Button asChild variant="link" className="px-0">
-        <Link href="/">Domov</Link>
+        <Link href="/" aria-current={id ? undefined : 'page'}>
+          Domov
+        </Link>
       </Button>
       <div className="ml-auto flex items-center">
         <Suspense fallback={<Skeleton className="h-10 w-40" />}>
