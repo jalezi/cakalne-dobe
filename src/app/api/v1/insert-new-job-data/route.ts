@@ -18,6 +18,7 @@ import type { AllData } from '@/lib/zod-schemas/data-schemas';
 import { trimmedStringSchema } from '@/lib/zod-schemas/helpers-schema';
 
 const MAX_CHUNK_SIZE = 50;
+const EXPECTED_NUMBER_OF_JOBS = 1;
 
 export async function GET(request: NextRequest) {
   const siteUrl = request.nextUrl.origin;
@@ -320,6 +321,20 @@ export async function GET(request: NextRequest) {
           insertedWaitingPeriods.push(...chunkWaitingPeriods);
         }
 
+        const totalRows =
+          EXPECTED_NUMBER_OF_JOBS +
+          notCompleteDataObj.procedures.length +
+          notCompleteDataObj.institutions.size +
+          notCompleteDataObj.maxAllowedDays.length +
+          notCompleteDataObj.waitingPeriods.size;
+
+        const totalRowsInserted =
+          insertedJobs.length +
+          newProcedures.length +
+          newInstitutions.length +
+          insertedMaxAllowedDays.length +
+          insertedWaitingPeriods.length;
+
         return {
           success: true,
           data: {
@@ -327,14 +342,22 @@ export async function GET(request: NextRequest) {
           },
           meta: {
             length: {
+              total: {
+                total: totalRows,
+                inserted: totalRowsInserted,
+              },
+              job: {
+                total: EXPECTED_NUMBER_OF_JOBS,
+                inserted: insertedJobs.length,
+              },
               procedures: {
                 total: notCompleteDataObj.procedures.length,
-                new: newProcedures.length,
+                inserted: newProcedures.length,
                 existing: existingProcedures.length,
               },
               institutions: {
                 total: notCompleteDataObj.institutions.size,
-                new: newInstitutions.length,
+                inserted: newInstitutions.length,
                 existing: existingInstitutions.length,
               },
               maxAllowedDays: {
