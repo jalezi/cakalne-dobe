@@ -148,11 +148,11 @@ export function Time({
   );
 }
 
-export interface TimeRangeProps extends TimeHTMLAttributes<HTMLElement> {
+export type TimeRangeProps = TimeHTMLAttributes<HTMLElement> & {
   startDate: Date | string | number;
   endDate: Date | string | number;
   locale?: string;
-}
+} & Options;
 
 /**
  * Renders a time range component.
@@ -168,9 +168,10 @@ export function TimeRange({
   endDate,
   locale = DEFAULT_LOCALE,
   className,
+  options,
   ...props
 }: TimeRangeProps): JSX.Element {
-  const formatDateRange = createDateFormatRange(locale);
+  const formatDateRange = createDateFormatRange(locale, options);
   const startDateToFormat =
     startDate instanceof Date ? startDate : new Date(startDate);
   const endDateToFormat = endDate instanceof Date ? endDate : new Date(endDate);
