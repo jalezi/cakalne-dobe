@@ -16,6 +16,24 @@ type ProcedureCodePageProps = {
   params: { id: string; procedureCode: string };
 };
 
+export async function generateStaticParams() {
+  const jobs = await db.query.jobs.findMany({
+    columns: { id: true },
+    orderBy: (job, operators) => operators.desc(job.startDate),
+  });
+
+  const procedures = await db.query.procedures.findMany({
+    columns: { code: true },
+    orderBy: (procedure, operators) => operators.asc(procedure.code),
+  });
+
+  return jobs.slice(0, 5).flatMap((job) =>
+    procedures.slice(0, 5).map((procedure) => ({
+      params: { id: job.id, procedureCode: procedure.code },
+    }))
+  );
+}
+
 export async function generateMetadata({ params }: ProcedureCodePageProps) {
   const job = await db.query.jobs.findFirst({
     where: (job, operators) => operators.eq(job.id, params.id),

@@ -13,6 +13,14 @@ type DatasetPageProps = {
   params: { id: string };
 };
 
+export async function generateStaticParams() {
+  const jobs = await db.query.jobs.findMany({
+    columns: { id: true },
+  });
+
+  return jobs.map((job) => ({ params: { id: job.id } })).slice(0, 5);
+}
+
 export async function generateMetadata({ params }: DatasetPageProps) {
   const job = await db.query.jobs.findFirst({
     where: (job, operators) => operators.eq(job.id, params.id),
