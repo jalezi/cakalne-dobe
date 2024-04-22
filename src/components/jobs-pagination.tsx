@@ -12,27 +12,29 @@ interface JobsPaginationProps {
   procedureCode?: string;
 }
 
-export async function JobsPagination({ id }: JobsPaginationProps) {
+export async function JobsPagination({
+  id,
+  procedureCode,
+}: JobsPaginationProps) {
   const jobs = await db.query.jobs.findMany({
     columns: { id: true, startDate: true },
     orderBy: [desc(jobsTable.startDate)],
   });
-  const jobsOptions = jobs.map((job) => ({
-    value: job.id,
-    label: job.startDate,
-  }));
 
-  const jobIndex = jobsOptions.findIndex((job) => job.value === id);
+  const jobIndex = jobs.findIndex((job) => job.id === id);
 
   if (jobIndex === -1) {
     return null;
   }
 
-  const previousJob = jobIndex > 0 ? jobsOptions[jobIndex - 1] : null;
-  const previousJobDate = previousJob ? new Date(previousJob.label) : null;
-  const nextJob =
-    jobIndex < jobsOptions.length - 1 ? jobsOptions[jobIndex + 1] : null;
-  const nextJobDate = nextJob ? new Date(nextJob.label) : null;
+  const pCode = procedureCode ? procedureCode : '';
+
+  const previousJob = jobIndex > 0 ? jobs[jobIndex - 1] : null;
+  const previousJobDate = previousJob ? new Date(previousJob.startDate) : null;
+  const prevHref = previousJob ? `/${previousJob.id}/${pCode}` : null;
+  const nextJob = jobIndex < jobs.length - 1 ? jobs[jobIndex + 1] : null;
+  const nextJobDate = nextJob ? new Date(nextJob.startDate) : null;
+  const nextHref = nextJob ? `/${nextJob.id}/${pCode}` : null;
 
   return (
     <div className="flex">
@@ -50,19 +52,23 @@ export async function JobsPagination({ id }: JobsPaginationProps) {
                 : 'neznan datum'
             }
           >
-            <JobLink id={previousJob.value}>
-              <ChevronLeft size={16} />
-            </JobLink>
+            {prevHref ? (
+              <JobLink href={prevHref}>
+                <ChevronLeft size={16} />
+              </JobLink>
+            ) : null}
           </Button>
           <Button
             asChild
             variant="link"
             className={cn(!nextJob && 'hidden', 'hidden pl-0 sm:inline-flex')}
           >
-            <JobLink id={previousJob.value}>
-              <ChevronLeft size={16} />
-              {previousJobDate ? <Time date={previousJobDate} /> : null}
-            </JobLink>
+            {prevHref ? (
+              <JobLink href={prevHref}>
+                <ChevronLeft size={16} />
+                {previousJobDate ? <Time date={previousJobDate} /> : null}
+              </JobLink>
+            ) : null}
           </Button>
         </>
       ) : null}
@@ -80,9 +86,11 @@ export async function JobsPagination({ id }: JobsPaginationProps) {
                 : 'neznan datum'
             }
           >
-            <JobLink id={nextJob.value}>
-              <ChevronRight size={16} />
-            </JobLink>
+            {nextHref ? (
+              <JobLink href={nextHref}>
+                <ChevronRight size={16} />
+              </JobLink>
+            ) : null}
           </Button>
           <Button
             asChild
@@ -92,10 +100,12 @@ export async function JobsPagination({ id }: JobsPaginationProps) {
               'ml-auto hidden pr-0 sm:inline-flex'
             )}
           >
-            <JobLink id={nextJob.value}>
-              {nextJobDate ? <Time date={nextJobDate} /> : null}
-              <ChevronRight size={16} />
-            </JobLink>
+            {nextHref ? (
+              <JobLink href={nextHref}>
+                {nextJobDate ? <Time date={nextJobDate} /> : null}
+                <ChevronRight size={16} />
+              </JobLink>
+            ) : null}
           </Button>
         </>
       ) : null}

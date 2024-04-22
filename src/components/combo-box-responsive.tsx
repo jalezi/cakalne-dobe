@@ -49,7 +49,7 @@ export function ComboBoxResponsive({
     defaultSelected ?? null
   );
 
-  const selectedOptionLabel = !!selectedOption?.label ? (
+  const selectedOptionLabel = selectedOption?.label ? (
     <span className="truncate">{selectedOption.label}</span>
   ) : (
     <>{placeholder}</>

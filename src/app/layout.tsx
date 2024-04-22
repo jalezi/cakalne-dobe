@@ -11,7 +11,7 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: {
     template: '%s - Čakalne dobe - Sledilnik',
-    default: 'Čakalne dobe',
+    default: 'Čakalne dobe - Sledilnik',
   },
   description: 'Pregled čakalnih dob v slovenskem zdravstvu',
 };

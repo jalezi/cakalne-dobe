@@ -1,30 +1,19 @@
-import { Suspense } from 'react';
-
 import { format } from 'date-fns';
 
-import { Table } from '@/components/table';
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { Time } from '@/components/time';
-import { DataTableSkeleton } from '@/components/skeleton/data-table';
-
-import { JobsPagination } from '@/components/jobs-pagination';
-import { JobsPaginationSkeleton } from '@/components/skeleton/jobs-pagination';
 
 import { JsonDropDownMenu } from '@/components/json-dropdown-menu';
 import { db } from '@/db';
-import { ProceduresPicker } from '@/components/procedures-picker';
+import { Suspense } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ProceduresPicker } from '@/components/procedures-picker';
 
-const SEARCH_PARAMS = {
-  procedureCode: 'procedureCode',
-} as const;
-
-type HomeProps = {
+type DatasetPageProps = {
   params: { id: string };
-  searchParams: Record<string, string>;
 };
 
-export async function generateMetadata({ params, searchParams }: HomeProps) {
+export async function generateMetadata({ params }: DatasetPageProps) {
   const job = await db.query.jobs.findFirst({
     where: (job, operators) => operators.eq(job.id, params.id),
     columns: { startDate: true },
@@ -32,68 +21,22 @@ export async function generateMetadata({ params, searchParams }: HomeProps) {
 
   const date = job
     ? new Intl.DateTimeFormat('sl-SI', {
-        dateStyle: 'full',
+        dateStyle: 'short',
         timeZone: 'Europe/Ljubljana',
       }).format(new Date(job.startDate))
     : null;
 
   const dateText = date ? ` za: ${date}` : '';
 
-  const urlSearchParams = new URLSearchParams(searchParams);
-  const procedureCodeSearchParam =
-    urlSearchParams.get(SEARCH_PARAMS.procedureCode) ?? '';
-  const foundProcedure =
-    (await db.query.procedures.findFirst({
-      where: (procedure, operators) =>
-        operators.eq(procedure.code, procedureCodeSearchParam),
-      columns: { name: true },
-    })) ??
-    (await db.query.procedures.findFirst({
-      columns: { name: true },
-      orderBy(fields, operators) {
-        return operators.asc(fields.code);
-      },
-    }));
-
   return {
-    title: `${foundProcedure?.name ?? 'Neznana procedura'}`, // ? possible too long title with too many dashes; procedure's name is long and sometimes contains dashes; title template is "Čakalne dobe - Sledilnik"
-    description: `Čakalne dobe za ${foundProcedure?.name ?? 'neznano proceduro'}${dateText}`,
+    title: date,
+    description: `Čakalne dobe na ${dateText}`,
   };
 }
 
-export default async function Home({
-  params: { id },
-  searchParams,
-}: HomeProps) {
-  const urlSearchParams = new URLSearchParams(searchParams);
-  const procedureCodeSearchParam =
-    urlSearchParams.get(SEARCH_PARAMS.procedureCode) ?? '';
-
-  const procedures = await db.query.procedures.findMany({
-    columns: {
-      code: true,
-      name: true,
-    },
-    orderBy: (procedures, operators) => operators.asc(procedures.code),
-  });
-
-  const procedure =
-    procedures.find(
-      (procedure) => procedure.code === procedureCodeSearchParam
-    ) ?? procedures[0];
-
-  if (!procedure) {
-    return notFound();
-  }
-
-  urlSearchParams.set(SEARCH_PARAMS.procedureCode, procedure.code);
-
-  if (procedureCodeSearchParam !== procedure.code) {
-    redirect(`/${id}?${urlSearchParams.toString()}`);
-  }
-
+export default async function DatasetPage({ params }: DatasetPageProps) {
   const job = await db.query.jobs.findFirst({
-    where: (job, operators) => operators.eq(job.id, id),
+    where: (job, operators) => operators.eq(job.id, params.id),
     columns: { gitLabJobId: true, startDate: true, id: true },
   });
 
@@ -105,6 +48,14 @@ export default async function Home({
 
   const fileName = `wp-${formattedDate}-${job.gitLabJobId}`;
 
+  const procedures = await db.query.procedures.findMany({
+    orderBy: (procedure, operators) => operators.asc(procedure.code),
+    columns: {
+      code: true,
+      name: true,
+    },
+  });
+
   return (
     <main className="space-y-2 p-4">
       <h1
@@ -114,10 +65,7 @@ export default async function Home({
       >
         Čakalne dobe
       </h1>
-      <h2>{procedure.name}</h2>
-      <Suspense fallback={<JobsPaginationSkeleton />}>
-        <JobsPagination id={id} />
-      </Suspense>
+
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <p id="attr-data-fetched-on">
           Podatki pridobljeni:{' '}
@@ -143,14 +91,11 @@ export default async function Home({
         }
       >
         <ProceduresPicker
-          currentProcedureCode={procedure.code}
-          procedures={procedures}
-          pathname={`/${job.id}`}
-          urlSearchParams={urlSearchParams}
+          options={procedures.map((procedure) => ({
+            value: `/${params.id}/${procedure.code}`,
+            label: `${procedure.code} - ${procedure.name}`,
+          }))}
         />
-      </Suspense>
-      <Suspense fallback={<DataTableSkeleton />}>
-        <Table procedureCode={procedure.code} dbJobId={job.id} />
       </Suspense>
     </main>
   );
