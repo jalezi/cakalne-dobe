@@ -3,8 +3,6 @@ import { db } from '@/db';
 import { desc } from 'drizzle-orm';
 import { jobs as jobsTable } from '@/db/schema';
 
-export const revalidate = 3600; // in seconds
-
 export default async function Home() {
   const jobs = await db.query.jobs.findMany({
     columns: { id: true, startDate: true },

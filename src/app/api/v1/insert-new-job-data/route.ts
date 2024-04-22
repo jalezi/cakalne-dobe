@@ -17,6 +17,7 @@ import { db } from '@/db';
 import type { AllData } from '@/lib/zod-schemas/data-schemas';
 import { trimmedStringSchema } from '@/lib/zod-schemas/helpers-schema';
 import type { GetLatestGitLabJobId } from '../get-latest-gitlab-job-id/route';
+import { revalidatePath } from 'next/cache';
 
 const MAX_CHUNK_SIZE = 50;
 const EXPECTED_NUMBER_OF_JOBS = 1;
@@ -334,6 +335,8 @@ export async function GET(request: NextRequest) {
           newInstitutions.length +
           insertedMaxAllowedDays.length +
           insertedWaitingPeriods.length;
+
+        revalidatePath('/', 'page');
 
         return {
           success: true,
