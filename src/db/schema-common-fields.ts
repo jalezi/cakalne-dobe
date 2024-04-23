@@ -5,9 +5,8 @@ export const timestamps = {
   createdAt: integer('created_at', { mode: 'timestamp' })
     .default(sql`(cast(unixepoch() as int))`)
     .notNull(),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }) // FIXME: Typo in update_at -> updated_at
+  updatedAt: integer('updated_at', { mode: 'timestamp' })
     .default(sql`(cast(unixepoch() as int))`)
     .notNull()
     .$onUpdate(() => new Date()),
 };
-
