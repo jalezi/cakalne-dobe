@@ -7,12 +7,43 @@ import { DataTableColumnHeader } from '@/components/table-header';
 
 import type { Column as TColumn } from '@tanstack/react-table';
 import { fuzzySort } from '@/lib/fuzzy-filter';
+import { MaxUrgency } from '@/components/max-urgency';
 
-export type Column = FacilityProcedureWaitingTimes;
+import type {
+  Column as TRTColumn,
+  Table as TRTTable,
+} from '@tanstack/react-table';
 
-const columnHelper = createColumnHelper<Column>();
+export type ProcedureWTPerInstTable = FacilityProcedureWaitingTimes;
+
+const columnHelper = createColumnHelper<ProcedureWTPerInstTable>();
 
 const isNumber = (value: unknown): value is number => typeof value === 'number';
+
+const UrgencyHeader = ({
+  column,
+  table,
+}: {
+  column: TRTColumn<ProcedureWTPerInstTable>;
+  table: TRTTable<ProcedureWTPerInstTable>;
+}) => {
+  const procedureCode = table.options.meta?.procedureCode;
+  const maxAllowedDays = procedureCode
+    ? table.options.meta?.findProcedureMaxAllowedDays?.(procedureCode)
+    : null;
+
+  const days = maxAllowedDays?.[column.id as 'regular' | 'fast' | 'veryFast'];
+
+  return (
+    <DataTableColumnHeader
+      column={column}
+      title={HEADER_TEXT_MAP.regular}
+      className="justify-center"
+    >
+      {days ? <MaxUrgency days={days} urgency="regular" /> : null}
+    </DataTableColumnHeader>
+  );
+};
 
 export const HEADER_TEXT_MAP = {
   procedure: 'Storitev',
@@ -31,7 +62,7 @@ export const isKeyOfHeaderText = (
   key: string
 ): key is keyof typeof HEADER_TEXT_MAP => key in HEADER_TEXT_MAP;
 
-export const columns: ColumnDef<Column>[] = [
+export const columns: ColumnDef<ProcedureWTPerInstTable>[] = [
   columnHelper.group({
     id: 'procedure',
     header: HEADER_TEXT_MAP.procedure,
@@ -81,13 +112,7 @@ export const columns: ColumnDef<Column>[] = [
       {
         id: 'regular',
         accessorFn: (originalRow) => originalRow.waitingPeriods.regular,
-        header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title={HEADER_TEXT_MAP.regular}
-            className="justify-center"
-          />
-        ),
+        header: UrgencyHeader,
         cell: ({ row, table }) => {
           const maxAllowedDays =
             table.options.meta?.findProcedureMaxAllowedDays?.(
@@ -107,13 +132,7 @@ export const columns: ColumnDef<Column>[] = [
       {
         id: 'fast',
         accessorFn: (originalRow) => originalRow.waitingPeriods.fast,
-        header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title={HEADER_TEXT_MAP.fast}
-            className="justify-center"
-          />
-        ),
+        header: UrgencyHeader,
         cell: ({ row, table }) => {
           const maxAllowedDays =
             table.options.meta?.findProcedureMaxAllowedDays?.(
@@ -133,13 +152,7 @@ export const columns: ColumnDef<Column>[] = [
       {
         id: 'veryFast',
         accessorFn: (originalRow) => originalRow.waitingPeriods.veryFast,
-        header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title={HEADER_TEXT_MAP.veryFast}
-            className="justify-center"
-          />
-        ),
+        header: UrgencyHeader,
         cell: ({ row, table }) => {
           const maxAllowedDays =
             table.options.meta?.findProcedureMaxAllowedDays?.(

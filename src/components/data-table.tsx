@@ -40,7 +40,6 @@ import {
 } from '@/components/ui/select';
 import { fuzzyFilter } from '@/lib/fuzzy-filter';
 import { ColumnsToggler } from './columns-toggler';
-import { MaxUrgency } from './max-urgency';
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -169,16 +168,6 @@ export function DataTable<TData, TValue>({
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
-                  const maxAllowedDays =
-                    table.options.meta?.findProcedureMaxAllowedDays?.(
-                      table.options.meta?.procedureCode ?? ''
-                    );
-
-                  const days =
-                    maxAllowedDays && header.id in maxAllowedDays
-                      ? maxAllowedDays[header.id as keyof typeof maxAllowedDays]
-                      : null;
-
                   return (
                     <TableHead
                       key={header.id}
@@ -191,12 +180,6 @@ export function DataTable<TData, TValue>({
                             header.column.columnDef.header,
                             header.getContext()
                           )}
-                      {days ? (
-                        <MaxUrgency
-                          days={days}
-                          urgency={header.id as keyof typeof maxAllowedDays}
-                        />
-                      ) : null}
                     </TableHead>
                   );
                 })}
