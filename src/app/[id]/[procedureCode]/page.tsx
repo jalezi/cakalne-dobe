@@ -148,11 +148,11 @@ export default async function ProcedureCodePage({
       >
         <ProceduresPicker
           options={procedures.map((procedure) => ({
-            value: `/${params.id}/${procedure.code}`,
+            value: `/${params.id}/${procedure.code}/`,
             label: `${procedure.code} - ${procedure.name}`,
           }))}
           defaultSelected={{
-            value: `/${params.id}/${procedure.code}`,
+            value: `/${params.id}/${procedure.code}/`,
             label: `${procedure.code} - ${procedure.name}`,
           }}
         />

@@ -19,6 +19,7 @@ import { useMediaQuery } from '@/hooks/use-media-query';
 import { cn } from '@/lib/utils';
 import { Check } from 'lucide-react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
 export type SelectOption = {
@@ -129,6 +130,7 @@ function OptionList({
   asLink,
   inputPlaceholder = 'Išči...',
 }: OptionListProps) {
+  const pathname = usePathname();
   const onSelectChange = (value: string) => {
     onSelect?.(value);
     setSelectedStatus(options.find((option) => option.value === value) || null);
@@ -168,7 +170,10 @@ function OptionList({
               asChild={asLink}
             >
               {asLink ? (
-                <Link href={option.value}>
+                <Link
+                  href={option.value}
+                  aria-current={option.value === pathname ? 'page' : undefined}
+                >
                   <CheckIcon
                     isSelected={option.value === selectedOption?.value}
                   />

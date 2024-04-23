@@ -100,7 +100,7 @@ export default async function DatasetPage({ params }: DatasetPageProps) {
       >
         <ProceduresPicker
           options={procedures.map((procedure) => ({
-            value: `/${params.id}/${procedure.code}`,
+            value: `/${params.id}/${procedure.code}/`,
             label: `${procedure.code} - ${procedure.name}`,
           }))}
         />

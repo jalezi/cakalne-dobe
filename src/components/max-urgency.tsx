@@ -20,12 +20,18 @@ const formatOrdinals = (value: number) => {
 
 interface MaxUrgencyProps extends React.HTMLAttributes<HTMLSpanElement> {
   days: number;
+  urgency: 'regular' | 'fast' | 'veryFast';
 }
 
-export const MaxUrgency = ({ days, className, ...props }: MaxUrgencyProps) => {
+export const MaxUrgency = ({
+  days,
+  urgency,
+  className,
+  ...props
+}: MaxUrgencyProps) => {
   return (
     <>
-      <span id="attr-max-days" className="sr-only" {...props}>
+      <span id={`attr-max-days-${urgency}`} className="sr-only" {...props}>
         <abbr className="sr-only" title="maksimum">
           maks.
         </abbr>
@@ -34,7 +40,7 @@ export const MaxUrgency = ({ days, className, ...props }: MaxUrgencyProps) => {
       <Badge
         className={cn('my-1', className)}
         variant="destructive"
-        aria-labelledby="attr-max-days"
+        aria-labelledby={`attr-max-days-${urgency}`}
       >
         {days}
       </Badge>

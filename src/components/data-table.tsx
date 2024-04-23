@@ -139,12 +139,19 @@ export function DataTable<TData, TValue>({
               table.setPageSize(Number(value));
             }}
           >
-            <SelectTrigger className="h-9 w-[4.375rem]">
+            <SelectTrigger
+              className="h-9 w-[4.375rem]"
+              aria-label={`Število vrstic na stran: ${table.getState().pagination.pageSize}`}
+            >
               <SelectValue placeholder={table.getState().pagination.pageSize} />
             </SelectTrigger>
             <SelectContent side="top">
               {[10, 20, 30, 40, 50].map((pageSize) => (
-                <SelectItem key={pageSize} value={`${pageSize}`}>
+                <SelectItem
+                  key={pageSize}
+                  value={`${pageSize}`}
+                  aria-label={`${pageSize} vrstic na stran`}
+                >
                   {pageSize}
                 </SelectItem>
               ))}
@@ -184,7 +191,12 @@ export function DataTable<TData, TValue>({
                             header.column.columnDef.header,
                             header.getContext()
                           )}
-                      {days ? <MaxUrgency days={days} /> : null}
+                      {days ? (
+                        <MaxUrgency
+                          days={days}
+                          urgency={header.id as keyof typeof maxAllowedDays}
+                        />
+                      ) : null}
                     </TableHead>
                   );
                 })}
