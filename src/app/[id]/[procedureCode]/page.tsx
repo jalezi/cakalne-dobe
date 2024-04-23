@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import { JsonDropDownMenu } from '@/components/json-dropdown-menu';
 import { ProceduresPicker } from '@/components/procedures-picker';
 import { DataTableSkeleton } from '@/components/skeleton/data-table';
-import { Table } from '@/components/table';
+import { ProcedureWTPerInstTable } from '@/components/tables/procedure-wt-per-inst-table';
 import { Time } from '@/components/time';
 import { Skeleton } from '@/components/ui/skeleton';
 import { db } from '@/db';
@@ -158,7 +158,10 @@ export default async function ProcedureCodePage({
         />
       </Suspense>
       <Suspense fallback={<DataTableSkeleton />}>
-        <Table procedureCode={procedure.code} dbJobId={job.id} />
+        <ProcedureWTPerInstTable
+          procedureCode={procedure.code}
+          dbJobId={job.id}
+        />
       </Suspense>
     </main>
   );
