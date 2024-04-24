@@ -29,7 +29,6 @@ import {
 import { DataTablePagination } from '@/components/pagination';
 import { useState } from 'react';
 
-import { groupByParent } from './tables/procedure-wt/columns';
 import { DebouncedInput } from '@/components/debounced-input';
 import {
   Select,
@@ -39,7 +38,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { fuzzyFilter } from '@/lib/fuzzy-filter';
-import { ColumnsToggler } from './columns-toggler';
+import { ColumnsToggler, groupByParent } from './columns-toggler';
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];

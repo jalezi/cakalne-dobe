@@ -1,9 +1,8 @@
 import {
-  type GroupedByParent,
   HEADER_TEXT_MAP,
   isKeyOfHeaderText,
 } from '@/components/tables/procedure-wt/columns';
-import { type Table } from '@tanstack/table-core';
+import type { Table as TTable, Column as TColumn } from '@tanstack/table-core';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -19,7 +18,7 @@ import { Fragment } from 'react';
 interface ColumnsTogglerProps<TData, TValue> {
   groupedColumns: GroupedByParent<TData, TValue>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  table: Table<any>;
+  table: TTable<any>;
 }
 export function ColumnsToggler<TData, TValue>({
   groupedColumns,
@@ -94,4 +93,33 @@ export function ColumnsToggler<TData, TValue>({
       </DropdownMenuContent>
     </DropdownMenu>
   );
+}
+
+export type GroupedByParent<TData, TValue> = Record<
+  string,
+  { column: TColumn<TData, TValue>; children: TColumn<TData, unknown>[] }
+>;
+export function groupByParent<TData, TValue>(
+  columns: TColumn<TData, TValue>[]
+) {
+  const result: GroupedByParent<TData, TValue> = {};
+  const groupedColumns = columns.reduce((acc, column) => {
+    const parentColumn = column.parent;
+    if (!parentColumn) {
+      return acc;
+    }
+
+    if (!acc[parentColumn.id]) {
+      acc[parentColumn.id] = {
+        column: parentColumn,
+        children: [],
+      };
+    }
+
+    acc[parentColumn.id].children.push(column);
+
+    return acc;
+  }, result);
+
+  return groupedColumns;
 }
