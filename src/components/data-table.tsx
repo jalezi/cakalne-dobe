@@ -93,14 +93,7 @@ export function DataTable<TData, TValue>({
     onGlobalFilterChange: setGlobalFilter,
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
-    meta: {
-      ...meta,
-      findProcedureMaxAllowedDays: (code: string) => {
-        return meta?.allowedMaxWaitingTimes?.find(
-          (procedure) => procedure.code === code
-        )?.maxAllowedDays;
-      },
-    },
+    meta,
     debugTable: true,
   });
 

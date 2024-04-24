@@ -5,45 +5,19 @@ import type { FacilityProcedureWaitingTimes } from '@/lib/zod-schemas/data-schem
 import { createColumnHelper, type ColumnDef } from '@tanstack/react-table';
 import { DataTableColumnHeader } from '@/components/table-header';
 
-import type { Column as TColumn } from '@tanstack/react-table';
+import type {
+  Column as TColumn,
+  Table as TTable,
+  Row as TRow,
+} from '@tanstack/react-table';
 import { fuzzySort } from '@/lib/fuzzy-filter';
 import { MaxUrgency } from '@/components/max-urgency';
-
-import type {
-  Column as TRTColumn,
-  Table as TRTTable,
-} from '@tanstack/react-table';
 
 export type ProcedureWTPerInstTable = FacilityProcedureWaitingTimes;
 
 const columnHelper = createColumnHelper<ProcedureWTPerInstTable>();
 
 const isNumber = (value: unknown): value is number => typeof value === 'number';
-
-const UrgencyHeader = ({
-  column,
-  table,
-}: {
-  column: TRTColumn<ProcedureWTPerInstTable>;
-  table: TRTTable<ProcedureWTPerInstTable>;
-}) => {
-  const procedureCode = table.options.meta?.procedureCode;
-  const maxAllowedDays = procedureCode
-    ? table.options.meta?.findProcedureMaxAllowedDays?.(procedureCode)
-    : null;
-
-  const days = maxAllowedDays?.[column.id as 'regular' | 'fast' | 'veryFast'];
-
-  return (
-    <DataTableColumnHeader
-      column={column}
-      title={HEADER_TEXT_MAP.regular}
-      className="justify-center"
-    >
-      {days ? <MaxUrgency days={days} urgency="regular" /> : null}
-    </DataTableColumnHeader>
-  );
-};
 
 export const HEADER_TEXT_MAP = {
   procedure: 'Storitev',
@@ -113,65 +87,70 @@ export const columns: ColumnDef<ProcedureWTPerInstTable>[] = [
         id: 'regular',
         accessorFn: (originalRow) => originalRow.waitingPeriods.regular,
         header: UrgencyHeader,
-        cell: ({ row, table }) => {
-          const maxAllowedDays =
-            table.options.meta?.findProcedureMaxAllowedDays?.(
-              row.original.procedure.code
-            );
-          const maxDays = maxAllowedDays?.regular;
-          const days = row.original.waitingPeriods.regular;
-          const isExceeded = days && maxDays ? days > maxDays : false;
-          return (
-            <div className={cn(isExceeded && 'text-red-600', 'text-center')}>
-              {isNumber(days) ? days : '-'}
-            </div>
-          );
-        },
+        cell: UrgencyCell,
         sortingFn: 'alphanumeric',
       },
       {
         id: 'fast',
         accessorFn: (originalRow) => originalRow.waitingPeriods.fast,
         header: UrgencyHeader,
-        cell: ({ row, table }) => {
-          const maxAllowedDays =
-            table.options.meta?.findProcedureMaxAllowedDays?.(
-              row.original.procedure.code
-            );
-          const maxDays = maxAllowedDays?.fast;
-          const days = row.original.waitingPeriods.fast;
-          const isExceeded = days && maxDays ? days > maxDays : false;
-          return (
-            <div className={cn(isExceeded && 'text-red-600', 'text-center')}>
-              {isNumber(days) ? days : '-'}
-            </div>
-          );
-        },
+        cell: UrgencyCell,
         sortingFn: 'alphanumeric',
       },
       {
         id: 'veryFast',
         accessorFn: (originalRow) => originalRow.waitingPeriods.veryFast,
         header: UrgencyHeader,
-        cell: ({ row, table }) => {
-          const maxAllowedDays =
-            table.options.meta?.findProcedureMaxAllowedDays?.(
-              row.original.procedure.code
-            );
-          const maxDays = maxAllowedDays?.veryFast;
-          const days = row.original.waitingPeriods.veryFast;
-          const isExceeded = days && maxDays ? days > maxDays : false;
-          return (
-            <div className={cn(isExceeded && 'text-red-600', 'text-center')}>
-              {isNumber(days) ? days : '-'}
-            </div>
-          );
-        },
+        cell: UrgencyCell,
         sortingFn: 'alphanumeric',
       },
     ],
   }),
 ];
+
+type ColumnHeaderProps = {
+  column: TColumn<ProcedureWTPerInstTable>;
+  table: TTable<ProcedureWTPerInstTable>;
+};
+
+function UrgencyHeader({ column, table }: ColumnHeaderProps) {
+  const procedureCode = table.options.meta?.procedureCode;
+  const maxAllowedDays = table.options.meta?.allowedMaxWaitingTimes?.find(
+    (procedure) => procedure.code === procedureCode
+  )?.maxAllowedDays;
+
+  const days = maxAllowedDays?.[column.id as 'regular' | 'fast' | 'veryFast'];
+
+  return (
+    <DataTableColumnHeader
+      column={column}
+      title={HEADER_TEXT_MAP.regular}
+      className="justify-center"
+    >
+      {days ? <MaxUrgency days={days} urgency="regular" /> : null}
+    </DataTableColumnHeader>
+  );
+}
+
+type ColumnCellProps = {
+  row: TRow<ProcedureWTPerInstTable>;
+  table: TTable<ProcedureWTPerInstTable>;
+};
+
+function UrgencyCell({ row, table }: ColumnCellProps) {
+  const procedureCode = row.original.procedure.code;
+  const maxAllowedDays = table.options.meta?.allowedMaxWaitingTimes?.find(
+    (procedure) => procedure.code === procedureCode
+  )?.maxAllowedDays;
+  const maxDays = maxAllowedDays?.regular;
+  const days = row.original.waitingPeriods.regular;
+  const isExceeded = days && maxDays ? days > maxDays : false;
+  return (
+    <div className={cn(isExceeded && 'text-red-600', 'text-center')}>
+      {isNumber(days) ? days : '-'}
+    </div>
+  );
+}
 
 export type GroupedByParent<TData, TValue> = Record<
   string,
