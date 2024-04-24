@@ -8,6 +8,8 @@ import { db } from '@/db';
 import { Suspense } from 'react';
 import { ProcedureAvgWTTable } from '@/components/tables/procedure-avg-wt/procedure-avg-wt';
 import { DataTableSkeleton } from '@/components/skeleton/data-table';
+import { JobsPaginationSkeleton } from '@/components/skeleton/jobs-pagination';
+import { JobsPagination } from '@/components/jobs-pagination';
 
 type DatasetPageProps = {
   params: { id: string };
@@ -65,7 +67,9 @@ export default async function DatasetPage({ params }: DatasetPageProps) {
       >
         Čakalne dobe
       </h1>
-
+      <Suspense fallback={<JobsPaginationSkeleton />}>
+        <JobsPagination id={params.id} />
+      </Suspense>
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <p id="attr-data-fetched-on">
           Podatki pridobljeni:{' '}
