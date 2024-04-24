@@ -13,9 +13,7 @@ import type {
 import { fuzzySort } from '@/lib/fuzzy-filter';
 import { MaxUrgency } from '@/components/max-urgency';
 
-export type ProcedureWTPerInstTable = FacilityProcedureWaitingTimes;
-
-const columnHelper = createColumnHelper<ProcedureWTPerInstTable>();
+const columnHelper = createColumnHelper<FacilityProcedureWaitingTimes>();
 
 const isNumber = (value: unknown): value is number => typeof value === 'number';
 
@@ -36,7 +34,7 @@ export const isKeyOfHeaderText = (
   key: string
 ): key is keyof typeof HEADER_TEXT_MAP => key in HEADER_TEXT_MAP;
 
-export const columns: ColumnDef<ProcedureWTPerInstTable>[] = [
+export const columns: ColumnDef<FacilityProcedureWaitingTimes>[] = [
   columnHelper.group({
     id: 'procedure',
     header: HEADER_TEXT_MAP.procedure,
@@ -109,8 +107,8 @@ export const columns: ColumnDef<ProcedureWTPerInstTable>[] = [
 ];
 
 type ColumnHeaderProps = {
-  column: TColumn<ProcedureWTPerInstTable>;
-  table: TTable<ProcedureWTPerInstTable>;
+  column: TColumn<FacilityProcedureWaitingTimes>;
+  table: TTable<FacilityProcedureWaitingTimes>;
 };
 
 function UrgencyHeader({ column, table }: ColumnHeaderProps) {
@@ -133,8 +131,8 @@ function UrgencyHeader({ column, table }: ColumnHeaderProps) {
 }
 
 type ColumnCellProps = {
-  row: TRow<ProcedureWTPerInstTable>;
-  table: TTable<ProcedureWTPerInstTable>;
+  row: TRow<FacilityProcedureWaitingTimes>;
+  table: TTable<FacilityProcedureWaitingTimes>;
 };
 
 function UrgencyCell({ row, table }: ColumnCellProps) {
