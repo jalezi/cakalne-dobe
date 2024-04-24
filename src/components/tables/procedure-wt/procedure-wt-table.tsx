@@ -1,19 +1,19 @@
-import { DataTable } from '../data-table';
+import { DataTable } from '../../data-table';
 import { columns } from '@/app/_components/columns';
 import { db } from '@/db';
 import { institutions, maxAllowedDays, waitingPeriods } from '@/db/schema';
 import { procedures as proceduresTable } from '@/db/schema';
 import { and, eq } from 'drizzle-orm';
 
-interface ProcedureWTPerInstTableProps {
+interface ProcedureWTTableProps {
   dbJobId: string;
   procedureCode: string;
 }
 
-export async function ProcedureWTPerInstTable({
+export async function ProcedureWTTable({
   procedureCode,
   dbJobId,
-}: ProcedureWTPerInstTableProps) {
+}: ProcedureWTTableProps) {
   const procedureNameObj = await db.query.procedures.findFirst({
     columns: {
       name: true,
