@@ -81,14 +81,6 @@ export default async function ProcedureCodePage({
       columns: { gitLabJobId: true, startDate: true, id: true },
     }),
 
-    db.query.procedures.findFirst({
-      where: (procedure, operators) =>
-        operators.eq(procedure.code, params.procedureCode),
-      columns: {
-        name: true,
-        code: true,
-      },
-    }),
     db.query.procedures.findMany({
       orderBy: (procedure, operators) => operators.asc(procedure.code),
       columns: {
@@ -98,7 +90,10 @@ export default async function ProcedureCodePage({
     }),
   ]);
 
-  const [job, procedure, procedures] = batchResponse;
+  const [job, procedures] = batchResponse;
+  const procedure = procedures.find(
+    (procedure) => procedure.code === params.procedureCode
+  );
 
   if (!job || !procedure) {
     return notFound();
