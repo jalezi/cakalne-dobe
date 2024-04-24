@@ -122,7 +122,7 @@ function UrgencyHeader({ column, table }: ColumnHeaderProps) {
   return (
     <DataTableColumnHeader
       column={column}
-      title={HEADER_TEXT_MAP.regular}
+      title={HEADER_TEXT_MAP[column.id as 'regular' | 'fast' | 'veryFast']}
       className="justify-center"
     >
       {days ? <MaxUrgency days={days} urgency="regular" /> : null}
