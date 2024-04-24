@@ -4,11 +4,13 @@ import { useRouter } from 'next/navigation';
 import { ComboBoxResponsive, type SelectOption } from './combo-box-responsive';
 
 interface ProceduresPickerProps {
+  id?: string;
   options: SelectOption[];
   defaultSelected?: SelectOption;
 }
 
 export function ProceduresPicker({
+  id,
   options,
   defaultSelected,
 }: ProceduresPickerProps) {
@@ -16,6 +18,7 @@ export function ProceduresPicker({
 
   return (
     <ComboBoxResponsive
+      id={id}
       asLink
       onSelect={(value) => {
         router.replace(value);

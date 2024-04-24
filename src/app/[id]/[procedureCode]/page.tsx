@@ -112,18 +112,38 @@ export default async function ProcedureCodePage({
       <h1
         id="attr-h1"
         className="text-2xl font-bold"
-        aria-labelledby="attr-h1 attr-h2 attr-data-fetched-on"
+        aria-labelledby="attr-h1 attr-h2 attr-h3 attr-data-fetched-on"
       >
         Čakalne dobe
       </h1>
-      <h2 id="attr-h2">
-        {procedure.code} - {procedure.name}
-      </h2>
+      <p id="attr-h2">
+        Nabor podatkov na dan: <Time date={job.startDate} />
+        <span className="sr-only">za</span>
+      </p>
+      <Suspense
+        fallback={
+          <div>
+            <Skeleton className="h-10 w-full" />
+          </div>
+        }
+      >
+        <ProceduresPicker
+          id="attr-h3"
+          options={procedures.map((procedure) => ({
+            value: `/${params.id}/${procedure.code}/`,
+            label: `${procedure.code} - ${procedure.name}`,
+          }))}
+          defaultSelected={{
+            value: `/${params.id}/${procedure.code}/`,
+            label: `${procedure.code} - ${procedure.name}`,
+          }}
+        />
+      </Suspense>
       <Suspense fallback={<JobsPaginationSkeleton />}>
         <JobsPagination id={params.id} procedureCode={procedure.code} />
       </Suspense>
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <p id="attr-data-fetched-on">
+        <p id="attr-data-fetched-on" className="text-sm">
           Podatki pridobljeni:{' '}
           <Time
             date={job.startDate}
@@ -139,24 +159,7 @@ export default async function ProcedureCodePage({
         </p>
         <JsonDropDownMenu gitLabJobId={job.gitLabJobId} fileName={fileName} />
       </div>
-      <Suspense
-        fallback={
-          <div>
-            <Skeleton className="h-10 w-full" />
-          </div>
-        }
-      >
-        <ProceduresPicker
-          options={procedures.map((procedure) => ({
-            value: `/${params.id}/${procedure.code}/`,
-            label: `${procedure.code} - ${procedure.name}`,
-          }))}
-          defaultSelected={{
-            value: `/${params.id}/${procedure.code}/`,
-            label: `${procedure.code} - ${procedure.name}`,
-          }}
-        />
-      </Suspense>
+
       <Suspense fallback={<DataTableSkeleton />}>
         <ProcedureWTTable procedureCode={procedure.code} dbJobId={job.id} />
       </Suspense>

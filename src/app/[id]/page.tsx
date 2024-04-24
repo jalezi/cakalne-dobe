@@ -29,18 +29,24 @@ export async function generateMetadata({ params }: DatasetPageProps) {
     columns: { startDate: true },
   });
 
-  const date = job
+  const dateShort = job
     ? new Intl.DateTimeFormat('sl-SI', {
         dateStyle: 'short',
         timeZone: 'Europe/Ljubljana',
       }).format(new Date(job.startDate))
     : null;
 
-  const dateText = date ? ` za: ${date}` : '';
+  const dateLong = job
+    ? new Intl.DateTimeFormat('sl-SI', {
+        dateStyle: 'long',
+        timeStyle: 'long',
+        timeZone: 'Europe/Ljubljana',
+      }).format(new Date(job.startDate))
+    : null;
 
   return {
-    title: date,
-    description: `Čakalne dobe na ${dateText}`,
+    title: 'Povprečja',
+    description: `Povprečja čakalnih dob za postopke na dan: ${dateShort ?? ''}. Podatki pridobljeni: ${dateLong}.`,
   };
 }
 
@@ -67,11 +73,14 @@ export default async function DatasetPage({ params }: DatasetPageProps) {
       >
         Čakalne dobe
       </h1>
+      <p id="attr-h2">
+        Nabor podatkov na dan: <Time date={job.startDate} />
+      </p>
       <Suspense fallback={<JobsPaginationSkeleton />}>
         <JobsPagination id={params.id} />
       </Suspense>
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <p id="attr-data-fetched-on">
+        <p id="attr-data-fetched-on" className="text-sm">
           Podatki pridobljeni:{' '}
           <Time
             date={job.startDate}

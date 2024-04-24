@@ -28,6 +28,7 @@ export type SelectOption = {
 };
 
 export interface ComboBoxResponsiveProps {
+  id?: string;
   options: SelectOption[];
   defaultSelected?: SelectOption | null;
   onSelect?: (value: string) => void;
@@ -37,6 +38,7 @@ export interface ComboBoxResponsiveProps {
 }
 
 export function ComboBoxResponsive({
+  id,
   options,
   defaultSelected,
   onSelect,
@@ -57,7 +59,7 @@ export function ComboBoxResponsive({
   );
 
   const triggerButton = (
-    <Button variant="outline" className="w-full justify-start">
+    <Button id={id} variant="outline" className="w-full justify-start">
       {selectedOptionLabel}
     </Button>
   );
