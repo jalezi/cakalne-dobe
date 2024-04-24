@@ -2,7 +2,7 @@ import {
   type GroupedByParent,
   HEADER_TEXT_MAP,
   isKeyOfHeaderText,
-} from '@/app/_components/columns';
+} from '@/components/tables/procedure-wt/columns';
 import { type Table } from '@tanstack/table-core';
 import {
   DropdownMenu,

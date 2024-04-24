@@ -1,5 +1,5 @@
 import { DataTable } from '../../data-table';
-import { columns } from '@/app/_components/columns';
+import { columns } from '@/components/tables/procedure-wt/columns';
 import { db } from '@/db';
 import { institutions, maxAllowedDays, waitingPeriods } from '@/db/schema';
 import { procedures as proceduresTable } from '@/db/schema';

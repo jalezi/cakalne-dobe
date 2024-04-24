@@ -29,7 +29,7 @@ import {
 import { DataTablePagination } from '@/components/pagination';
 import { useState } from 'react';
 
-import { groupByParent } from '../app/_components/columns';
+import { groupByParent } from './tables/procedure-wt/columns';
 import { DebouncedInput } from '@/components/debounced-input';
 import {
   Select,
