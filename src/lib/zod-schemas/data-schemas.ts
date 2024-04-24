@@ -70,3 +70,29 @@ export const facilityProcedureWaitingTimesSchema = z.object({
 export type FacilityProcedureWaitingTimes = z.infer<
   typeof facilityProcedureWaitingTimesSchema
 >;
+
+export const procedureAvgWaitingTimesSchema = z.object({
+  avg: z.object({
+    regular: z.number(),
+    fast: z.number(),
+    veryFast: z.number(),
+  }),
+  total: z.object({
+    regular: z.number().nullable(),
+    fast: z.number().nullable(),
+    veryFast: z.number().nullable(),
+  }),
+  count: z.object({
+    regular: z.number(),
+    fast: z.number(),
+    veryFast: z.number(),
+  }),
+  maxAllowedDays: maxAllowedDaysByUrgencySchema,
+  procedureCode: z.string(),
+  procedureName: z.string(),
+  jobId: z.string(),
+});
+
+export type ProcedureAvgWaitingTimes = z.infer<
+  typeof procedureAvgWaitingTimesSchema
+>;

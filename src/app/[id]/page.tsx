@@ -6,8 +6,8 @@ import { Time } from '@/components/time';
 import { JsonDropDownMenu } from '@/components/json-dropdown-menu';
 import { db } from '@/db';
 import { Suspense } from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ProceduresPicker } from '@/components/procedures-picker';
+import { ProcedureAvgWTTable } from '@/components/tables/procedure-avg-wt/procedure-avg-wt';
+import { DataTableSkeleton } from '@/components/skeleton/data-table';
 
 type DatasetPageProps = {
   params: { id: string };
@@ -56,14 +56,6 @@ export default async function DatasetPage({ params }: DatasetPageProps) {
 
   const fileName = `wp-${formattedDate}-${job.gitLabJobId}`;
 
-  const procedures = await db.query.procedures.findMany({
-    orderBy: (procedure, operators) => operators.asc(procedure.code),
-    columns: {
-      code: true,
-      name: true,
-    },
-  });
-
   return (
     <main className="space-y-2 p-4">
       <h1
@@ -91,19 +83,9 @@ export default async function DatasetPage({ params }: DatasetPageProps) {
         </p>
         <JsonDropDownMenu gitLabJobId={job.gitLabJobId} fileName={fileName} />
       </div>
-      <Suspense
-        fallback={
-          <div>
-            <Skeleton className="h-10 w-full" />
-          </div>
-        }
-      >
-        <ProceduresPicker
-          options={procedures.map((procedure) => ({
-            value: `/${params.id}/${procedure.code}/`,
-            label: `${procedure.code} - ${procedure.name}`,
-          }))}
-        />
+
+      <Suspense fallback={<DataTableSkeleton />}>
+        <ProcedureAvgWTTable dbJobId={job.id} />
       </Suspense>
     </main>
   );
