@@ -1,5 +1,8 @@
 import { DataTable } from '../../data-table';
-import { columns } from '@/components/tables/procedure-wt/columns';
+import {
+  columns,
+  headerTextMap,
+} from '@/components/tables/procedure-wt/columns';
 import { db } from '@/db';
 import { institutions, maxAllowedDays, waitingPeriods } from '@/db/schema';
 import { procedures as proceduresTable } from '@/db/schema';
@@ -79,7 +82,7 @@ export async function ProcedureWTTable({
     <DataTable
       data={rows}
       columns={columns}
-      meta={{ allowedMaxWaitingTimes, procedureCode }}
+      meta={{ allowedMaxWaitingTimes, procedureCode, headerTextMap }}
       initialState={{
         sorting: [{ id: 'codeWithName', desc: false }],
         columnVisibility: procedureName

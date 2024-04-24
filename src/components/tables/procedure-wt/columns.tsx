@@ -18,6 +18,7 @@ const columnHelper = createColumnHelper<FacilityProcedureWaitingTimes>();
 const isNumber = (value: unknown): value is number => typeof value === 'number';
 
 export const HEADER_TEXT_MAP = {
+  all: 'Vsi',
   procedure: 'Storitev',
   waitingPeriods: 'Stopnja nujnosti',
   code: 'Koda',
@@ -30,9 +31,12 @@ export const HEADER_TEXT_MAP = {
   codeWithName: 'Postopek',
 } as const;
 
-export const isKeyOfHeaderText = (
-  key: string
-): key is keyof typeof HEADER_TEXT_MAP => key in HEADER_TEXT_MAP;
+type HeaderTextMap = typeof HEADER_TEXT_MAP;
+type Key = keyof HeaderTextMap;
+
+export const headerTextMap = new Map<Key, string>(
+  Object.entries(HEADER_TEXT_MAP) as [Key, string][]
+);
 
 export const columns: ColumnDef<FacilityProcedureWaitingTimes>[] = [
   columnHelper.group({

@@ -11,6 +11,7 @@ import Link from 'next/link';
 const columnHelper = createColumnHelper<ProcedureAvgWaitingTimes>();
 
 export const HEADER_TEXT_MAP = {
+  all: 'Vsi',
   procedure: 'Storitev',
   avg: 'Povprečje',
   regular: 'Običajno',
@@ -18,6 +19,13 @@ export const HEADER_TEXT_MAP = {
   veryFast: 'Zelo hitro',
   codeWithName: 'Postopek',
 } as const;
+
+type HeaderTextMap = typeof HEADER_TEXT_MAP;
+type Key = keyof HeaderTextMap;
+
+export const headerTextMap = new Map<Key, string>(
+  Object.entries(HEADER_TEXT_MAP) as [Key, string][]
+);
 
 export const columns: ColumnDef<ProcedureAvgWaitingTimes>[] = [
   columnHelper.group({
@@ -52,6 +60,7 @@ export const columns: ColumnDef<ProcedureAvgWaitingTimes>[] = [
   columnHelper.group({
     id: 'avg',
     header: HEADER_TEXT_MAP.avg,
+    enableHiding: false,
     columns: [
       {
         id: 'regular',

@@ -1,7 +1,3 @@
-import {
-  HEADER_TEXT_MAP,
-  isKeyOfHeaderText,
-} from '@/components/tables/procedure-wt/columns';
 import type { Table as TTable, Column as TColumn } from '@tanstack/table-core';
 import {
   DropdownMenu,
@@ -41,26 +37,27 @@ export function ColumnsToggler<TData, TValue>({
         </DropdownMenuCheckboxItem>
         <DropdownMenuSeparator />
         {Object.entries(groupedColumns).map(([key, columns]) => {
-          const isParentKey = isKeyOfHeaderText(key);
+          const groupLabel = table.options.meta?.headerTextMap?.get(key) ?? key;
           return (
             <Fragment key={key}>
               <DropdownMenuGroup>
-                <DropdownMenuLabel>
-                  {isParentKey ? HEADER_TEXT_MAP[key] : key}
+                <DropdownMenuLabel className="capitalize">
+                  {groupLabel}
                 </DropdownMenuLabel>
                 {columns.children.map((column) => {
-                  const { id } = column;
-                  const isChildKey = isKeyOfHeaderText(id);
+                  const columnLabel =
+                    table.options.meta?.headerTextMap?.get(column.id) ??
+                    column.id;
                   return (
                     <DropdownMenuCheckboxItem
-                      key={id}
+                      key={column.id}
                       className="capitalize"
                       checked={column.getIsVisible()}
                       onCheckedChange={(value) =>
                         column.toggleVisibility(!!value)
                       }
                     >
-                      {isChildKey ? HEADER_TEXT_MAP[id] : id}
+                      {columnLabel}
                     </DropdownMenuCheckboxItem>
                   );
                 })}
@@ -69,27 +66,6 @@ export function ColumnsToggler<TData, TValue>({
             </Fragment>
           );
         })}
-        {table
-          .getAllColumns()
-          .filter((column) => column.getCanHide())
-          .map((column) => {
-            return column.getLeafColumns().map((leafColumn) => {
-              const { id } = leafColumn;
-              const isKey = isKeyOfHeaderText(id);
-              return (
-                <DropdownMenuCheckboxItem
-                  key={leafColumn.id}
-                  className="capitalize"
-                  checked={leafColumn.getIsVisible()}
-                  onCheckedChange={(value) =>
-                    leafColumn.toggleVisibility(!!value)
-                  }
-                >
-                  {isKey ? HEADER_TEXT_MAP[id] : id}
-                </DropdownMenuCheckboxItem>
-              );
-            });
-          })}
       </DropdownMenuContent>
     </DropdownMenu>
   );

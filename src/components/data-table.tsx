@@ -93,7 +93,7 @@ export function DataTable<TData, TValue>({
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
     meta,
-    debugTable: true,
+    debugTable: false,
   });
 
   const flatColumns = table
