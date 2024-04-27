@@ -26,10 +26,12 @@ export type ProcedureAvgWtForJob = Awaited<
 export async function getProcedureAvgWtPerJobChart(procedureCode: string) {
   return await db
     .select({
-      date: sql<string>`strftime('%Y-%m-%d',${jobsTable.startDate})`,
-      regular: average(waitingPeriodsTable.regular),
-      fast: average(waitingPeriodsTable.fast),
-      veryFast: average(waitingPeriodsTable.veryFast),
+      x: sql<string>`strftime('%Y-%m-%d',${jobsTable.startDate})`,
+      y: {
+        regular: average(waitingPeriodsTable.regular),
+        fast: average(waitingPeriodsTable.fast),
+        veryFast: average(waitingPeriodsTable.veryFast),
+      },
     })
     .from(waitingPeriodsTable)
     .where(eq(proceduresTable.code, procedureCode))

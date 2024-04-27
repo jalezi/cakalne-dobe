@@ -1,9 +1,10 @@
 import { db } from '@/db';
-import { desc } from 'drizzle-orm';
-import { jobs as jobsTable } from '@/db/schema';
+import { jobs as jobsTable, procedures } from '@/db/schema';
 import { TimeRange } from '@/components/time';
-import { Suspense } from 'react';
-import { AvgWaitingPeriodsChart } from '@/components/charts/wp/chart';
+import { asc, desc, sql } from 'drizzle-orm';
+import ChartCard from '@/components/charts/wp/card';
+import { Chart } from '@/components/charts/wp/chart';
+import { getProcedureAvgWtPerJobChart } from '@/actions/get-procedure-avg-wt-per-job-chart';
 
 export default async function Home() {
   const jobs = await db.query.jobs.findMany({
@@ -14,9 +15,20 @@ export default async function Home() {
   const firstJob = jobs.at(-1);
   const lastJob = jobs.at(0);
 
+  const procedureOptions = await db
+    .select({
+      value: procedures.code,
+      label: sql<string>`${procedures.name} || ' - ' || ${procedures.code}`,
+    })
+    .from(procedures)
+    .orderBy(asc(procedures.name));
+  const chartData = await getProcedureAvgWtPerJobChart(
+    procedureOptions[0].value
+  );
+
   return (
     <main className="z-0 space-y-2 p-4">
-      <h1 id="attr-h1" className="text-2xl font-bold" aria-labelledby="attr-h1">
+      <h1 id="attr-h1" className="text-2xl font-bold">
         Čakalne dobe
       </h1>
       <div>
@@ -29,10 +41,13 @@ export default async function Home() {
           />
         ) : null}
       </div>
-
-      <Suspense fallback="loading...">
-        <AvgWaitingPeriodsChart />
-      </Suspense>
+      <ChartCard title="Povprečje">
+        <Chart
+          lineDatakeys={['regular', 'fast', 'veryFast']}
+          initialData={chartData}
+          procedureOptions={procedureOptions}
+        />
+      </ChartCard>
     </main>
   );
 }

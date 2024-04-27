@@ -1,8 +1,5 @@
 'use client';
 
-import { Time } from '@/components/time';
-import { cn } from '@/lib/utils';
-
 import { useState } from 'react';
 import {
   CartesianGrid,
@@ -14,74 +11,30 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { TooltipContent } from './tooltip-content';
 
-type Payload = {
-  value: string | number;
-  name: string;
-  color: string;
-  stroke: string;
-  payload: { date: Date };
-  fill: string;
+type HexColor = `#${string}`;
+
+export type TimeSeriesChartData<TLines extends string[]> = {
+  x: Date | string | number;
+  y: {
+    [key in TLines[number]]: unknown;
+  };
 };
 
-interface CustomTooltipProps {
-  active?: boolean;
-  payload?: Payload[];
-  label?: number;
-}
-
-const CustomContent = ({ active, payload }: CustomTooltipProps) => {
-  if (active && payload && payload.length > 0) {
-    const { payload: pldBase } = payload[0];
-
-    return (
-      <div className="bg-background p-2 text-foreground">
-        <Time date={pldBase?.date} className="text-xs font-semibold" />
-        <ul>
-          {payload.map((pld: Payload, index) => {
-            document.body.style.setProperty(
-              `--tooltip-color-${index}`,
-              pld.color
-            );
-            return (
-              <li
-                key={pld.name}
-                className={cn(
-                  `text-xs`,
-                  `text-[var(--tooltip-color-${index})]`
-                )}
-              >
-                {`${pld.name} : ${pld.value}`}
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-    );
-  }
-  return null;
-};
-
-type PageData = {
-  date: Date;
-  regular: number;
-  fast: number;
-  veryFast: number;
-};
-
-interface MyLineChartProps<TLines extends string[]> {
+interface TimeSeriesChartProps<TLines extends string[]> {
   lineDataKeys: TLines;
-  lineStrokes: `#${string}`[];
-  chartData: PageData[];
+  lineStrokes: HexColor[];
+  chartData: TimeSeriesChartData<TLines>[];
   lineFriendlyNames?: Record<TLines[number], string>;
 }
 
-export function MyLineChart<TLine extends string[]>({
-  chartData: pageData,
+export function TimeSeriesChart<TLine extends string[]>({
+  chartData,
   lineDataKeys,
   lineStrokes,
   lineFriendlyNames,
-}: MyLineChartProps<TLine>) {
+}: TimeSeriesChartProps<TLine>) {
   const [activeSeries, setActiveSeries] = useState<Array<string>>([]);
 
   const handleLegendClick = (dataKey: string) => {
@@ -100,7 +53,12 @@ export function MyLineChart<TLine extends string[]>({
     }).format(new Date(value));
   };
 
-  const dateNumericValues = pageData.map((el) => el.date.getTime());
+  const chartDataWithDate = chartData.map((el) => ({
+    ...el,
+    x: el.x instanceof Date ? el.x : new Date(el.x),
+  }));
+
+  const dateNumericValues = chartDataWithDate.map((el) => el.x.getTime());
 
   return (
     <ResponsiveContainer
@@ -110,13 +68,12 @@ export function MyLineChart<TLine extends string[]>({
       // initialDimension={{ width: 1000, height: 400 }}
     >
       <LineChart
-        data={pageData}
-        title="Some title"
+        data={chartDataWithDate}
         accessibilityLayer
-        margin={{ bottom: 48, top: 24, left: 0, right: 0 }}
+        margin={{ bottom: 48, top: 24, left: 0, right: 48 }}
       >
         <XAxis
-          dataKey="date"
+          dataKey="x"
           label={{
             position: 'insideBottom',
             value: 'datum',
@@ -134,7 +91,7 @@ export function MyLineChart<TLine extends string[]>({
         />
         <YAxis className="text-xs" />
         <CartesianGrid strokeDasharray="3 3" />
-        <Tooltip labelFormatter={dateFormater} content={<CustomContent />} />
+        <Tooltip labelFormatter={dateFormater} content={<TooltipContent />} />
         <Legend
           height={36}
           iconSize={8}
@@ -148,11 +105,11 @@ export function MyLineChart<TLine extends string[]>({
         {lineDataKeys.map((line, index) => (
           <Line
             key={line}
-            hide={activeSeries.includes(line)}
+            hide={activeSeries.includes(`y.${line}`)}
             type="monotone"
-            dataKey={line}
+            dataKey={`y.${line}`}
             stroke={lineStrokes[index]}
-            fill="#8884d8"
+            fill={lineStrokes[index]}
             name={
               lineFriendlyNames?.[line as keyof typeof lineFriendlyNames] ??
               line
