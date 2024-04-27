@@ -337,6 +337,7 @@ export async function GET(request: NextRequest) {
           insertedWaitingPeriods.length;
 
         revalidatePath('/', 'page');
+        revalidatePath('/[id]', 'page');
 
         return {
           success: true,
