@@ -14,6 +14,7 @@ import {
 import { TooltipContent } from './tooltip-content';
 
 type HexColor = `#${string}`;
+type HSL = string;
 
 export type TimeSeriesChartData<TLines extends string[]> = {
   x: Date | string | number;
@@ -24,7 +25,7 @@ export type TimeSeriesChartData<TLines extends string[]> = {
 
 interface TimeSeriesChartProps<TLines extends string[]> {
   lineDataKeys: TLines;
-  lineStrokes: HexColor[];
+  lineStrokes: (HexColor | HSL)[];
   chartData: TimeSeriesChartData<TLines>[];
   lineFriendlyNames?: Record<TLines[number], string>;
 }
@@ -41,11 +42,9 @@ export function TimeSeriesChart<TLine extends string[]>({
     (data) =>
       lineDataKeys
         .map((line) => {
-          if (!activeSeries.includes(line)) {
-            return data.y[line as keyof typeof data.y];
-          } else {
-            return null;
-          }
+          return activeSeries.includes(line)
+            ? null
+            : data.y[line as keyof typeof data.y];
         })
         .filter((el) => el !== null) as number[]
   );
@@ -116,7 +115,10 @@ export function TimeSeriesChart<TLine extends string[]>({
           }}
         />
         <CartesianGrid strokeDasharray="3 3" />
-        <Tooltip labelFormatter={dateFormater} content={<TooltipContent />} />
+        <Tooltip
+          labelFormatter={dateFormater}
+          content={<TooltipContent lineStrokes={lineStrokes} />}
+        />
         <Legend
           height={36}
           iconSize={8}

@@ -8,6 +8,7 @@ import {
   ComboBoxResponsive,
   type SelectOption,
 } from '@/components/combo-box-responsive';
+import theme from '@/theme';
 
 const TimeSeriesChart = dynamic(
   () => import('./time-series-chart').then((mod) => mod.TimeSeriesChart),
@@ -63,7 +64,11 @@ export function Chart<TLines extends string[]>({
         />
         <TimeSeriesChart
           lineDataKeys={lineDatakeys}
-          lineStrokes={['#987', '#8884d8', '#82ca9d']}
+          lineStrokes={[
+            theme.colors['chart-line-1'].DEFAULT,
+            theme.colors['chart-line-2'].DEFAULT,
+            theme.colors['chart-line-3'].DEFAULT,
+          ]}
           chartData={chartData}
           lineFriendlyNames={{
             regular: 'Običajno',

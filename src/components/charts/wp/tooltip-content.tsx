@@ -13,9 +13,14 @@ type Payload = {
 interface TooltipContentProps {
   active?: boolean;
   payload?: Payload[];
-  label?: number;
+
+  lineStrokes: string[];
 }
-export function TooltipContent({ active, payload }: TooltipContentProps) {
+export function TooltipContent({
+  active,
+  payload,
+  ...props
+}: TooltipContentProps) {
   if (active && payload && payload.length > 0) {
     const { payload: pldBase } = payload[0];
 
@@ -24,17 +29,10 @@ export function TooltipContent({ active, payload }: TooltipContentProps) {
         <Time date={pldBase?.x} className="text-xs font-semibold" />
         <ul>
           {payload.map((pld: Payload, index) => {
-            document.body.style.setProperty(
-              `--tooltip-color-${index}`,
-              pld.color
-            );
+            const color = props.lineStrokes[index] ?? pld.color;
 
             return (
-              <li
-                style={{ color: pld.color }}
-                key={pld.name}
-                className={cn(`text-xs`)}
-              >
+              <li key={pld.name} style={{ color }} className={cn(`text-xs`)}>
                 {`${pld.name} : ${pld.value}`}
               </li>
             );
