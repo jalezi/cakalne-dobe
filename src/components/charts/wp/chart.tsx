@@ -33,7 +33,7 @@ export function Chart<TLines extends string[]>({
     return;
   };
 
-  const onChange = async (value: string) => {
+  const onSelect = async (value: string) => {
     const newChartData = (await getProcedureAvgWtPerJobChart(
       value
     )) as TimeSeriesChartData<TLines>[];
@@ -50,13 +50,13 @@ export function Chart<TLines extends string[]>({
           <ComboBoxResponsive
             id="procedure-code-combo"
             options={procedureOptions}
-            onSelect={onChange}
+            onSelect={onSelect}
             defaultSelected={procedureOptions[0]}
             excludeOptionAll
           />
         </div>
       </form>
-      <figure className="min-h-[624px]">
+      <figure className="min-h-[480px]">
         <figcaption
           aria-labelledby="procedure-code-label procedure-code-select"
           className="sr-only"

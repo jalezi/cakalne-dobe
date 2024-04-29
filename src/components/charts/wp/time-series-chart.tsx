@@ -37,6 +37,19 @@ export function TimeSeriesChart<TLine extends string[]>({
 }: TimeSeriesChartProps<TLine>) {
   const [activeSeries, setActiveSeries] = useState<Array<string>>([]);
 
+  const allValues = chartData.flatMap(
+    (data) =>
+      lineDataKeys
+        .map((line) => {
+          if (!activeSeries.includes(line)) {
+            return data.y[line as keyof typeof data.y];
+          } else {
+            return null;
+          }
+        })
+        .filter((el) => el !== null) as number[]
+  );
+
   const handleLegendClick = (dataKey: string) => {
     if (activeSeries.includes(dataKey)) {
       setActiveSeries(activeSeries.filter((el) => el !== dataKey));
@@ -47,7 +60,6 @@ export function TimeSeriesChart<TLine extends string[]>({
 
   const dateFormater = (value: string, _payload: unknown) => {
     return Intl.DateTimeFormat('sl-SI', {
-      year: 'numeric',
       month: 'short',
       day: 'numeric',
     }).format(new Date(value));
@@ -59,10 +71,14 @@ export function TimeSeriesChart<TLine extends string[]>({
   }));
 
   const dateNumericValues = chartDataWithDate.map((el) => el.x.getTime());
+  const yDomain = [
+    Math.floor(Math.min(...allValues)),
+    Math.ceil(Math.max(...allValues)),
+  ];
 
   return (
     <ResponsiveContainer
-      height={600}
+      height={480}
       width="100%"
 
       // initialDimension={{ width: 1000, height: 400 }}
@@ -70,7 +86,7 @@ export function TimeSeriesChart<TLine extends string[]>({
       <LineChart
         data={chartDataWithDate}
         accessibilityLayer
-        margin={{ bottom: 48, top: 24, left: 0, right: 48 }}
+        margin={{ bottom: 48, top: 24, left: 0, right: 4 }}
       >
         <XAxis
           dataKey="x"
@@ -86,10 +102,19 @@ export function TimeSeriesChart<TLine extends string[]>({
           scale="time"
           type="number"
           tickFormatter={dateFormater}
-          interval={2}
+          interval={'preserveEnd'}
           className="text-xs"
         />
-        <YAxis className="text-xs" />
+        <YAxis
+          className="text-xs"
+          domain={yDomain}
+          label={{
+            value: 'čas [dni]',
+            angle: -90,
+            position: 'insideLeft',
+            offset: 8,
+          }}
+        />
         <CartesianGrid strokeDasharray="3 3" />
         <Tooltip labelFormatter={dateFormater} content={<TooltipContent />} />
         <Legend
