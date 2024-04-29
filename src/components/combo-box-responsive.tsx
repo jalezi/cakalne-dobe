@@ -35,6 +35,7 @@ export interface ComboBoxResponsiveProps {
   asLink?: boolean;
   placeholder?: string;
   inputPlaceholder?: string;
+  excludeOptionAll?: boolean;
 }
 
 export function ComboBoxResponsive({
@@ -45,6 +46,7 @@ export function ComboBoxResponsive({
   asLink,
   placeholder = 'Izberi',
   inputPlaceholder,
+  excludeOptionAll,
 }: ComboBoxResponsiveProps) {
   const [open, setOpen] = useState(false);
   const isDesktop = useMediaQuery('(min-width: 768px)');
@@ -77,6 +79,7 @@ export function ComboBoxResponsive({
             selectedOption={selectedOption}
             asLink={asLink}
             inputPlaceholder={inputPlaceholder}
+            excludeOptionAll={excludeOptionAll}
           />
         </PopoverContent>
       </Popover>
@@ -96,6 +99,7 @@ export function ComboBoxResponsive({
             selectedOption={selectedOption}
             asLink={asLink}
             inputPlaceholder={inputPlaceholder}
+            excludeOptionAll={excludeOptionAll}
           />
         </div>
       </DrawerContent>
@@ -111,6 +115,7 @@ interface OptionListProps {
   selectedOption?: SelectOption | null;
   asLink?: boolean;
   inputPlaceholder?: string;
+  excludeOptionAll?: boolean;
 }
 
 const CheckIcon = ({ isSelected }: { isSelected?: boolean | undefined }) => {
@@ -131,6 +136,7 @@ function OptionList({
   selectedOption,
   asLink,
   inputPlaceholder = 'Išči...',
+  excludeOptionAll,
 }: OptionListProps) {
   const pathname = usePathname();
   const onSelectChange = (value: string) => {
@@ -152,7 +158,7 @@ function OptionList({
       <CommandList>
         <CommandEmpty>Žal, nisem našel iskanega.</CommandEmpty>
         <CommandGroup>
-          {asLink ? null : (
+          {asLink || excludeOptionAll ? null : (
             <CommandItem
               key="empty"
               value=""

@@ -52,6 +52,7 @@ export function Chart<TLines extends string[]>({
             options={procedureOptions}
             onSelect={onChange}
             defaultSelected={procedureOptions[0]}
+            excludeOptionAll
           />
         </div>
       </form>
