@@ -22,9 +22,9 @@ export default async function Home() {
     })
     .from(procedures)
     .orderBy(asc(procedures.name));
-  const chartData = await getProcedureAvgWtPerJobChart(
-    procedureOptions[0].value
-  );
+  const chartData = procedureOptions[0].value
+    ? await getProcedureAvgWtPerJobChart(procedureOptions[0].value)
+    : null;
 
   return (
     <main className="z-0 space-y-2 p-4">
@@ -42,11 +42,15 @@ export default async function Home() {
         ) : null}
       </div>
       <ChartCard title="Povprečje">
-        <Chart
-          lineDatakeys={['regular', 'fast', 'veryFast']}
-          initialData={chartData}
-          procedureOptions={procedureOptions}
-        />
+        {chartData ? (
+          <Chart
+            lineDatakeys={['regular', 'fast', 'veryFast']}
+            initialData={chartData}
+            procedureOptions={procedureOptions}
+          />
+        ) : (
+          'Žal ni podatkov za prikaz. Prosimo poskusite kasneje.'
+        )}
       </ChartCard>
     </main>
   );
