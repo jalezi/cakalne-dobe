@@ -77,7 +77,7 @@ export function DateRangeJobLinks({
             <Button
               variant={'outline'}
               className={cn(
-                'w-[280px] justify-start text-left font-normal',
+                'max-w-[17rem] justify-start text-left font-normal',
                 !date && 'text-muted-foreground'
               )}
             >

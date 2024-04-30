@@ -9,6 +9,9 @@ import {
   type SelectOption,
 } from '@/components/combo-box-responsive';
 import theme from '@/theme';
+import { TimeRangePicker } from './time-range-picker';
+import { Label } from '@/components/ui/label';
+import type { DateRange } from 'react-day-picker';
 
 const TimeSeriesChart = dynamic(
   () => import('./time-series-chart').then((mod) => mod.TimeSeriesChart),
@@ -18,12 +21,17 @@ const TimeSeriesChart = dynamic(
 interface ChartProps<TLines extends string[]> {
   lineDatakeys: TLines;
   initialData: TimeSeriesChartData<TLines>[];
+  initialDateRange: {
+    to: Date;
+    from: Date;
+  };
   procedureOptions: SelectOption[];
 }
 
 export function Chart<TLines extends string[]>({
   lineDatakeys,
   initialData,
+  initialDateRange,
   procedureOptions,
 }: ChartProps<TLines>) {
   const [chartData, setChartData] =
@@ -34,26 +42,44 @@ export function Chart<TLines extends string[]>({
     return;
   };
 
-  const onSelect = async (value: string) => {
+  const onProcedureSelect = async (value: string) => {
     const newChartData = (await getProcedureAvgWtPerJobChart(
-      value
+      value,
+      initialDateRange.to,
+      initialDateRange.from
+    )) as TimeSeriesChartData<TLines>[];
+    setChartData(newChartData);
+  };
+
+  const onDateRangeChange = async (dateRange: DateRange) => {
+    if (!dateRange || !dateRange.from) return;
+    const newChartData = (await getProcedureAvgWtPerJobChart(
+      procedureOptions[0].value,
+      dateRange.to ?? dateRange.from,
+      dateRange.from ?? initialDateRange.from
     )) as TimeSeriesChartData<TLines>[];
     setChartData(newChartData);
   };
 
   return (
     <>
-      <form onSubmit={onSubmit} className="w-full ">
-        <div className="flex flex-wrap gap-2">
-          <label id="procedure-code-label" htmlFor="procedureCode">
+      <form onSubmit={onSubmit} className="space-y-2">
+        <div className="space-x-1 space-y-2">
+          <Label id="procedure-code-label" htmlFor="procedureCode">
             Postopek
-          </label>
+          </Label>
           <ComboBoxResponsive
-            id="procedure-code-combo"
+            id="chart-procedure-code"
             options={procedureOptions}
-            onSelect={onSelect}
+            onSelect={onProcedureSelect}
             defaultSelected={procedureOptions[0]}
             excludeOptionAll
+          />
+        </div>
+        <div className="space-x-1 space-y-2">
+          <TimeRangePicker
+            initialDateRange={initialDateRange}
+            onChange={onDateRangeChange}
           />
         </div>
       </form>

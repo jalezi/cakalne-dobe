@@ -6,7 +6,9 @@ import {
   asc,
   avg,
   eq,
+  gte,
   isNotNull,
+  lte,
   sql,
   type Column as DrizzleColumn,
 } from 'drizzle-orm';
@@ -15,6 +17,7 @@ import {
   procedures as proceduresTable,
   waitingPeriods as waitingPeriodsTable,
 } from '@/db/schema';
+import { format } from 'date-fns';
 
 const average = (col: DrizzleColumn) =>
   sql<number>`round(cast(${avg(col)} as FLOAT),2)`;
@@ -23,10 +26,19 @@ export type ProcedureAvgWtForJob = Awaited<
   ReturnType<typeof getProcedureAvgWtPerJobChart>
 >[number];
 
-export async function getProcedureAvgWtPerJobChart(procedureCode: string) {
+export async function getProcedureAvgWtPerJobChart(
+  procedureCode: string,
+  toDate: Date,
+  fromDate: Date
+) {
+  const toDateString = format(toDate, 'yyyy-MM-dd');
+  const fromDateString = format(fromDate, 'yyyy-MM-dd');
+
+  const sqlStartDate = sql<string>`strftime('%Y-%m-%d',${jobsTable.startDate})`;
+
   return await db
     .select({
-      x: sql<string>`strftime('%Y-%m-%d',${jobsTable.startDate})`,
+      x: sqlStartDate,
       y: {
         regular: average(waitingPeriodsTable.regular),
         fast: average(waitingPeriodsTable.fast),
@@ -34,7 +46,13 @@ export async function getProcedureAvgWtPerJobChart(procedureCode: string) {
       },
     })
     .from(waitingPeriodsTable)
-    .where(eq(proceduresTable.code, procedureCode))
+    .where(
+      and(
+        eq(proceduresTable.code, procedureCode),
+        gte(sqlStartDate, fromDateString),
+        lte(sqlStartDate, toDateString)
+      )
+    )
     .innerJoin(jobsTable, eq(waitingPeriodsTable.jobId, jobsTable.id))
     .innerJoin(
       proceduresTable,

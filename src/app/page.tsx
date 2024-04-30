@@ -5,6 +5,10 @@ import { asc, desc, sql } from 'drizzle-orm';
 import ChartCard from '@/components/charts/wp/card';
 import { Chart } from '@/components/charts/wp/chart';
 import { getProcedureAvgWtPerJobChart } from '@/actions/get-procedure-avg-wt-per-job-chart';
+import { addMonths } from 'date-fns';
+
+// day @mitar has started to collect data for the first time
+const FIRST_DAY = new Date(2024, 3, 7);
 
 export default async function Home() {
   const jobs = await db.query.jobs.findMany({
@@ -22,8 +26,17 @@ export default async function Home() {
     })
     .from(procedures)
     .orderBy(asc(procedures.name));
+
+  const toDate = new Date();
+  const fromDate =
+    addMonths(toDate, -1) > FIRST_DAY ? addMonths(toDate, -1) : FIRST_DAY;
+
   const chartData = procedureOptions[0].value
-    ? await getProcedureAvgWtPerJobChart(procedureOptions[0].value)
+    ? await getProcedureAvgWtPerJobChart(
+        procedureOptions[0].value,
+        toDate,
+        fromDate
+      )
     : null;
 
   return (
@@ -46,6 +59,10 @@ export default async function Home() {
           <Chart
             lineDatakeys={['regular', 'fast', 'veryFast']}
             initialData={chartData}
+            initialDateRange={{
+              to: toDate,
+              from: fromDate,
+            }}
             procedureOptions={procedureOptions}
           />
         ) : (
