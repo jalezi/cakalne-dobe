@@ -13,6 +13,18 @@ import { TimeRangePicker } from './time-range-picker';
 import { Label } from '@/components/ui/label';
 import type { DateRange } from 'react-day-picker';
 
+// Override console.error
+// This is a hack to suppress the warning about missing defaultProps in recharts library as of version 2.12
+// @link https://github.com/recharts/recharts/issues/3615
+const error = console.error;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+console.error = (...args: any) => {
+  if (!Array.isArray(args) || !args[0] || typeof args[0] !== 'string') return;
+  if (/defaultProps/.test(args[0])) return;
+  error(...args);
+};
+
 const TimeSeriesChart = dynamic(
   () => import('./time-series-chart').then((mod) => mod.TimeSeriesChart),
   { ssr: false }
