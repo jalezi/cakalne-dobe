@@ -41,10 +41,14 @@ export default async function Home() {
 
   return (
     <main className="z-0 space-y-2 p-4">
-      <h1 id="attr-h1" className="text-2xl font-bold">
+      <h1
+        id="attr-h1"
+        className="sr-only"
+        aria-labelledby="attr-h1 attr-dataset-date-range"
+      >
         Čakalne dobe
       </h1>
-      <div>
+      <p id="attr-dataset-date-range">
         Podatki zbrani za obdobje:{' '}
         {firstJob && lastJob ? (
           <TimeRange
@@ -53,22 +57,25 @@ export default async function Home() {
             options={{ timeZone: 'Europe/Ljubljana' }}
           />
         ) : null}
-      </div>
-      <ChartCard title="Povprečje">
-        {chartData ? (
-          <Chart
-            lineDatakeys={['regular', 'fast', 'veryFast']}
-            initialData={chartData}
-            initialDateRange={{
-              to: toDate,
-              from: fromDate,
-            }}
-            procedureOptions={procedureOptions}
-          />
-        ) : (
-          'Žal ni podatkov za prikaz. Prosimo poskusite kasneje.'
-        )}
-      </ChartCard>
+      </p>
+      <section>
+        <h2 className="sr-only">Grafi</h2>
+        <ChartCard title="Povprečje">
+          {chartData ? (
+            <Chart
+              lineDatakeys={['regular', 'fast', 'veryFast']}
+              initialData={chartData}
+              initialDateRange={{
+                to: toDate,
+                from: fromDate,
+              }}
+              procedureOptions={procedureOptions}
+            />
+          ) : (
+            'Žal ni podatkov za prikaz. Prosimo poskusite kasneje.'
+          )}
+        </ChartCard>
+      </section>
     </main>
   );
 }

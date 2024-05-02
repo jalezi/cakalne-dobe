@@ -106,12 +106,12 @@ export default async function ProcedureCodePage({
     <main className="space-y-2 p-4">
       <h1
         id="attr-h1"
-        className="text-2xl font-bold"
-        aria-labelledby="attr-h1 attr-h2 attr-h3 attr-data-fetched-on"
+        className="sr-only"
+        aria-labelledby="attr-h1 attr-dataset-date attr-procedure attr-data-fetched-on"
       >
         Čakalne dobe
       </h1>
-      <p id="attr-h2">
+      <p id="attr-dataset-date">
         Nabor podatkov na dan: <Time date={job.startDate} />
         <span className="sr-only">za</span>
       </p>
@@ -123,7 +123,7 @@ export default async function ProcedureCodePage({
         }
       >
         <ProceduresPicker
-          id="attr-h3"
+          id="attr-procedure"
           options={procedures.map((procedure) => ({
             value: `/${params.id}/${procedure.code}/`,
             label: `${procedure.code} - ${procedure.name}`,

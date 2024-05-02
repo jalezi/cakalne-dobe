@@ -68,12 +68,12 @@ export default async function DatasetPage({ params }: DatasetPageProps) {
     <main className="space-y-2 p-4">
       <h1
         id="attr-h1"
-        className="text-2xl font-bold"
-        aria-labelledby="attr-h1 attr-data-fetched-on"
+        className="sr-only"
+        aria-labelledby="attr-h1 attr-dataset-date attr-data-fetched-on"
       >
         Čakalne dobe
       </h1>
-      <p id="attr-h2">
+      <p id="attr-dataset-date">
         Nabor podatkov na dan: <Time date={job.startDate} />
       </p>
       <Suspense fallback={<JobsPaginationSkeleton />}>

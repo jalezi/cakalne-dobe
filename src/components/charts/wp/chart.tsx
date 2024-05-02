@@ -96,10 +96,6 @@ export function Chart<TLines extends string[]>({
         </div>
       </form>
       <figure className="min-h-[480px]">
-        <figcaption
-          aria-labelledby="procedure-code-label procedure-code-select"
-          className="sr-only"
-        />
         <TimeSeriesChart
           lineDataKeys={lineDatakeys}
           lineStrokes={[
@@ -114,6 +110,13 @@ export function Chart<TLines extends string[]>({
             veryFast: 'Zelo hitro',
           }}
         />
+        <figcaption
+          id="attr-chart-caption"
+          aria-labelledby="attr-chart-caption procedure-code-label chart-procedure-code"
+          className="sr-only"
+        >
+          Graf prikazuje povprečne čakalne dobe za izbrani postopek.
+        </figcaption>
       </figure>
     </>
   );
