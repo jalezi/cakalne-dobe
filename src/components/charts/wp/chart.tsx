@@ -12,6 +12,7 @@ import theme from '@/theme';
 import { TimeRangePicker } from './time-range-picker';
 import { Label } from '@/components/ui/label';
 import type { DateRange } from 'react-day-picker';
+import { ClassicLoader } from '@/components/ui/loaders';
 
 // Override console.error
 // This is a hack to suppress the warning about missing defaultProps in recharts library as of version 2.12
@@ -27,7 +28,14 @@ console.error = (...args: any) => {
 
 const TimeSeriesChart = dynamic(
   () => import('./time-series-chart').then((mod) => mod.TimeSeriesChart),
-  { ssr: false }
+  {
+    ssr: false,
+    loading: () => (
+      <div className="grid min-h-[480px] place-items-center">
+        <ClassicLoader />
+      </div>
+    ),
+  }
 );
 
 interface ChartProps<TLines extends string[]> {
@@ -95,7 +103,7 @@ export function Chart<TLines extends string[]>({
           />
         </div>
       </form>
-      <figure className="min-h-[480px]">
+      <figure className="relative min-h-[480px]">
         <TimeSeriesChart
           lineDataKeys={lineDatakeys}
           lineStrokes={[

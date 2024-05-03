@@ -6,6 +6,8 @@ import ChartCard from '@/components/charts/wp/card';
 import { Chart } from '@/components/charts/wp/chart';
 import { getProcedureAvgWtPerJobChart } from '@/actions/get-procedure-avg-wt-per-job-chart';
 import { addMonths } from 'date-fns';
+import { Suspense } from 'react';
+import { ClassicLoader } from '@/components/ui/loaders';
 
 // day @mitar has started to collect data for the first time
 const FIRST_DAY = new Date(2024, 3, 7);
@@ -61,19 +63,21 @@ export default async function Home() {
       <section>
         <h2 className="sr-only">Grafi</h2>
         <ChartCard title="Povprečje">
-          {chartData ? (
-            <Chart
-              lineDatakeys={['regular', 'fast', 'veryFast']}
-              initialData={chartData}
-              initialDateRange={{
-                to: toDate,
-                from: fromDate,
-              }}
-              procedureOptions={procedureOptions}
-            />
-          ) : (
-            'Žal ni podatkov za prikaz. Prosimo poskusite kasneje.'
-          )}
+          <Suspense fallback={<ClassicLoader />}>
+            {chartData ? (
+              <Chart
+                lineDatakeys={['regular', 'fast', 'veryFast']}
+                initialData={chartData}
+                initialDateRange={{
+                  to: toDate,
+                  from: fromDate,
+                }}
+                procedureOptions={procedureOptions}
+              />
+            ) : (
+              'Žal ni podatkov za prikaz. Prosimo poskusite kasneje.'
+            )}
+          </Suspense>
         </ChartCard>
       </section>
     </main>
