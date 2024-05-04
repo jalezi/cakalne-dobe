@@ -104,6 +104,9 @@ export default async function ProcedureCodePage({
   const fileName = `wp-${formattedDate}-${job.gitLabJobId}`;
   return (
     <main className="space-y-2 p-4">
+      <Suspense fallback={<JobsPaginationSkeleton />}>
+        <JobsPagination id={params.id} procedureCode={procedure.code} />
+      </Suspense>
       <h1
         id="attr-h1"
         className="sr-only"
@@ -134,9 +137,7 @@ export default async function ProcedureCodePage({
           }}
         />
       </Suspense>
-      <Suspense fallback={<JobsPaginationSkeleton />}>
-        <JobsPagination id={params.id} procedureCode={procedure.code} />
-      </Suspense>
+
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <p id="attr-data-fetched-on" className="text-sm">
           Podatki pridobljeni:{' '}

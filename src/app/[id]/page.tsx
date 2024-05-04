@@ -66,6 +66,9 @@ export default async function DatasetPage({ params }: DatasetPageProps) {
 
   return (
     <main className="space-y-2 p-4">
+      <Suspense fallback={<JobsPaginationSkeleton />}>
+        <JobsPagination id={params.id} />
+      </Suspense>
       <h1
         id="attr-h1"
         className="sr-only"
@@ -76,9 +79,7 @@ export default async function DatasetPage({ params }: DatasetPageProps) {
       <p id="attr-dataset-date">
         Nabor podatkov na dan: <Time date={job.startDate} />
       </p>
-      <Suspense fallback={<JobsPaginationSkeleton />}>
-        <JobsPagination id={params.id} />
-      </Suspense>
+
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <p id="attr-data-fetched-on" className="text-sm">
           Podatki pridobljeni:{' '}
