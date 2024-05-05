@@ -18,6 +18,12 @@ export async function InstWTChart({
     toDate
   );
 
+  if (chartData.length === 0) {
+    return (
+      <div className="grid min-h-[480px] place-items-center">Ni podatkov</div>
+    );
+  }
+
   return (
     <ProcedureWtByInstOnDayChart
       lineDatakeys={['regular', 'fast', 'veryFast']}

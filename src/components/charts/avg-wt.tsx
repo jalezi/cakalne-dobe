@@ -25,6 +25,12 @@ export async function AvgWTChart({
     fromDate
   );
 
+  if (chartData.length === 0) {
+    return (
+      <div className="grid min-h-[480px] place-items-center">Ni podatkov</div>
+    );
+  }
+
   return (
     <AverageWaitingTimeChart
       lineDatakeys={['regular', 'fast', 'veryFast']}
