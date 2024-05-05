@@ -2,12 +2,15 @@ import { SelectOption } from '../combo-box-responsive';
 import { getProcedureWtForInstOnDay } from '@/actions/get-procedure-wt-for-inst-on-day';
 import { ProcedureWtByInstOnDayChart } from './wp/chart-02';
 
-interface InstWTProps {
+interface InstWTChartProps {
   procedureCode: string;
   procedureOptions: SelectOption[];
 }
 
-export async function InstWT({ procedureCode, procedureOptions }: InstWTProps) {
+export async function InstWTChart({
+  procedureCode,
+  procedureOptions,
+}: InstWTChartProps) {
   const toDate = new Date();
 
   const chartData = await getProcedureWtForInstOnDay(
