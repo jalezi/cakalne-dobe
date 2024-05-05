@@ -41,8 +41,6 @@ export function BrushChart<TLine extends string[]>({
 }: BruchCharProps<TLine>) {
   const [activeSeries, setActiveSeries] = useState<Array<string>>([]);
 
-  console.log(activeSeries);
-
   const handleLegendClick = (dataKey: string) => {
     if (activeSeries.includes(dataKey)) {
       setActiveSeries(activeSeries.filter((el) => el !== dataKey));
