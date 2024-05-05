@@ -8,7 +8,7 @@ import {
 import { TimeRange } from '@/components/time';
 import { asc, avg, desc, sql } from 'drizzle-orm';
 import ChartCard from '@/components/charts/wp/card';
-import { AverageWaitingTimeChart } from '@/components/charts/wp/chart';
+import { AverageWaitingTimeChart } from '@/components/charts/wp/chart-01';
 import { getProcedureAvgWtPerJobChart } from '@/actions/get-procedure-avg-wt-per-job-chart';
 import { addMonths, format } from 'date-fns';
 import { Suspense } from 'react';
