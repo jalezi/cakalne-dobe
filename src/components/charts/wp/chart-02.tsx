@@ -132,7 +132,7 @@ export function ProcedureWtByInstOnDayChart<TLines extends string[]>({
               <Calendar
                 id="date"
                 mode="single"
-                selected={initialDate}
+                selected={date}
                 onSelect={onDateChange}
                 disabled={(day) => day > new Date() || day < FIRST_DAY}
                 locale={sl}
