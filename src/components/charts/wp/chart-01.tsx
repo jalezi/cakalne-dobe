@@ -111,7 +111,7 @@ export function AverageWaitingTimeChart<TLines extends string[]>({
           />
         </div>
       </form>
-      <figure className="relative min-h-[480px]">
+      <figure className="relative mt-2 min-h-[480px]">
         <TimeSeriesChart
           lineDataKeys={lineDatakeys}
           lineStrokes={[

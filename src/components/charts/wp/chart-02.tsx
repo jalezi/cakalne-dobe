@@ -139,7 +139,7 @@ export function ProcedureWtByInstOnDayChart<TLines extends string[]>({
           </Popover>
         </div>
       </form>
-      <figure className="relative min-h-[480px]">
+      <figure className="relative mt-2 min-h-[480px]">
         <BrushChart
           lineDataKeys={lineDatakeys}
           lineStrokes={[
