@@ -52,7 +52,7 @@ export function BrushChart<TLine extends string[]>({
   };
 
   return (
-    <ResponsiveContainer width="100%" height={480}>
+    <ResponsiveContainer height={480} width="100%">
       <BarChart
         data={chartData}
         accessibilityLayer

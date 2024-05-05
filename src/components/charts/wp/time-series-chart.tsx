@@ -76,12 +76,7 @@ export function TimeSeriesChart<TLine extends string[]>({
   ];
 
   return (
-    <ResponsiveContainer
-      height={480}
-      width="100%"
-
-      // initialDimension={{ width: 1000, height: 400 }}
-    >
+    <ResponsiveContainer height={480} width="100%">
       <LineChart
         data={chartDataWithDate}
         accessibilityLayer
