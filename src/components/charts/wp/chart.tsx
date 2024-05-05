@@ -46,6 +46,7 @@ interface ChartProps<TLines extends string[]> {
     from: Date;
   };
   procedureOptions: SelectOption[];
+  initialProcedure: string;
 }
 
 export function AverageWaitingTimeChart<TLines extends string[]>({
@@ -53,9 +54,14 @@ export function AverageWaitingTimeChart<TLines extends string[]>({
   initialData,
   initialDateRange,
   procedureOptions,
+  initialProcedure,
 }: ChartProps<TLines>) {
   const [chartData, setChartData] =
     useState<TimeSeriesChartData<TLines>[]>(initialData);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(
+    initialDateRange
+  );
+  const [procedure, setProcedure] = useState<string>(initialProcedure);
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -65,20 +71,22 @@ export function AverageWaitingTimeChart<TLines extends string[]>({
   const onProcedureSelect = async (value: string) => {
     const newChartData = (await getProcedureAvgWtPerJobChart(
       value,
-      initialDateRange.to,
-      initialDateRange.from
+      dateRange?.to ?? dateRange?.from ?? initialDateRange.from,
+      dateRange?.from ?? initialDateRange.from
     )) as TimeSeriesChartData<TLines>[];
     setChartData(newChartData);
+    setProcedure(value);
   };
 
-  const onDateRangeChange = async (dateRange: DateRange) => {
-    if (!dateRange || !dateRange.from) return;
+  const onDateRangeChange = async (newDateRange: DateRange) => {
+    if (!newDateRange || !newDateRange.from) return;
     const newChartData = (await getProcedureAvgWtPerJobChart(
-      procedureOptions[0].value,
-      dateRange.to ?? dateRange.from,
-      dateRange.from ?? initialDateRange.from
+      procedure,
+      newDateRange.to ?? newDateRange.from,
+      newDateRange.from ?? initialDateRange.from
     )) as TimeSeriesChartData<TLines>[];
     setChartData(newChartData);
+    setDateRange(newDateRange);
   };
 
   return (
