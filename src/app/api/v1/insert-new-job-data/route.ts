@@ -18,6 +18,8 @@ import type { AllData } from '@/lib/zod-schemas/data-schemas';
 import { trimmedStringSchema } from '@/lib/zod-schemas/helpers-schema';
 import type { GetLatestGitLabJobId } from '../get-latest-gitlab-job-id/route';
 import { revalidatePath } from 'next/cache';
+import { sql } from 'drizzle-orm';
+import { format } from 'date-fns';
 
 const MAX_CHUNK_SIZE = 50;
 const EXPECTED_NUMBER_OF_JOBS = 1;
@@ -577,9 +579,15 @@ async function isLatestJobInDB(siteUrl: string) {
     throw new Error(latestGitLabJobId.error);
   }
 
+  const jobDate = format(latestGitLabJobId.data.jobFinishedAt, 'yyyy-MM-dd');
+  const sqlStartDate = sql<string>`strftime('%Y-%m-%d',${jobsTable.startDate})`;
+
   const foundJob = await db.query.jobs.findFirst({
     where: (jobs, operators) =>
-      operators.eq(jobs.gitLabJobId, latestGitLabJobId.data.gitLabJobId),
+      operators.or(
+        operators.eq(jobs.gitLabJobId, latestGitLabJobId.data.gitLabJobId),
+        operators.eq(sqlStartDate, jobDate)
+      ),
   });
 
   return !!foundJob;
