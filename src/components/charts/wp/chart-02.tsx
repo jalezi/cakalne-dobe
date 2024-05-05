@@ -126,6 +126,12 @@ export function ProcedureWtByInstOnDayChart<TLines extends string[]>({
               </Button>
             </PopoverTrigger>
             <PopoverContent className="flex w-auto flex-col space-y-2 p-2">
+              <Button
+                variant="outline"
+                onClick={() => onDateChange(new Date())}
+              >
+                Danes
+              </Button>
               <Calendar
                 id="date"
                 mode="single"
