@@ -397,6 +397,65 @@ export async function GET(request: NextRequest) {
   }
 }
 
+type WebhookPayload =
+  | {
+      success: true;
+      data: {
+        gitLabJobId: string;
+      };
+    }
+  | {
+      success: false;
+      error: string;
+    };
+
+export async function POST(request: Request) {
+  try {
+    const webhookJson = (await request.json()) as WebhookPayload;
+    if (!webhookJson.success) {
+      throw new Error(webhookJson.error || 'Webhook error');
+    }
+
+    const siteUrl = new URL(request.url).origin;
+    const response = await fetch(
+      new URL('/api/v1/insert-new-job-data', siteUrl),
+      {
+        method: 'GET',
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch the latest data');
+    }
+
+    const data = (await response.json()) as
+      | {
+          success: true;
+          data: {
+            job: InsertJob;
+          };
+          meta: Record<string, unknown>;
+        }
+      | {
+          success: false;
+          error: string;
+          meta: Record<string, unknown>;
+        };
+
+    if (!data.success) {
+      throw new Error(data.error);
+    }
+
+    return Response.json(data);
+  } catch (error) {
+    const newError = handleError(error);
+    console.error(newError);
+    return new Response(`Webhook error: ${newError.message}`, {
+      status: 400,
+    });
+  }
+}
+
 type NotCompleteDataByTable = {
   procedures: Pick<InsertProcedure, 'code' | 'name'>[];
   institutions: Map<string, Pick<InsertInstitution, 'name'>>;
