@@ -133,6 +133,7 @@ export function ProcedureWtByInstOnDayChart<TLines extends string[]>({
                 onSelect={onDateChange}
                 disabled={(day) => day > new Date() || day < FIRST_DAY}
                 locale={sl}
+                defaultMonth={date ?? new Date()}
               />
             </PopoverContent>
           </Popover>
