@@ -425,7 +425,18 @@ export async function POST(request: Request) {
     );
 
     if (!response.ok) {
-      throw new Error('Failed to fetch the latest data');
+      return Response.json(
+        {
+          success: false,
+          error: 'Failed to fetch latest data',
+          meta: {
+            status: response.status,
+            statusText: response.statusText,
+            url: response.url,
+          },
+        },
+        { status: 202 }
+      );
     }
 
     const data = (await response.json()) as
