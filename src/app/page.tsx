@@ -6,19 +6,13 @@ import {
   waitingPeriods as waitingPeriodsTable,
 } from '@/db/schema';
 import { TimeRange } from '@/components/time';
-import { asc, avg, desc, sql } from 'drizzle-orm';
+import { asc, desc, sql } from 'drizzle-orm';
 import ChartCard from '@/components/charts/wp/card';
-import { AverageWaitingTimeChart } from '@/components/charts/wp/chart-01';
-import { getProcedureAvgWtPerJobChart } from '@/actions/get-procedure-avg-wt-per-job-chart';
-import { addMonths, format } from 'date-fns';
 import { Suspense } from 'react';
 import { ClassicLoader } from '@/components/ui/loaders';
 
-import { getProcedureWtForInstOnDay } from '@/actions/get-procedure-wt-for-inst-on-day';
-import { ProcedureWtByInstOnDayChart } from '@/components/charts/wp/chart-02';
-
-// day @mitar has started to collect data for the first time
-const FIRST_DAY = new Date(2024, 3, 7);
+import { AvgWTChart } from '@/components/charts/avg-wt';
+import { InstWT } from '@/components/charts/inst-wt';
 
 export default async function Home() {
   const jobs = await db.query.jobs.findMany({
@@ -36,23 +30,6 @@ export default async function Home() {
     })
     .from(proceduresTable)
     .orderBy(asc(proceduresTable.name));
-
-  const toDate = new Date();
-  const fromDate =
-    addMonths(toDate, -1) > FIRST_DAY ? addMonths(toDate, -1) : FIRST_DAY;
-
-  const chartDataAvg = procedureOptions[0].value
-    ? await getProcedureAvgWtPerJobChart(
-        procedureOptions[0].value,
-        toDate,
-        fromDate
-      )
-    : null;
-
-  const chartDataInst = await getProcedureWtForInstOnDay(
-    procedureOptions[0].value,
-    toDate
-  );
 
   return (
     <main className="z-0 space-y-2 p-4">
@@ -77,35 +54,18 @@ export default async function Home() {
         <h2 className="sr-only">Grafi</h2>
         <ChartCard title="Povprečje">
           <Suspense fallback={<ClassicLoader />}>
-            {chartDataAvg ? (
-              <AverageWaitingTimeChart
-                lineDatakeys={['regular', 'fast', 'veryFast']}
-                initialData={chartDataAvg}
-                initialDateRange={{
-                  to: toDate,
-                  from: fromDate,
-                }}
-                procedureOptions={procedureOptions}
-                initialProcedure={procedureOptions[0].value}
-              />
-            ) : (
-              'Žal ni podatkov za prikaz. Prosimo poskusite kasneje.'
-            )}
+            <AvgWTChart
+              procedureCode={procedureOptions[0].value}
+              procedureOptions={procedureOptions}
+            />
           </Suspense>
         </ChartCard>
         <ChartCard title="Ustanove na dan">
           <Suspense fallback={<ClassicLoader />}>
-            {chartDataAvg ? (
-              <ProcedureWtByInstOnDayChart
-                lineDatakeys={['regular', 'fast', 'veryFast']}
-                initialData={chartDataInst}
-                initialDate={toDate}
-                procedureOptions={procedureOptions}
-                initialProcedure={procedureOptions[0].value}
-              />
-            ) : (
-              'Žal ni podatkov za prikaz. Prosimo poskusite kasneje.'
-            )}
+            <InstWT
+              procedureCode={procedureOptions[0].value}
+              procedureOptions={procedureOptions}
+            />
           </Suspense>
         </ChartCard>
       </section>
