@@ -24,6 +24,7 @@ import { Time } from '@/components/time';
 import { CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { sl } from 'date-fns/locale';
 
 // day @mitar has started to collect data for the first time
 const FIRST_DAY = new Date(2024, 3, 7);
@@ -134,6 +135,7 @@ export function ProcedureWtByInstOnDayChart<TLines extends string[]>({
                 selected={initialDate}
                 onSelect={onDateChange}
                 disabled={(day) => day > new Date() || day < FIRST_DAY}
+                locale={sl}
               />
             </PopoverContent>
           </Popover>
