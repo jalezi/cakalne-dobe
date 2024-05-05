@@ -1,10 +1,5 @@
 import { db } from '@/db';
-import {
-  institutions as institutionsTable,
-  jobs as jobsTable,
-  procedures as proceduresTable,
-  waitingPeriods as waitingPeriodsTable,
-} from '@/db/schema';
+import { jobs as jobsTable, procedures as proceduresTable } from '@/db/schema';
 import { TimeRange } from '@/components/time';
 import { asc, desc, sql } from 'drizzle-orm';
 import ChartCard from '@/components/charts/wp/card';

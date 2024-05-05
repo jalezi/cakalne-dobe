@@ -1,7 +1,7 @@
 import { getProcedureAvgWtPerJobChart } from '@/actions/get-procedure-avg-wt-per-job-chart';
 import { addMonths } from 'date-fns';
 import { AverageWaitingTimeChart } from './wp/chart-01';
-import { SelectOption } from '../combo-box-responsive';
+import type { SelectOption } from '../combo-box-responsive';
 
 interface AvgWTChartProps {
   procedureCode: string;

@@ -1,4 +1,4 @@
-import { SelectOption } from '../combo-box-responsive';
+import type { SelectOption } from '../combo-box-responsive';
 import { getProcedureWtForInstOnDay } from '@/actions/get-procedure-wt-for-inst-on-day';
 import { ProcedureWtByInstOnDayChart } from './wp/chart-02';
 
