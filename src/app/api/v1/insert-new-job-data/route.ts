@@ -443,7 +443,9 @@ export async function POST(request: Request) {
         };
 
     if (!data.success) {
-      throw new Error(data.error);
+      return Response.json(data, {
+        status: 202,
+      });
     }
 
     return Response.json(data);
@@ -451,7 +453,7 @@ export async function POST(request: Request) {
     const newError = handleError(error);
     console.error(newError);
     return new Response(`Webhook error: ${newError.message}`, {
-      status: 400,
+      status: 202,
     });
   }
 }
