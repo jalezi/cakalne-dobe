@@ -6,7 +6,7 @@ type Payload = {
   name: string;
   color: string;
   stroke: string;
-  payload: { x: Date };
+  payload: { x: Date | string };
   fill: string;
 };
 
@@ -24,9 +24,12 @@ export function TooltipContent({
   if (active && payload && payload.length > 0) {
     const { payload: pldBase } = payload[0];
 
+    const xAxisLabel =
+      pldBase?.x instanceof Date ? <Time date={pldBase?.x} /> : pldBase?.x;
+
     return (
       <div className="border bg-background p-2 text-foreground">
-        <Time date={pldBase?.x} className="text-xs font-semibold" />
+        <p className="max-w-64 truncate text-xs font-semibold">{xAxisLabel}</p>
         <ul>
           {payload.map((pld: Payload, index) => {
             const color = props.lineStrokes[index] ?? pld.color;

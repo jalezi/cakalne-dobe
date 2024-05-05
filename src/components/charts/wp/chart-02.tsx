@@ -3,7 +3,6 @@
 import dynamic from 'next/dynamic';
 import type { TimeSeriesChartData } from './time-series-chart';
 import { useState } from 'react';
-import { getProcedureAvgWtPerJobChart } from '@/actions/get-procedure-avg-wt-per-job-chart';
 import {
   ComboBoxResponsive,
   type SelectOption,
@@ -13,6 +12,21 @@ import { TimeRangePicker } from './time-range-picker';
 import { Label } from '@/components/ui/label';
 import type { DateRange } from 'react-day-picker';
 import { ClassicLoader } from '@/components/ui/loaders';
+import { BrushChartData } from './brush-chart';
+import { getProcedureWtForInstOnDay } from '@/actions/get-procedure-wt-for-inst-on-day';
+import { Calendar } from '@/components/ui/calendar';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Time } from '@/components/time';
+import { CalendarIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+
+// day @mitar has started to collect data for the first time
+const FIRST_DAY = new Date(2024, 3, 7);
 
 // Override console.error
 // This is a hack to suppress the warning about missing defaultProps in recharts library as of version 2.12
@@ -26,8 +40,8 @@ console.error = (...args: any) => {
   error(...args);
 };
 
-const TimeSeriesChart = dynamic(
-  () => import('./time-series-chart').then((mod) => mod.TimeSeriesChart),
+const BrushChart = dynamic(
+  () => import('./brush-chart').then((mod) => mod.BrushChart),
   {
     ssr: false,
     loading: () => (
@@ -40,22 +54,24 @@ const TimeSeriesChart = dynamic(
 
 interface ChartProps<TLines extends string[]> {
   lineDatakeys: TLines;
-  initialData: TimeSeriesChartData<TLines>[];
-  initialDateRange: {
-    to: Date;
-    from: Date;
-  };
+  initialData: BrushChartData<TLines>[];
+  initialDate: Date;
   procedureOptions: SelectOption[];
+  initialProcedure: string;
 }
 
-export function AverageWaitingTimeChart<TLines extends string[]>({
+export function ProcedureWtByInstOnDayChart<TLines extends string[]>({
   lineDatakeys,
   initialData,
-  initialDateRange,
+  initialDate,
   procedureOptions,
+  initialProcedure,
 }: ChartProps<TLines>) {
   const [chartData, setChartData] =
-    useState<TimeSeriesChartData<TLines>[]>(initialData);
+    useState<BrushChartData<TLines>[]>(initialData);
+
+  const [date, setDate] = useState<Date | undefined>(initialDate);
+  const [procedure, setProcedure] = useState<string>(initialProcedure);
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -63,22 +79,22 @@ export function AverageWaitingTimeChart<TLines extends string[]>({
   };
 
   const onProcedureSelect = async (value: string) => {
-    const newChartData = (await getProcedureAvgWtPerJobChart(
+    const newChartData = (await getProcedureWtForInstOnDay(
       value,
-      initialDateRange.to,
-      initialDateRange.from
-    )) as TimeSeriesChartData<TLines>[];
+      date ?? initialDate
+    )) as BrushChartData<TLines>[];
     setChartData(newChartData);
+    setProcedure(value);
   };
 
-  const onDateRangeChange = async (dateRange: DateRange) => {
-    if (!dateRange || !dateRange.from) return;
-    const newChartData = (await getProcedureAvgWtPerJobChart(
-      procedureOptions[0].value,
-      dateRange.to ?? dateRange.from,
-      dateRange.from ?? initialDateRange.from
-    )) as TimeSeriesChartData<TLines>[];
+  const onDateChange = async (date: Date | undefined) => {
+    if (!date) return;
+    const newChartData = (await getProcedureWtForInstOnDay(
+      procedure,
+      date
+    )) as BrushChartData<TLines>[];
     setChartData(newChartData);
+    setDate(date);
   };
 
   return (
@@ -97,14 +113,34 @@ export function AverageWaitingTimeChart<TLines extends string[]>({
           />
         </div>
         <div className="space-x-1 space-y-2">
-          <TimeRangePicker
-            initialDateRange={initialDateRange}
-            onChange={onDateRangeChange}
-          />
+          <Label htmlFor="date">Datum</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={'outline'}
+                className={cn(
+                  'max-w-[17rem] justify-start text-left font-normal',
+                  !date && 'text-muted-foreground'
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {date ? <Time date={date} /> : <span>Izberi datum</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="flex w-auto flex-col space-y-2 p-2">
+              <Calendar
+                id="date"
+                mode="single"
+                selected={initialDate}
+                onSelect={onDateChange}
+                disabled={(day) => day > new Date() || day < FIRST_DAY}
+              />
+            </PopoverContent>
+          </Popover>
         </div>
       </form>
       <figure className="relative min-h-[480px]">
-        <TimeSeriesChart
+        <BrushChart
           lineDataKeys={lineDatakeys}
           lineStrokes={[
             theme.colors['chart-line-1'].DEFAULT,

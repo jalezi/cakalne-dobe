@@ -1,13 +1,21 @@
 import { db } from '@/db';
-import { jobs as jobsTable, procedures } from '@/db/schema';
+import {
+  institutions as institutionsTable,
+  jobs as jobsTable,
+  procedures as proceduresTable,
+  waitingPeriods as waitingPeriodsTable,
+} from '@/db/schema';
 import { TimeRange } from '@/components/time';
-import { asc, desc, sql } from 'drizzle-orm';
+import { asc, avg, desc, sql } from 'drizzle-orm';
 import ChartCard from '@/components/charts/wp/card';
-import { Chart } from '@/components/charts/wp/chart';
+import { AverageWaitingTimeChart } from '@/components/charts/wp/chart';
 import { getProcedureAvgWtPerJobChart } from '@/actions/get-procedure-avg-wt-per-job-chart';
-import { addMonths } from 'date-fns';
+import { addMonths, format } from 'date-fns';
 import { Suspense } from 'react';
 import { ClassicLoader } from '@/components/ui/loaders';
+
+import { getProcedureWtForInstOnDay } from '@/actions/get-procedure-wt-for-inst-on-day';
+import { ProcedureWtByInstOnDayChart } from '@/components/charts/wp/chart-02';
 
 // day @mitar has started to collect data for the first time
 const FIRST_DAY = new Date(2024, 3, 7);
@@ -23,23 +31,28 @@ export default async function Home() {
 
   const procedureOptions = await db
     .select({
-      value: procedures.code,
-      label: sql<string>`${procedures.name} || ' - ' || ${procedures.code}`,
+      value: proceduresTable.code,
+      label: sql<string>`${proceduresTable.name} || ' - ' || ${proceduresTable.code}`,
     })
-    .from(procedures)
-    .orderBy(asc(procedures.name));
+    .from(proceduresTable)
+    .orderBy(asc(proceduresTable.name));
 
   const toDate = new Date();
   const fromDate =
     addMonths(toDate, -1) > FIRST_DAY ? addMonths(toDate, -1) : FIRST_DAY;
 
-  const chartData = procedureOptions[0].value
+  const chartDataAvg = procedureOptions[0].value
     ? await getProcedureAvgWtPerJobChart(
         procedureOptions[0].value,
         toDate,
         fromDate
       )
     : null;
+
+  const chartDataInst = await getProcedureWtForInstOnDay(
+    procedureOptions[0].value,
+    toDate
+  );
 
   return (
     <main className="z-0 space-y-2 p-4">
@@ -64,15 +77,31 @@ export default async function Home() {
         <h2 className="sr-only">Grafi</h2>
         <ChartCard title="Povprečje">
           <Suspense fallback={<ClassicLoader />}>
-            {chartData ? (
-              <Chart
+            {chartDataAvg ? (
+              <AverageWaitingTimeChart
                 lineDatakeys={['regular', 'fast', 'veryFast']}
-                initialData={chartData}
+                initialData={chartDataAvg}
                 initialDateRange={{
                   to: toDate,
                   from: fromDate,
                 }}
                 procedureOptions={procedureOptions}
+                initialProcedure={procedureOptions[0].value}
+              />
+            ) : (
+              'Žal ni podatkov za prikaz. Prosimo poskusite kasneje.'
+            )}
+          </Suspense>
+        </ChartCard>
+        <ChartCard title="Ustanove na dan">
+          <Suspense fallback={<ClassicLoader />}>
+            {chartDataAvg ? (
+              <ProcedureWtByInstOnDayChart
+                lineDatakeys={['regular', 'fast', 'veryFast']}
+                initialData={chartDataInst}
+                initialDate={toDate}
+                procedureOptions={procedureOptions}
+                initialProcedure={procedureOptions[0].value}
               />
             ) : (
               'Žal ni podatkov za prikaz. Prosimo poskusite kasneje.'
