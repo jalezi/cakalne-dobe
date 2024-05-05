@@ -94,6 +94,7 @@ export function BrushChart<TLine extends string[]>({
           height={30}
           stroke={theme.colors.muted.foreground}
           className="text-sm"
+          endIndex={chartData.length - 1 >= 10 ? 10 : chartData.length - 1}
         />
         {lineDataKeys.map((line, index) => (
           <Bar
