@@ -1,14 +1,7 @@
 'use server';
 
 import { db } from '@/db';
-import {
-  and,
-  avg,
-  desc,
-  eq,
-  sql,
-  type Column as DrizzleColumn,
-} from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import {
   jobs as jobsTable,
   procedures as proceduresTable,
@@ -17,14 +10,14 @@ import {
 } from '@/db/schema';
 import { format } from 'date-fns';
 
-const average = (col: DrizzleColumn) =>
-  sql<number>`round(cast(${avg(col)} as FLOAT),2)`;
-
 export async function getProcedureWtForInstOnDay(
   procedureCode: string,
   date: Date
 ) {
-  const toDateString = format(date, 'yyyy-MM-dd');
+  const toDateString = format(
+    date.toLocaleString('en-US', { timeZone: 'Europe/Ljubljana' }),
+    'yyyy-MM-dd'
+  );
 
   const sqlStartDate = sql<string>`strftime('%Y-%m-%d',${jobsTable.startDate})`;
 

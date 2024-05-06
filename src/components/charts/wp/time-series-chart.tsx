@@ -61,7 +61,13 @@ export function TimeSeriesChart<TLine extends string[]>({
     return Intl.DateTimeFormat('sl-SI', {
       month: 'short',
       day: 'numeric',
-    }).format(new Date(value));
+    }).format(
+      new Date(
+        new Date(value).toLocaleString('en-US', {
+          timeZone: 'Europe/Ljubljana',
+        })
+      )
+    );
   };
 
   const chartDataWithDate = chartData.map((el) => ({

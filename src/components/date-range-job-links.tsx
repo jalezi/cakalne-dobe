@@ -24,9 +24,7 @@ import {
 import Link from 'next/link';
 import { Time, TimeRange } from './time';
 import { Label } from './ui/label';
-
-// day @mitar has started to collect data for the first time
-const FIRST_DAY = new Date(2024, 3, 7);
+import { FIRST_DAY } from '@/lib/constants';
 
 interface DateRangeJobLinksProps {
   initialDateRange?: {

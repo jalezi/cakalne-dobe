@@ -22,9 +22,7 @@ import { CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { sl } from 'date-fns/locale';
-
-// day @mitar has started to collect data for the first time
-const FIRST_DAY = new Date(2024, 3, 7);
+import { FIRST_DAY } from '@/lib/constants';
 
 // Override console.error
 // This is a hack to suppress the warning about missing defaultProps in recharts library as of version 2.12

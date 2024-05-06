@@ -2,14 +2,12 @@ import { getProcedureAvgWtPerJobChart } from '@/actions/get-procedure-avg-wt-per
 import { addMonths } from 'date-fns';
 import { AverageWaitingTimeChart } from './wp/chart-01';
 import type { SelectOption } from '../combo-box-responsive';
+import { FIRST_DAY } from '@/lib/constants';
 
 interface AvgWTChartProps {
   procedureCode: string;
   procedureOptions: SelectOption[];
 }
-
-// day @mitar has started to collect data for the first time
-const FIRST_DAY = new Date(2024, 3, 7);
 
 export async function AvgWTChart({
   procedureCode,

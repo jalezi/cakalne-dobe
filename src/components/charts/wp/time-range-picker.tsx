@@ -28,9 +28,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { CalendarIcon } from 'lucide-react';
 import { Time, TimeRange } from '@/components/time';
-
-// day @mitar has started to collect data for the first time
-const FIRST_DAY = new Date(2024, 3, 7);
+import { FIRST_DAY } from '@/lib/constants';
 
 interface TimeRangePickerProps {
   initialDateRange?: {

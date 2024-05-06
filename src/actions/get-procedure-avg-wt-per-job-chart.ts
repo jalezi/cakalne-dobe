@@ -31,8 +31,14 @@ export async function getProcedureAvgWtPerJobChart(
   toDate: Date,
   fromDate: Date
 ) {
-  const toDateString = format(toDate, 'yyyy-MM-dd');
-  const fromDateString = format(fromDate, 'yyyy-MM-dd');
+  const toDateString = format(
+    toDate.toLocaleString('en-US', { timeZone: 'Europe/Ljubljana' }),
+    'yyyy-MM-dd'
+  );
+  const fromDateString = format(
+    fromDate.toLocaleString('en-US', { timeZone: 'Europe/Ljubljana' }),
+    'yyyy-MM-dd'
+  );
 
   const sqlStartDate = sql<string>`strftime('%Y-%m-%d',${jobsTable.startDate})`;
 

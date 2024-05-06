@@ -25,7 +25,15 @@ export function TooltipContent({
     const { payload: pldBase } = payload[0];
 
     const xAxisLabel =
-      pldBase?.x instanceof Date ? <Time date={pldBase?.x} /> : pldBase?.x;
+      pldBase?.x instanceof Date ? (
+        <Time
+          date={pldBase?.x.toLocaleString('en-US', {
+            timeZone: 'Europe/Ljubljana',
+          })}
+        />
+      ) : (
+        pldBase?.x
+      );
 
     return (
       <div className="border bg-background p-2 text-foreground">
