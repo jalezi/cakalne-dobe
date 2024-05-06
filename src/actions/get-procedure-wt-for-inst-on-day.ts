@@ -32,9 +32,9 @@ export async function getProcedureWtForInstOnDay(
     .select({
       x: institutionsTable.name,
       y: {
-        regular: average(waitingPeriodsTable.regular),
-        fast: average(waitingPeriodsTable.fast),
-        veryFast: average(waitingPeriodsTable.veryFast),
+        regular: waitingPeriodsTable.regular,
+        fast: waitingPeriodsTable.fast,
+        veryFast: waitingPeriodsTable.veryFast,
       },
     })
     .from(waitingPeriodsTable)
@@ -54,10 +54,5 @@ export async function getProcedureWtForInstOnDay(
       )
     )
     .orderBy(desc(waitingPeriodsTable.regular))
-    .groupBy(
-      institutionsTable.name,
-      waitingPeriodsTable.regular,
-      waitingPeriodsTable.fast,
-      waitingPeriodsTable.veryFast
-    );
+    .groupBy(institutionsTable.name);
 }
