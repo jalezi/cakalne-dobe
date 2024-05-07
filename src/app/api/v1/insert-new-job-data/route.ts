@@ -338,8 +338,9 @@ export async function GET(request: NextRequest) {
           insertedMaxAllowedDays.length +
           insertedWaitingPeriods.length;
 
+        revalidatePath('/', 'layout');
         revalidatePath('/', 'page');
-        revalidatePath('/[id]', 'page');
+        revalidatePath('/[id]/', 'page');
 
         return {
           success: true,
