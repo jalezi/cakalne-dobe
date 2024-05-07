@@ -131,6 +131,56 @@ export function TimeRangePicker({
                   });
                   break;
                 }
+                case '3': {
+                  const fromDate = new Date(
+                    today.getFullYear(),
+                    today.getMonth(),
+                    1
+                  );
+                  const toDate = new Date();
+                  setDate({
+                    from: fromDate,
+                    to: toDate,
+                  });
+                  onChange?.({
+                    from: fromDate,
+                    to: toDate,
+                  });
+                  break;
+                }
+                case '4': {
+                  const fromDate = new Date(
+                    today.getFullYear(),
+                    today.getMonth() - 1,
+                    1
+                  );
+                  const toDate = new Date(
+                    today.getFullYear(),
+                    today.getMonth(),
+                    0
+                  );
+                  setDate({
+                    from: fromDate,
+                    to: toDate,
+                  });
+                  onChange?.({
+                    from: fromDate,
+                    to: toDate,
+                  });
+                  break;
+                }
+                case '5': {
+                  const fromDate = addDays(today, -29);
+                  const toDate = new Date();
+                  setDate({
+                    from: fromDate,
+                    to: toDate,
+                  });
+                  onChange?.({
+                    from: fromDate,
+                    to: toDate,
+                  });
+                }
               }
             }}
           >
@@ -141,6 +191,9 @@ export function TimeRangePicker({
               <SelectItem value="0">Ponastavi</SelectItem>
               <SelectItem value="1">Ta teden</SelectItem>
               <SelectItem value="2">Zadnjih 7 dni</SelectItem>
+              <SelectItem value="3">Ta mesec</SelectItem>
+              <SelectItem value="4">Prejšnji mesec</SelectItem>
+              <SelectItem value="5">Zadnjih 30 dni</SelectItem>
             </SelectContent>
           </Select>
           <div className="rounded-md border">

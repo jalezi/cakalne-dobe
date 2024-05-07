@@ -1,5 +1,5 @@
 import { getProcedureAvgWtPerJobChart } from '@/actions/get-procedure-avg-wt-per-job-chart';
-import { addMonths } from 'date-fns';
+import { add, addDays, addMonths } from 'date-fns';
 import { AverageWaitingTimeChart } from './wp/chart-01';
 import type { SelectOption } from '../combo-box-responsive';
 import { FIRST_DAY } from '@/lib/constants';
@@ -15,7 +15,9 @@ export async function AvgWTChart({
 }: AvgWTChartProps) {
   const toDate = new Date();
   const fromDate =
-    addMonths(toDate, -1) > FIRST_DAY ? addMonths(toDate, -1) : FIRST_DAY;
+    addMonths(addDays(toDate, 1), -1) > FIRST_DAY
+      ? addMonths(addDays(toDate, 1), -1)
+      : FIRST_DAY;
 
   const chartData = await getProcedureAvgWtPerJobChart(
     procedureCode,
