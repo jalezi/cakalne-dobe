@@ -462,6 +462,10 @@ export async function POST(request: Request) {
       });
     }
 
+    revalidatePath('/', 'layout');
+    revalidatePath('/', 'page');
+    revalidatePath('/[id]/', 'page');
+
     return Response.json(data);
   } catch (error) {
     const newError = handleError(error);
