@@ -1,7 +1,6 @@
-import { type GetLatestGitLabJobId } from '../get-latest-gitlab-job-id/route';
 import { handleError } from '@/utils/handle-error';
 import type { AllData } from '@/lib/zod-schemas/data-schemas';
-import type { NextRequest } from 'next/server';
+import { getLastJobId } from '@/utils/get-last-job-id';
 
 const BASE_URL = new URL('https://mitar.gitlab.io');
 const BASE_JOBS_URL = new URL('-/cakalne-dobe/-/jobs', BASE_URL);
@@ -21,30 +20,12 @@ export type GetLatestData =
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
-  const siteUrl = request.nextUrl.origin;
-  const apiUrl = new URL('/api/v1/get-latest-gitlab-job-id', siteUrl);
-
+export async function GET() {
   let gitLabJobId: string;
 
   try {
-    const response = await fetch(apiUrl, {
-      next: { revalidate: 0, tags: ['getLatestGitLabJobIs'] },
-    });
+    const result = await getLastJobId(10);
 
-    if (!response.ok) {
-      return Response.json({
-        success: false,
-        error: 'Failed to fetch latest GitLab job ID',
-        meta: {
-          status: response.status,
-          statusText: response.statusText,
-          url: response.url,
-        },
-      });
-    }
-
-    const result = (await response.json()) as GetLatestGitLabJobId;
     if (!result.success) {
       return Response.json({
         success: false,
@@ -62,7 +43,7 @@ export async function GET(request: NextRequest) {
     return Response.json({
       success: false,
       error: 'Failed to fetch latest GitLab job ID',
-      meta: { cause: newError.message, message: newError.message, url: apiUrl },
+      meta: { cause: newError.message, message: newError.message },
     });
   }
 

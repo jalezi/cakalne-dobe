@@ -1,6 +1,6 @@
 import { type NextRequest } from 'next/server';
-import { getJobs } from '@/utils/get-jobs';
 import { handleError } from '@/utils/handle-error';
+import { getLastJobId } from '@/utils/get-last-job-id';
 
 export type GetLatestGitLabJobId =
   | {
@@ -8,6 +8,17 @@ export type GetLatestGitLabJobId =
       data: {
         gitLabJobId: string;
         jobFinishedAt: string;
+      };
+      meta?: {
+        params?: {
+          first: number;
+          after: string | undefined;
+        };
+        nodes?: number;
+        pageInfo?: {
+          endCursor: string;
+          hasNextPage: boolean;
+        };
       };
     }
   | {
@@ -47,52 +58,23 @@ export async function GET(request: NextRequest) {
   const after = searchParams.get('after') ?? undefined;
 
   try {
-    const response = await getJobs({
-      first: firstNumber,
-      after,
-    });
+    const response = await getLastJobId(firstNumber, after);
+
     if (!response.success) {
       return Response.json({
         success: false,
         error: response.error,
-        meta: { params: { first, after } },
-      });
-    }
-
-    const { nodes, pageInfo } = response.data.jobs;
-    const job = nodes.find((job) => job.name === 'run');
-    const meta = {
-      params: {
-        first: firstNumber,
-        after,
-      },
-      nodes: nodes.length,
-      pageInfo,
-    };
-
-    if (!job) {
-      return Response.json({
-        success: false,
-        error: 'No job found',
-        meta,
-      });
-    }
-
-    const { detailsPath } = job.detailedStatus;
-    const gitLabJobId = detailsPath.split('/').pop();
-
-    if (!gitLabJobId) {
-      return Response.json({
-        success: false,
-        error: 'No GitLab job ID found',
-        meta,
+        meta: response.meta,
       });
     }
 
     return Response.json({
       success: true,
-      data: { gitLabJobId, jobFinishedAt: job.finishedAt },
-      meta,
+      data: {
+        gitLabJobId: response.data.gitLabJobId,
+        jobFinishedAt: response.data.jobFinishedAt,
+      },
+      meta: response.meta,
     });
   } catch (error) {
     const newError = handleError(error);
