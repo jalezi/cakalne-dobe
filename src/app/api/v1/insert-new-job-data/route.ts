@@ -19,6 +19,8 @@ import { sql } from 'drizzle-orm';
 import { format } from 'date-fns';
 import { getLastJobId } from '@/utils/get-last-job-id';
 
+export const maxDuration = 30;
+
 const MAX_CHUNK_SIZE = 50;
 const EXPECTED_NUMBER_OF_JOBS = 1;
 
