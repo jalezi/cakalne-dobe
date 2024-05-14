@@ -20,9 +20,8 @@ import {
 import { Time } from '@/components/time';
 import { CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { cn, disabaledDates } from '@/lib/utils';
 import { sl } from 'date-fns/locale';
-import { FIRST_DAY } from '@/lib/constants';
 
 // Override console.error
 // This is a hack to suppress the warning about missing defaultProps in recharts library as of version 2.12
@@ -135,7 +134,7 @@ export function ProcedureWtByInstOnDayChart<TLines extends string[]>({
                 mode="single"
                 selected={date}
                 onSelect={onDateChange}
-                disabled={(day) => day > new Date() || day < FIRST_DAY}
+                disabled={(day) => disabaledDates(day)}
                 locale={sl}
                 defaultMonth={date ?? new Date()}
               />

@@ -6,7 +6,7 @@ import { Calendar as CalendarIcon } from 'lucide-react';
 import { type DateRange } from 'react-day-picker';
 import { sl } from 'date-fns/locale';
 
-import { cn } from '@/lib/utils';
+import { cn, disabaledDates } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import {
@@ -135,9 +135,7 @@ export function DateRangeJobLinks({
                 selected={date}
                 onSelect={setDate}
                 numberOfMonths={2}
-                disabled={(day) =>
-                  day > new Date() || day < new Date(2024, 3, 7)
-                }
+                disabled={(day) => disabaledDates(day)}
                 locale={sl}
                 fromDate={FIRST_DAY}
                 toDate={new Date()}

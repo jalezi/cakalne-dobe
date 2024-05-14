@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { cn, disabaledDates } from '@/lib/utils';
 import { CalendarIcon } from 'lucide-react';
 import { Time, TimeRange } from '@/components/time';
 import { FIRST_DAY } from '@/lib/constants';
@@ -203,7 +203,7 @@ export function TimeRangePicker({
               selected={date}
               onSelect={onSelected}
               numberOfMonths={2}
-              disabled={(day) => day > new Date() || day < FIRST_DAY}
+              disabled={(day) => disabaledDates(day)}
               locale={sl}
               fromDate={FIRST_DAY}
               toDate={new Date()}
