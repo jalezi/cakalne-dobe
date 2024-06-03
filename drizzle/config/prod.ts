@@ -12,4 +12,6 @@ export default {
   },
   out: './drizzle',
   verbose: true,
+  // @ts-expect-error missing types
+  dialect: 'sqlite',
 } satisfies Config;
