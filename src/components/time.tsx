@@ -1,4 +1,4 @@
-import { type TimeHTMLAttributes } from 'react';
+import { type TimeHTMLAttributes, type JSX } from 'react';
 
 import { cn } from '@/lib/utils';
 

@@ -13,7 +13,7 @@ import { JobsPaginationSkeleton } from '@/components/skeleton/jobs-pagination';
 import { JobsPagination } from '@/components/jobs-pagination';
 
 type ProcedureCodePageProps = {
-  params: { id: string; procedureCode: string };
+  params: Promise<{ id: string; procedureCode: string }>;
 };
 
 export async function generateStaticParams() {
@@ -34,7 +34,8 @@ export async function generateStaticParams() {
   );
 }
 
-export async function generateMetadata({ params }: ProcedureCodePageProps) {
+export async function generateMetadata(props: ProcedureCodePageProps) {
+  const params = await props.params;
   const job = await db.query.jobs.findFirst({
     where: (job, operators) => operators.eq(job.id, params.id),
     columns: { startDate: true },
@@ -72,9 +73,8 @@ export async function generateMetadata({ params }: ProcedureCodePageProps) {
   };
 }
 
-export default async function ProcedureCodePage({
-  params,
-}: ProcedureCodePageProps) {
+export default async function ProcedureCodePage(props: ProcedureCodePageProps) {
+  const params = await props.params;
   const batchResponse = await db.batch([
     db.query.jobs.findFirst({
       where: (job, operators) => operators.eq(job.id, params.id),

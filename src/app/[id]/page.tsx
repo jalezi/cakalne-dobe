@@ -12,7 +12,7 @@ import { JobsPaginationSkeleton } from '@/components/skeleton/jobs-pagination';
 import { JobsPagination } from '@/components/jobs-pagination';
 
 type DatasetPageProps = {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 };
 
 export async function generateStaticParams() {
@@ -23,7 +23,8 @@ export async function generateStaticParams() {
   return jobs.map((job) => ({ params: { id: job.id } })).slice(0, 5);
 }
 
-export async function generateMetadata({ params }: DatasetPageProps) {
+export async function generateMetadata(props: DatasetPageProps) {
+  const params = await props.params;
   const job = await db.query.jobs.findFirst({
     where: (job, operators) => operators.eq(job.id, params.id),
     columns: { startDate: true },
@@ -50,7 +51,8 @@ export async function generateMetadata({ params }: DatasetPageProps) {
   };
 }
 
-export default async function DatasetPage({ params }: DatasetPageProps) {
+export default async function DatasetPage(props: DatasetPageProps) {
+  const params = await props.params;
   const job = await db.query.jobs.findFirst({
     where: (job, operators) => operators.eq(job.id, params.id),
     columns: { gitLabJobId: true, startDate: true, id: true },

@@ -29,10 +29,16 @@ export async function generateMetadata(): Promise<Metadata> {
 
 interface RootLayoutProps {
   children: React.ReactNode;
-  params: { id?: string };
+  params: Promise<{ id?: string }>;
 }
 
-export default function RootLayout({ children, params }: RootLayoutProps) {
+export default async function RootLayout(props: RootLayoutProps) {
+  const params = await props.params;
+
+  const {
+    children
+  } = props;
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head />
