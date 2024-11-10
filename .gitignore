@@ -40,8 +40,8 @@ next-env.d.ts
 /.vscode
 
 // DB
-dev.*
-prod.*
+dev*.*
+prod*.*
 
 //
 /mock-data

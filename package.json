@@ -14,6 +14,7 @@
     "drizzle:prod:studio": "drizzle-kit studio --config=./drizzle/config/prod.ts --port 4001",
     "db:local:seed": "node -r dotenv/config  -r esbuild-register seed/seed-db.ts dotenv_config_path=.env.development.local",
     "db:prod:seed": "node -r dotenv/config  -r esbuild-register seed/seed-db.ts dotenv_config_path=.env.production.local",
+    "db:local:update-job-dates": "node -r dotenv/config  -r esbuild-register seed/update-date-from-now-desc.ts dotenv_config_path=.env.development.local",
     "turso:dev": "turso dev",
     "turso:dev:file": "turso dev --db-file dev.db",
     "turso:prod:file": "turso dev --db-file prod.db"
