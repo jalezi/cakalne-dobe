@@ -15,9 +15,19 @@ export const getSiteUrl = () => {
   return `http://127.0.0.1:${process.env.PORT ?? 3000}`;
 };
 
-export const disabaledDates = (day: Date) => {
+const DEFAULT_OPTIONS = {
+  dateRange: [FIRST_DAY, new Date()] as const,
+} as const;
+
+type DisabledDatesOptions = typeof DEFAULT_OPTIONS;
+
+export const disabaledDates = (
+  day: Date,
+  options: DisabledDatesOptions = DEFAULT_OPTIONS
+) => {
+  const { dateRange } = options;
   return (
-    format(day, 'yyyy-MM-dd') > format(new Date(), 'yyyy-MM-dd') ||
-    format(day, 'yyyy-MM-dd') < format(FIRST_DAY, 'yyyy-MM-dd')
+    format(day, 'yyyy-MM-dd') > format(dateRange[1], 'yyyy-MM-dd') ||
+    format(day, 'yyyy-MM-dd') < format(dateRange[0], 'yyyy-MM-dd')
   );
 };
