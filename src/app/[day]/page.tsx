@@ -14,7 +14,7 @@ import { desc, sql } from 'drizzle-orm';
 import { jobs as jobsTable } from '@/db/schema';
 
 type DatasetPageProps = {
-  params: Promise<{ id: string }>;
+  params: Promise<{ day: string }>;
 };
 
 export async function generateStaticParams() {
@@ -35,7 +35,7 @@ export async function generateMetadata(props: DatasetPageProps) {
   const job = await db.query.jobs.findFirst({
     columns: { startDate: true },
     where: (job, operators) =>
-      operators.eq(sql`DATE(${job.startDate})`, params.id),
+      operators.eq(sql`DATE(${job.startDate})`, params.day),
   });
 
   const dateShort = job
@@ -63,7 +63,7 @@ export default async function DatasetPage(props: DatasetPageProps) {
   const params = await props.params;
   const job = await db.query.jobs.findFirst({
     where: (job, operators) =>
-      operators.eq(sql`DATE(${job.startDate})`, params.id),
+      operators.eq(sql`DATE(${job.startDate})`, params.day),
     columns: { gitLabJobId: true, startDate: true, id: true },
   });
 
@@ -78,7 +78,7 @@ export default async function DatasetPage(props: DatasetPageProps) {
   return (
     <main className="space-y-2 p-4">
       <Suspense fallback={<JobsPaginationSkeleton />}>
-        <JobsPagination id={params.id} />
+        <JobsPagination id={params.day} />
       </Suspense>
       <h1
         id="attr-h1"
@@ -110,7 +110,7 @@ export default async function DatasetPage(props: DatasetPageProps) {
       </div>
 
       <Suspense fallback={<DataTableSkeleton />}>
-        <ProcedureAvgWTTable dbJobId={job.id} day={params.id} />
+        <ProcedureAvgWTTable dbJobId={job.id} day={params.day} />
       </Suspense>
     </main>
   );

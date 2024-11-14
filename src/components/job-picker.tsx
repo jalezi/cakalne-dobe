@@ -26,12 +26,12 @@ type DataPickerDemoProps = {
 };
 
 export function DatePickerDemo({ jobsOptions }: DataPickerDemoProps) {
-  const params = useParams<{ id: string }>();
+  const params = useParams<{ day: string }>();
   const urlSearchParams = useSearchParams();
   const router = useRouter();
 
   const selectedOption = jobsOptions?.find((option) =>
-    option.label.includes(params.id)
+    option.label.includes(params.day)
   );
   const [date, setDate] = React.useState<Date | undefined>(
     selectedOption?.label ? new Date(selectedOption?.label) : undefined
@@ -52,8 +52,8 @@ export function DatePickerDemo({ jobsOptions }: DataPickerDemoProps) {
   };
 
   React.useEffect(() => {
-    setDate(params.id ? new Date(params.id) : undefined);
-  }, [params.id]);
+    setDate(params.day ? new Date(params.day) : undefined);
+  }, [params.day]);
 
   return (
     <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>

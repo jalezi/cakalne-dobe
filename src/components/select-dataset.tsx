@@ -15,12 +15,12 @@ export function SelectDataset({
   jobsOptions,
   selectedJob,
 }: SelectDatasetProps) {
-  const params = useParams<{ id: string }>();
+  const params = useParams<{ day: string }>();
   const urlSearchParams = useSearchParams();
   const router = useRouter();
 
   const selectedOption = jobsOptions?.find((option) =>
-    option.value.includes(params.id)
+    option.value.includes(params.day)
   );
 
   const jobOptionsWithSearchParam = jobsOptions?.map((option) => {

@@ -15,7 +15,7 @@ import { jobs as jobsTable } from '@/db/schema';
 import { desc, sql } from 'drizzle-orm';
 
 type ProcedureCodePageProps = {
-  params: Promise<{ id: string; procedureCode: string }>;
+  params: Promise<{ day: string; procedureCode: string }>;
 };
 
 export async function generateStaticParams() {
@@ -46,7 +46,7 @@ export async function generateMetadata(props: ProcedureCodePageProps) {
   const job = await db.query.jobs.findFirst({
     columns: { startDate: true },
     where: (job, operators) =>
-      operators.eq(sql`DATE(${job.startDate})`, params.id),
+      operators.eq(sql`DATE(${job.startDate})`, params.day),
   });
 
   if (!job) {
@@ -86,7 +86,7 @@ export default async function ProcedureCodePage(props: ProcedureCodePageProps) {
   const batchResponse = await db.batch([
     db.query.jobs.findFirst({
       where: (job, operators) =>
-        operators.eq(sql`DATE(${job.startDate})`, params.id),
+        operators.eq(sql`DATE(${job.startDate})`, params.day),
       columns: { gitLabJobId: true, startDate: true, id: true },
     }),
 
@@ -114,7 +114,7 @@ export default async function ProcedureCodePage(props: ProcedureCodePageProps) {
   return (
     <main className="space-y-2 p-4">
       <Suspense fallback={<JobsPaginationSkeleton />}>
-        <JobsPagination id={params.id} procedureCode={procedure.code} />
+        <JobsPagination id={params.day} procedureCode={procedure.code} />
       </Suspense>
       <h1
         id="attr-h1"
@@ -137,11 +137,11 @@ export default async function ProcedureCodePage(props: ProcedureCodePageProps) {
         <ProceduresPicker
           id="attr-procedure"
           options={procedures.map((procedure) => ({
-            value: `/${params.id}/${procedure.code}/`,
+            value: `/${params.day}/${procedure.code}/`,
             label: `${procedure.code} - ${procedure.name}`,
           }))}
           defaultSelected={{
-            value: `/${params.id}/${procedure.code}/`,
+            value: `/${params.day}/${procedure.code}/`,
             label: `${procedure.code} - ${procedure.name}`,
           }}
         />
