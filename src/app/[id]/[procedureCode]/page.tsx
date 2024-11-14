@@ -11,6 +11,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { db } from '@/db';
 import { JobsPaginationSkeleton } from '@/components/skeleton/jobs-pagination';
 import { JobsPagination } from '@/components/jobs-pagination';
+import { jobs as jobsTable } from '@/db/schema';
+import { desc, sql } from 'drizzle-orm';
 
 type ProcedureCodePageProps = {
   params: Promise<{ id: string; procedureCode: string }>;
@@ -18,18 +20,23 @@ type ProcedureCodePageProps = {
 
 export async function generateStaticParams() {
   const jobs = await db.query.jobs.findMany({
-    columns: { id: true },
-    orderBy: (job, operators) => operators.desc(job.startDate),
+    columns: {},
+    orderBy: [desc(jobsTable.startDate)],
+    extras: {
+      dateStyle: sql<string>`DATE(${jobsTable.startDate})`.as('date-style'),
+    },
+    limit: 5,
   });
 
   const procedures = await db.query.procedures.findMany({
     columns: { code: true },
     orderBy: (procedure, operators) => operators.asc(procedure.code),
+    limit: 5,
   });
 
-  return jobs.slice(0, 5).flatMap((job) =>
-    procedures.slice(0, 5).map((procedure) => ({
-      params: { id: job.id, procedureCode: procedure.code },
+  return jobs.flatMap((job) =>
+    procedures.map((procedure) => ({
+      params: { id: job.dateStyle, procedureCode: procedure.code },
     }))
   );
 }
@@ -37,8 +44,9 @@ export async function generateStaticParams() {
 export async function generateMetadata(props: ProcedureCodePageProps) {
   const params = await props.params;
   const job = await db.query.jobs.findFirst({
-    where: (job, operators) => operators.eq(job.id, params.id),
     columns: { startDate: true },
+    where: (job, operators) =>
+      operators.eq(sql`DATE(${job.startDate})`, params.id),
   });
 
   if (!job) {
@@ -77,7 +85,8 @@ export default async function ProcedureCodePage(props: ProcedureCodePageProps) {
   const params = await props.params;
   const batchResponse = await db.batch([
     db.query.jobs.findFirst({
-      where: (job, operators) => operators.eq(job.id, params.id),
+      where: (job, operators) =>
+        operators.eq(sql`DATE(${job.startDate})`, params.id),
       columns: { gitLabJobId: true, startDate: true, id: true },
     }),
 

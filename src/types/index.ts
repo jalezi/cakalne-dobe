@@ -8,6 +8,7 @@ declare module '@tanstack/table-core' {
     allowedMaxWaitingTimes?: ProcedureWithMaxAllowedDays[];
     procedureCode?: string;
     headerTextMap?: Map<string, string>;
+    day?: string;
   }
   interface FilterFns {
     fuzzy: FilterFn<unknown>;

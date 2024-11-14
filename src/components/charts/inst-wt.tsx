@@ -5,17 +5,20 @@ import { ProcedureWtByInstOnDayChart } from './wp/chart-02';
 interface InstWTChartProps {
   procedureCode: string;
   procedureOptions: SelectOption[];
+
+  validDates: string[];
 }
 
 export async function InstWTChart({
   procedureCode,
   procedureOptions,
-}: InstWTChartProps) {
-  const toDate = new Date();
 
+  validDates,
+}: InstWTChartProps) {
+  const date = new Date(validDates[0]);
   const chartData = await getProcedureWtForInstOnDay(
     procedureOptions[0].value,
-    toDate
+    date
   );
 
   if (chartData.length === 0) {
@@ -28,9 +31,9 @@ export async function InstWTChart({
     <ProcedureWtByInstOnDayChart
       lineDatakeys={['regular', 'fast', 'veryFast']}
       initialData={chartData}
-      initialDate={toDate}
       procedureOptions={procedureOptions}
       initialProcedure={procedureCode}
+      validDates={validDates}
     />
   );
 }

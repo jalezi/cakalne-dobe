@@ -10,6 +10,8 @@ import { ProcedureAvgWTTable } from '@/components/tables/procedure-avg-wt/proced
 import { DataTableSkeleton } from '@/components/skeleton/data-table';
 import { JobsPaginationSkeleton } from '@/components/skeleton/jobs-pagination';
 import { JobsPagination } from '@/components/jobs-pagination';
+import { desc, sql } from 'drizzle-orm';
+import { jobs as jobsTable } from '@/db/schema';
 
 type DatasetPageProps = {
   params: Promise<{ id: string }>;
@@ -17,17 +19,23 @@ type DatasetPageProps = {
 
 export async function generateStaticParams() {
   const jobs = await db.query.jobs.findMany({
-    columns: { id: true },
+    columns: {},
+    orderBy: [desc(jobsTable.startDate)],
+    extras: {
+      dateStyle: sql<string>`DATE(${jobsTable.startDate})`.as('date-style'),
+    },
+    limit: 5,
   });
 
-  return jobs.map((job) => ({ params: { id: job.id } })).slice(0, 5);
+  return jobs.map((job) => ({ params: { id: job.dateStyle } }));
 }
 
 export async function generateMetadata(props: DatasetPageProps) {
   const params = await props.params;
   const job = await db.query.jobs.findFirst({
-    where: (job, operators) => operators.eq(job.id, params.id),
     columns: { startDate: true },
+    where: (job, operators) =>
+      operators.eq(sql`DATE(${job.startDate})`, params.id),
   });
 
   const dateShort = job
@@ -54,7 +62,8 @@ export async function generateMetadata(props: DatasetPageProps) {
 export default async function DatasetPage(props: DatasetPageProps) {
   const params = await props.params;
   const job = await db.query.jobs.findFirst({
-    where: (job, operators) => operators.eq(job.id, params.id),
+    where: (job, operators) =>
+      operators.eq(sql`DATE(${job.startDate})`, params.id),
     columns: { gitLabJobId: true, startDate: true, id: true },
   });
 
@@ -101,7 +110,7 @@ export default async function DatasetPage(props: DatasetPageProps) {
       </div>
 
       <Suspense fallback={<DataTableSkeleton />}>
-        <ProcedureAvgWTTable dbJobId={job.id} />
+        <ProcedureAvgWTTable dbJobId={job.id} day={params.id} />
       </Suspense>
     </main>
   );

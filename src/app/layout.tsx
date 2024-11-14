@@ -32,12 +32,11 @@ interface RootLayoutProps {
   params: Promise<{ id?: string }>;
 }
 
-export default async function RootLayout(props: RootLayoutProps) {
-  const params = await props.params;
-
-  const {
-    children
-  } = props;
+export default async function RootLayout({
+  params,
+  children,
+}: RootLayoutProps) {
+  const id = (await params).id;
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -50,7 +49,7 @@ export default async function RootLayout(props: RootLayoutProps) {
           disableTransitionOnChange
         >
           <div className="relative grid min-h-[100svh] grid-cols-1 grid-rows-[min-content_1fr_min-content] bg-inherit">
-            <Header id={params.id} />
+            <Header id={id} />
             {children}
             <Footer />
           </div>

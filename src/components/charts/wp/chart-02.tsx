@@ -20,8 +20,9 @@ import {
 import { Time } from '@/components/time';
 import { CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { cn, disabaledDates } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { sl } from 'date-fns/locale';
+import { format } from 'date-fns';
 
 // Override console.error
 // This is a hack to suppress the warning about missing defaultProps in recharts library as of version 2.12
@@ -50,22 +51,22 @@ const BrushChart = dynamic(
 interface ChartProps<TLines extends string[]> {
   lineDatakeys: TLines;
   initialData: BrushChartData<TLines>[];
-  initialDate: Date;
   procedureOptions: SelectOption[];
   initialProcedure: string;
+  validDates: string[];
 }
 
 export function ProcedureWtByInstOnDayChart<TLines extends string[]>({
   lineDatakeys,
   initialData,
-  initialDate,
   procedureOptions,
   initialProcedure,
+  validDates,
 }: ChartProps<TLines>) {
   const [chartData, setChartData] =
     useState<BrushChartData<TLines>[]>(initialData);
 
-  const [date, setDate] = useState<Date | undefined>(initialDate);
+  const [date, setDate] = useState<Date>(new Date(validDates[0]));
   const [procedure, setProcedure] = useState<string>(initialProcedure);
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -76,7 +77,7 @@ export function ProcedureWtByInstOnDayChart<TLines extends string[]>({
   const onProcedureSelect = async (value: string) => {
     const newChartData = (await getProcedureWtForInstOnDay(
       value,
-      date ?? initialDate
+      date
     )) as BrushChartData<TLines>[];
     setChartData(newChartData);
     setProcedure(value);
@@ -134,7 +135,9 @@ export function ProcedureWtByInstOnDayChart<TLines extends string[]>({
                 mode="single"
                 selected={date}
                 onSelect={onDateChange}
-                disabled={(day) => disabaledDates(day)}
+                disabled={(day) =>
+                  !validDates.includes(format(day, 'yyyy-MM-dd'))
+                }
                 locale={sl}
                 defaultMonth={date ?? new Date()}
               />

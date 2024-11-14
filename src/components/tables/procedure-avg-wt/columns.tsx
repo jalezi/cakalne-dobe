@@ -46,9 +46,11 @@ export const columns: ColumnDef<ProcedureAvgWaitingTimes>[] = [
             />
           );
         },
-        cell: ({ cell, row }) => (
+        cell: ({ cell, row, table }) => (
           <Button asChild variant="link" className="h-auto py-0">
-            <Link href={`/${row.original.jobId}/${row.original.procedureCode}`}>
+            <Link
+              href={`/${table.options.meta?.day}/${row.original.procedureCode}`}
+            >
               {cell.getValue()}
             </Link>
           </Button>

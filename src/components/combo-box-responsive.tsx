@@ -21,6 +21,7 @@ import { Check } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
+import { DialogTitle } from './ui/dialog';
 
 export type SelectOption = {
   value: string;
@@ -88,6 +89,7 @@ export function ComboBoxResponsive({
 
   return (
     <Drawer open={open} onOpenChange={setOpen}>
+      <DialogTitle className="sr-only">Izberi</DialogTitle>
       <DrawerTrigger asChild>{triggerButton}</DrawerTrigger>
       <DrawerContent>
         <div className="mt-4 border-t">

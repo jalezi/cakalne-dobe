@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { JobLink } from './job-link';
 import { cn } from '@/lib/utils';
 import { Time } from './time';
-import { desc } from 'drizzle-orm';
+import { desc, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import { jobs as jobsTable } from '@/db/schema';
 
@@ -17,11 +17,14 @@ export async function JobsPagination({
   procedureCode,
 }: JobsPaginationProps) {
   const jobs = await db.query.jobs.findMany({
-    columns: { id: true, startDate: true },
+    columns: { startDate: true },
+    extras: {
+      dateStyle: sql<string>`DATE(${jobsTable.startDate})`.as('date-style'),
+    },
     orderBy: [desc(jobsTable.startDate)],
   });
 
-  const jobIndex = jobs.findIndex((job) => job.id === id);
+  const jobIndex = jobs.findIndex((job) => job.dateStyle === id);
 
   if (jobIndex === -1) {
     return null;
@@ -31,10 +34,10 @@ export async function JobsPagination({
 
   const previousJob = jobIndex > 0 ? jobs[jobIndex - 1] : null;
   const previousJobDate = previousJob ? new Date(previousJob.startDate) : null;
-  const prevHref = previousJob ? `/${previousJob.id}/${pCode}` : null;
+  const prevHref = previousJob ? `/${previousJob.dateStyle}/${pCode}` : null;
   const nextJob = jobIndex < jobs.length - 1 ? jobs[jobIndex + 1] : null;
   const nextJobDate = nextJob ? new Date(nextJob.startDate) : null;
-  const nextHref = nextJob ? `/${nextJob.id}/${pCode}` : null;
+  const nextHref = nextJob ? `/${nextJob.dateStyle}/${pCode}` : null;
 
   return (
     <div className="flex">

@@ -19,6 +19,12 @@ export default async function Home() {
   const firstJob = jobs.at(-1);
   const lastJob = jobs.at(0);
 
+  if (!firstJob || !lastJob) {
+    return (
+      <div className="grid min-h-[480px] place-items-center">Ni podatkov</div>
+    );
+  }
+
   const procedureOptions = await db
     .select({
       value: proceduresTable.code,
@@ -69,6 +75,7 @@ export default async function Home() {
                 <InstWTChart
                   procedureCode={procedureOptions[0].value}
                   procedureOptions={procedureOptions}
+                  validDates={jobs.map((job) => job.startDate.slice(0, 10))}
                 />
               </Suspense>
             </ChartCard>
