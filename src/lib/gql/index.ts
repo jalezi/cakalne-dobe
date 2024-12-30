@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 export const GIT_LAB_GRAPHQL_API_URL = 'https://gitlab.com/api/graphql';
 
-export const PROJECT_FULL_PATH = 'mitar/cakalne-dobe' as const;
+export const PROJECT_FULL_PATH = 'wayback-automachine/cakalne-dobe' as const;
 export const PROJECT_JOB_STATUSES = ['SUCCESS'] as const;
 export const JOB_NAME = 'run' as const;
 
