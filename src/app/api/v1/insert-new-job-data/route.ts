@@ -33,7 +33,7 @@ type WebhookPayload =
       error: string;
     };
 
-const BASE_URL = new URL('https://mitar.gitlab.io');
+const BASE_URL = new URL('https://wayback-automachine.gitlab.io');
 const BASE_JOBS_URL = new URL('-/cakalne-dobe/-/jobs', BASE_URL);
 const JSON_OUT_PATH = '/artifacts/out.json';
 
