@@ -8,7 +8,6 @@ import {
   ComboBoxResponsive,
   type SelectOption,
 } from '@/components/combo-box-responsive';
-import theme from '@/theme';
 import { TimeRangePicker } from './time-range-picker';
 import { Label } from '@/components/ui/label';
 import type { DateRange } from 'react-day-picker';
@@ -89,6 +88,10 @@ export function AverageWaitingTimeChart<TLines extends string[]>({
     setDateRange(newDateRange);
   };
 
+  const styles = getComputedStyle(document.documentElement);
+const  line1 = styles.getPropertyValue("--chart-line-1");
+const line2 = styles.getPropertyValue("--chart-line-2");
+const line3 = styles.getPropertyValue("--chart-line-3");
   return (
     <>
       <form onSubmit={onSubmit} className="space-y-2">
@@ -115,9 +118,9 @@ export function AverageWaitingTimeChart<TLines extends string[]>({
         <TimeSeriesChart
           lineDataKeys={lineDatakeys}
           lineStrokes={[
-            theme.colors['chart-line-1'].DEFAULT,
-            theme.colors['chart-line-2'].DEFAULT,
-            theme.colors['chart-line-3'].DEFAULT,
+            line1,
+            line2,
+            line3,
           ]}
           chartData={chartData}
           lineFriendlyNames={{

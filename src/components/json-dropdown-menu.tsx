@@ -33,7 +33,7 @@ export function JsonDropDownMenu({
     <DropdownMenu>
       <DropdownMenuTrigger asChild className="ml-auto">
         <Button aria-haspopup="true" size="icon" variant="ghost">
-          <MoreHorizontal className="h-4 w-4" />
+          <MoreHorizontal className="size-4" />
           <span className="sr-only">Odpri/Zapri menu</span>
         </Button>
       </DropdownMenuTrigger>

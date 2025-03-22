@@ -14,7 +14,7 @@ import {
 } from 'recharts';
 import { TooltipContent } from './tooltip-content';
 import { useState } from 'react';
-import theme from '@/theme';
+
 
 type HexColor = `#${string}`;
 type HSL = string;
@@ -48,6 +48,9 @@ export function BrushChart<TLine extends string[]>({
       setActiveSeries((prev) => [...prev, dataKey]);
     }
   };
+
+  const styles = getComputedStyle(document.documentElement);
+  const mutedForeground = styles.getPropertyValue("--muted-foreground");
 
   return (
     <ResponsiveContainer height={480} width="100%">
@@ -92,7 +95,7 @@ export function BrushChart<TLine extends string[]>({
         <Brush
           dataKey="x"
           height={30}
-          stroke={theme.colors.muted.foreground}
+          stroke={mutedForeground}
           className="text-sm"
           endIndex={chartData.length - 1 >= 10 ? 10 : chartData.length - 1}
         />

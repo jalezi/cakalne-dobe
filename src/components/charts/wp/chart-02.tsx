@@ -6,7 +6,6 @@ import {
   ComboBoxResponsive,
   type SelectOption,
 } from '@/components/combo-box-responsive';
-import theme from '@/theme';
 import { Label } from '@/components/ui/label';
 import { ClassicLoader } from '@/components/ui/loaders';
 import type { BrushChartData } from './brush-chart';
@@ -92,6 +91,10 @@ export function ProcedureWtByInstOnDayChart<TLines extends string[]>({
     setChartData(newChartData);
     setDate(date);
   };
+  const styles = getComputedStyle(document.documentElement);
+const  line1 = styles.getPropertyValue("--chart-line-1");
+const line2 = styles.getPropertyValue("--chart-line-2");
+const line3 = styles.getPropertyValue("--chart-line-3");
 
   return (
     <>
@@ -119,7 +122,7 @@ export function ProcedureWtByInstOnDayChart<TLines extends string[]>({
                   !date && 'text-muted-foreground'
                 )}
               >
-                <CalendarIcon className="mr-2 h-4 w-4" />
+                <CalendarIcon className="mr-2 size-4" />
                 {date ? <Time date={date} /> : <span>Izberi datum</span>}
               </Button>
             </PopoverTrigger>
@@ -149,9 +152,9 @@ export function ProcedureWtByInstOnDayChart<TLines extends string[]>({
         <BrushChart
           lineDataKeys={lineDatakeys}
           lineStrokes={[
-            theme.colors['chart-line-1'].DEFAULT,
-            theme.colors['chart-line-2'].DEFAULT,
-            theme.colors['chart-line-3'].DEFAULT,
+            line1,
+            line2,
+            line3 
           ]}
           chartData={chartData}
           lineFriendlyNames={{

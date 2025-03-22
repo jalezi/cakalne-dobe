@@ -124,7 +124,7 @@ const CheckIcon = ({ isSelected }: { isSelected?: boolean | undefined }) => {
   return (
     <span className="mr-2">
       <Check
-        className={cn('h-4 w-4', isSelected ? 'opacity-100' : 'opacity-0')}
+        className={cn('size-4', isSelected ? 'opacity-100' : 'opacity-0')}
       />
     </span>
   );
