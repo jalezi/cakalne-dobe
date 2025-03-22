@@ -88,10 +88,7 @@ export function AverageWaitingTimeChart<TLines extends string[]>({
     setDateRange(newDateRange);
   };
 
-  const styles = getComputedStyle(document.documentElement);
-const  line1 = styles.getPropertyValue("--chart-line-1");
-const line2 = styles.getPropertyValue("--chart-line-2");
-const line3 = styles.getPropertyValue("--chart-line-3");
+
   return (
     <>
       <form onSubmit={onSubmit} className="space-y-2">
@@ -118,9 +115,9 @@ const line3 = styles.getPropertyValue("--chart-line-3");
         <TimeSeriesChart
           lineDataKeys={lineDatakeys}
           lineStrokes={[
-            line1,
-            line2,
-            line3,
+            'var(--chart-line-1)',
+            'var(--chart-line-2)',
+            'var(--chart-line-3)',
           ]}
           chartData={chartData}
           lineFriendlyNames={{
