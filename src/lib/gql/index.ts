@@ -22,6 +22,7 @@ const jobSchema = z.object({
   }),
 });
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const projectJobsSchema = z.object({
   project: z.object({
     jobs: z.object({

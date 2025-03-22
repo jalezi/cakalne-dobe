@@ -4,11 +4,7 @@
     "plugin:drizzle/recommended",
     "next/core-web-vitals"
   ],
-  "plugins": [
-    "prettier",
-    "@typescript-eslint",
-    "drizzle"
-  ],
+  "plugins": ["prettier", "@typescript-eslint", "drizzle"],
   "parser": "@typescript-eslint/parser",
   "rules": {
     "no-unused-vars": "off",
@@ -27,29 +23,23 @@
         "fixStyle": "separate-type-imports"
       }
     ],
+    "@typescript-eslint/no-empty-object-type": "warn",
     "no-console": [
       "error",
       {
-        "allow": [
-          "warn",
-          "error"
-        ]
+        "allow": ["warn", "error"]
       }
     ],
     "drizzle/enforce-delete-with-where": [
       "error",
       {
-        "drizzleObjectName": [
-          "db"
-        ]
+        "drizzleObjectName": ["db"]
       }
     ],
     "drizzle/enforce-update-with-where": [
       "error",
       {
-        "drizzleObjectName": [
-          "db"
-        ]
+        "drizzleObjectName": ["db"]
       }
     ]
   }

@@ -376,7 +376,7 @@ export async function POST(request: Request) {
               },
             },
           };
-        } catch (error) {
+        } catch  {
           trx.rollback(); // in documentation they are using await trx.rollback()
           return;
         }
