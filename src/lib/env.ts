@@ -15,6 +15,9 @@ const envClientVarsSchema = z.object({
 export const ENV_SERVER_VARS = envServerVarsSchema.parse(process.env);
 export const ENV_CLIENT_VARS = envClientVarsSchema.parse(process.env);
 
+console.log('ENV_SERVER_VARS', ENV_SERVER_VARS);
+console.log('ENV_CLIENT_VARS', ENV_CLIENT_VARS);
+
 type Env = z.infer<typeof envServerVarsSchema> &
   z.infer<typeof envClientVarsSchema>;
 
