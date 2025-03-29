@@ -2,13 +2,6 @@ import { db } from '@/db';
 import { jobs as jobsTable, procedures as proceduresTable } from '@/db/schema';
 import { TimeRange } from '@/components/time';
 import { asc, desc, sql } from 'drizzle-orm';
-import ChartCard from '@/components/charts/wp/card';
-import { Suspense } from 'react';
-import { ClassicLoader } from '@/components/ui/loaders';
-
-import { AvgWTChart } from '@/components/charts/avg-wt';
-import { InstWTChart } from '@/components/charts/inst-wt';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 export default async function Home() {
   const jobs = await db.query.jobs.findMany({
@@ -52,36 +45,6 @@ export default async function Home() {
           />
         ) : null}
       </p>
-      <section>
-        <h2 className="sr-only">Grafi</h2>
-        <Tabs defaultValue="AvgWTChart">
-          <TabsList>
-            <TabsTrigger value="AvgWTChart">Povprečje</TabsTrigger>
-            <TabsTrigger value="InstWtChart">Ustanove</TabsTrigger>
-          </TabsList>
-          <TabsContent value="AvgWTChart">
-            <ChartCard title="Povprečje">
-              <Suspense fallback={<ClassicLoader />}>
-                <AvgWTChart
-                  procedureCode={procedureOptions[0].value}
-                  procedureOptions={procedureOptions}
-                />
-              </Suspense>
-            </ChartCard>
-          </TabsContent>
-          <TabsContent value="InstWtChart">
-            <ChartCard title="Ustanove na dan">
-              <Suspense fallback={<ClassicLoader />}>
-                <InstWTChart
-                  procedureCode={procedureOptions[0].value}
-                  procedureOptions={procedureOptions}
-                  validDates={jobs.map((job) => job.startDate.slice(0, 10))}
-                />
-              </Suspense>
-            </ChartCard>
-          </TabsContent>
-        </Tabs>
-      </section>
     </main>
   );
 }

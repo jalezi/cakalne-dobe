@@ -35,9 +35,7 @@ export async function Header({ id }: { id?: string }) {
         </Link>
       </Button>
       <div className="ml-auto flex items-center">
-        <Suspense fallback={<Skeleton className="h-10 w-40" />}>
-          <DatePickerDemo jobsOptions={jobsOptions} />
-        </Suspense>
+
         <ThemeToggler className="ml-2 aspect-square" />
       </div>
     </header>
