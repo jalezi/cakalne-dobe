@@ -1,7 +1,7 @@
 import { db } from '@/db';
-import { jobs as jobsTable, procedures as proceduresTable } from '@/db/schema';
+import { jobs as jobsTable } from '@/db/schema';
 import { TimeRange } from '@/components/time';
-import { asc, desc, sql } from 'drizzle-orm';
+import { desc, } from 'drizzle-orm';
 
 export default async function Home() {
   const jobs = await db.query.jobs.findMany({
@@ -17,14 +17,6 @@ export default async function Home() {
       <div className="grid min-h-[480px] place-items-center">Ni podatkov</div>
     );
   }
-
-  const procedureOptions = await db
-    .select({
-      value: proceduresTable.code,
-      label: sql<string>`${proceduresTable.name} || ' - ' || ${proceduresTable.code}`,
-    })
-    .from(proceduresTable)
-    .orderBy(asc(proceduresTable.name));
 
   return (
     <main className="z-0 space-y-2 p-4">

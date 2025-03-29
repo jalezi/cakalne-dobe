@@ -5,9 +5,7 @@ import { Button } from './ui/button';
 import { db } from '@/db';
 import { desc, sql } from 'drizzle-orm';
 import { jobs as jobsTable } from '@/db/schema';
-import { Suspense } from 'react';
-import { Skeleton } from './ui/skeleton';
-import { DatePickerDemo } from './job-picker';
+
 
 export async function Header({ id }: { id?: string }) {
   const jobs = await db.query.jobs.findMany({

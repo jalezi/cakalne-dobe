@@ -13,8 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 
-interface ThemeTogglerProps
-  extends Omit<ButtonProps, 'variant' | 'size' | 'children'> {}
+type ThemeTogglerProps = Omit<ButtonProps, 'variant' | 'size' | 'children'> 
 
 export function ThemeToggler({ className, ...props }: ThemeTogglerProps) {
   const { setTheme } = useTheme();
