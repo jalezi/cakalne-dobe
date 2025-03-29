@@ -1,6 +1,6 @@
 'use client';
 
-import { Moon, Sun } from 'lucide-react';
+import { Check, Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 
 import type { ButtonProps } from '@/components/ui/button';
@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 type ThemeTogglerProps = Omit<ButtonProps, 'variant' | 'size' | 'children'> 
 
 export function ThemeToggler({ className, ...props }: ThemeTogglerProps) {
-  const { setTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
 
   return (
     <DropdownMenu>
@@ -33,14 +33,17 @@ export function ThemeToggler({ className, ...props }: ThemeTogglerProps) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => setTheme('light')}>
+        <DropdownMenuItem onClick={() => setTheme('light')} className="flex items-center justify-between">
           Light
+          {theme === 'light' && <Check className="h-4 w-4 ml-2" />}
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme('dark')}>
+        <DropdownMenuItem onClick={() => setTheme('dark')} className="flex items-center justify-between">
           Dark
+          {theme === 'dark' && <Check className="h-4 w-4 ml-2" />}
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme('system')}>
+        <DropdownMenuItem onClick={() => setTheme('system')} className="flex items-center justify-between">
           System
+          {theme === 'system' && <Check className="h-4 w-4 ml-2" />}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
