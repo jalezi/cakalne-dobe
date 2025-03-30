@@ -18,20 +18,22 @@ import { revalidatePath } from 'next/cache';
 import { sql } from 'drizzle-orm';
 import { format } from 'date-fns';
 import { getLastJobId } from '@/utils/get-last-job-id';
+import { z } from 'zod';
 
 export const maxDuration = 30;
 
 const MAX_CHUNK_SIZE = 50;
 const EXPECTED_NUMBER_OF_JOBS = 1;
 
-type WebhookPayload =
-  | {
-      success: true;
-    }
-  | {
-      success: false;
-      error: string;
-    };
+const webhookPayloadSchema = z.discriminatedUnion('success', [
+  z.object({
+    success: z.literal("ok"),
+  }),
+  z.object({
+    success: z.literal("error"),
+    error: z.string(),
+  }),
+]);
 
 const BASE_URL = new URL('https://wayback-automachine.gitlab.io');
 const BASE_JOBS_URL = new URL('-/cakalne-dobe/-/jobs', BASE_URL);
@@ -39,10 +41,31 @@ const JSON_OUT_PATH = '/artifacts/out.json';
 
 export async function POST(request: Request) {
   try {
-    const webhookJson = (await request.json()) as WebhookPayload;
-    if (!webhookJson.success) {
-      throw new Error(webhookJson.error || 'Webhook error');
+    const webhookJson = (await request.json());
+
+    const parsedWebhookPayload = webhookPayloadSchema.safeParse(webhookJson);
+    if (!parsedWebhookPayload.success) {
+      return Response.json(
+        {
+          success: false,
+          error: 'Invalid webhook payload',
+          details: parsedWebhookPayload.error.format(),
+        },
+        { status: 400 }
+      );
     }
+
+    if (parsedWebhookPayload.data.success === 'error') {
+      return Response.json(
+        {
+          success: false,
+          error: parsedWebhookPayload.data.error,
+          details: 'Webhook error',
+        },
+        { status: 400 }
+      );
+    }
+
 
     const latestJobInDbResult = await getLatestJobInDb();
 
