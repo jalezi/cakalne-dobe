@@ -1,6 +1,5 @@
 import { handleError } from '@/utils/handle-error';
 import {
-
   jobs as jobsTable,
   procedures as proceduresTable,
   institutions as institutionsTable,
@@ -15,12 +14,9 @@ import { sql } from 'drizzle-orm';
 import { format } from 'date-fns';
 import { getLastJobId } from '@/utils/get-last-job-id';
 import { z } from 'zod';
-
-
-import { ResultSet,  } from '@libsql/client';
-import { SQLiteTransaction } from 'drizzle-orm/sqlite-core';
-
-import * as schema from '@/db/schema';
+import type { ResultSet  } from '@libsql/client';
+import type { SQLiteTransaction } from 'drizzle-orm/sqlite-core';
+import type * as schema from '@/db/schema';
 
 export const maxDuration = 30;
 

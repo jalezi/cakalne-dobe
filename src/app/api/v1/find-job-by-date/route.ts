@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { handleError } from '@/utils/handle-error';
 import { getJobs } from '@/utils/get-jobs';
 import { z } from 'zod';
@@ -13,7 +13,6 @@ const FindJobByDateSchema = z.object({
   limit: z.number().optional().default(20),
 });
 
-type FindJobByDateRequest = z.infer<typeof FindJobByDateSchema>;
 
 export async function POST(request: NextRequest) {
   try {
