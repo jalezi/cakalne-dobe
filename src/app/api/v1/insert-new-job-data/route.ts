@@ -39,30 +39,19 @@ const BASE_URL = new URL('https://wayback-automachine.gitlab.io');
 const BASE_JOBS_URL = new URL('-/cakalne-dobe/-/jobs', BASE_URL);
 const JSON_OUT_PATH = '/artifacts/out.json';
 
+
 export async function POST(request: Request) {
   try {
     const webhookJson = (await request.json());
 
     const parsedWebhookPayload = webhookPayloadSchema.safeParse(webhookJson);
     if (!parsedWebhookPayload.success) {
-      return Response.json(
-        {
-          success: false,
-          error: 'Invalid webhook payload',
-          details: parsedWebhookPayload.error.format(),
-        },
-        { status: 400 }
-      );
+      throw new Error('Invalid webhook payload', {cause: parsedWebhookPayload.error});
     }
 
     if (parsedWebhookPayload.data.success === 'error') {
-      return Response.json(
-        {
-          success: false,
-          error: parsedWebhookPayload.data.error,
-          details: 'Webhook error',
-        },
-        { status: 400 }
+     throw new Error(
+        `GitLab job failed with error: ${parsedWebhookPayload.data.error}`, {cause: parsedWebhookPayload.data.error}
       );
     }
 
