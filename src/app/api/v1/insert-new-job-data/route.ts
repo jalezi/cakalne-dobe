@@ -64,37 +64,25 @@ export async function POST(request: Request) {
       throw new Error(validationResult.error);
     }
 
-    const latestJobInDbResult = await getLatestJobInDb();
-
-    if (latestJobInDbResult.isInDB) {
-      throw new Error(
-        `Latest data is already in the database. Date: ${latestJobInDbResult.date}, GitLab job ID: ${latestJobInDbResult.gitLabJobId}`
-      );
+    const shouldInsert = await shouldInsertLatestJob();
+    if (!shouldInsert.success) {
+      throw new Error(shouldInsert.error);
     }
 
     const lastGitLabIdResponse = await getLastJobId(10);
     if (!lastGitLabIdResponse.success) {
       throw new Error(lastGitLabIdResponse.error);
     }
-
     const gitLabJobId = lastGitLabIdResponse.data.gitLabJobId;
 
-    const jobUrl = new URL(
-      `jobs/${gitLabJobId}${JSON_OUT_PATH}`,
-      BASE_JOBS_URL
-    );
-
-    const responseOut = await fetch(jobUrl);
-    if (!responseOut.ok) {
-      throw new Error(
-        `Failed to fetch job output for the latest gitlab job with id: ${gitLabJobId}`
-      );
+    const dataResponse = await getData(gitLabJobId);
+    if (!dataResponse.success) {
+      throw new Error(dataResponse.error);
     }
 
-    const data = (await responseOut.json()) as AllData;
     const combinedData: { gitLabJobId: string } & AllData = Object.assign(
       { gitLabJobId },
-      data
+      dataResponse.data 
     );
 
     const { start, end } = combinedData;
@@ -454,6 +442,58 @@ function validateWebhookPayload (payload: unknown): ReturnType<Exclude<WebhookPa
     data: parsedPayload.data,
   };
 };
+
+async function shouldInsertLatestJob(): Promise<ReturnType<
+"ok">> {
+
+  const latestJobInDbResult = await getLatestJobInDb();
+
+  if (latestJobInDbResult.isInDB) {
+    return {
+      success: false,
+      error: 'Latest job not found in the database',
+      details: {
+        message: 'Latest job not found in the database',
+        jobId: latestJobInDbResult.gitLabJobId,
+        date: latestJobInDbResult.date,
+      }
+    }
+  }
+
+  return {success: true, data: "ok"};
+}
+
+async function getData(gitLabJobId: string): Promise<ReturnType<AllData>> {
+  const jobUrl = new URL(
+    `jobs/${gitLabJobId}${JSON_OUT_PATH}`,
+    BASE_JOBS_URL
+  );
+
+  const responseOut = await fetch(jobUrl);
+  if (!responseOut.ok) {
+    return {
+      success: false,
+      error: `Failed to fetch job output for the latest gitlab job with id: ${gitLabJobId}`,
+      details: {
+        message: 'Failed to fetch job output',
+        url: jobUrl.toString(),
+        status: responseOut.status,
+        statusText: responseOut.statusText,
+      },
+    }
+  }
+
+  const data = (await responseOut.json()) as AllData;
+  return {
+    success: true,
+    data,
+    meta: {
+      gitLabJobId,
+      start: data.start,
+      end: data.end,
+    }
+}
+}
 
 type NotCompleteDataByTable = {
   procedures: Pick<InsertProcedure, 'code' | 'name'>[];
