@@ -185,6 +185,7 @@ export async function POST(request: Request) {
           } = await insertProceduresTransaction(trx, notCompleteDataObj);
 
           // INSTITUTIONS
+          // TODO: extract this to a function
           const institutionsNamesToCheckIfExistsInDB = Array.from(
             notCompleteDataObj.institutions.keys()
           );
