@@ -64,6 +64,71 @@ async function insertJobTransaction(trx: SQLiteTransaction<'async', ResultSet, t
     .onConflictDoNothing();
 }
 
+/**
+ * Retrieves existing procedures and inserts new ones.
+ * @param trx Database transaction
+ * @param notCompleteDataObj Data containing procedures to process
+ * @returns Object with existing, inserted, and combined procedures
+ */
+async function insertProceduresTransaction(
+  trx: SQLiteTransaction<'async', ResultSet, typeof schema, any>,
+  notCompleteDataObj: NotCompleteDataByTable
+): Promise<{
+  existingProcedures: Array<{id: string; code: string; name: string}>;
+  insertedProcedures: Array<{id: string; code: string; name: string}>;
+  allProceduresWithDBIds: Array<{id: string; code: string; name: string}>;
+}> {
+  // Get procedure codes to check in database
+  const procedureCodesToCheckIfExistsInDB = 
+    notCompleteDataObj.procedures.map((procedure) => procedure.code);
+
+  // Find existing procedures
+  const existingProcedures = await trx.query.procedures.findMany({
+    columns: {
+      id: true,
+      code: true,
+      name: true,
+    },
+    where: (procedures, operators) =>
+      operators.inArray(procedures.code, procedureCodesToCheckIfExistsInDB),
+  });
+
+  // Find procedures that need to be inserted
+  const newProcedures = notCompleteDataObj.procedures.filter(
+    (procedure) =>
+      !existingProcedures.some(
+        (existingProcedure) => existingProcedure.code === procedure.code
+      )
+  );
+
+  // Insert new procedures in chunks
+  const insertedProcedures = await insertInChunks(
+    newProcedures,
+    MAX_CHUNK_SIZE,
+    async (chunk) => {
+      const chunkProcedures = await trx
+        .insert(proceduresTable)
+        .values(chunk)
+        .returning({
+          id: proceduresTable.id,
+          code: proceduresTable.code,
+          name: proceduresTable.name,
+        });
+
+      return chunkProcedures;
+    }
+  );
+
+  // Combine existing and new procedures
+  const allProceduresWithDBIds = [...existingProcedures, ...insertedProcedures];
+
+  return {
+    existingProcedures,
+    insertedProcedures,
+    allProceduresWithDBIds,
+  };
+}
+
 
 export async function POST(request: Request) {
   try {
@@ -103,49 +168,7 @@ export async function POST(request: Request) {
           const insertedJobs = await insertJobTransaction(trx, jobData);
 
           // PROCEDURES
-          const procedureCodesToCheckIfExistsInDB =
-            notCompleteDataObj.procedures.map((procedure) => procedure.code);
-
-          const existingProcedures = await trx.query.procedures.findMany({
-            columns: {
-              id: true,
-              code: true,
-              name: true,
-            },
-            where: (procedures, operators) =>
-              operators.inArray(
-                procedures.code,
-                procedureCodesToCheckIfExistsInDB
-              ),
-          });
-
-          const newProcedures = notCompleteDataObj.procedures.filter(
-            (procedure) =>
-              !existingProcedures.some(
-                (existingProcedure) => existingProcedure.code === procedure.code
-              )
-          );
-
-          const insertedProcedures: typeof existingProcedures = await insertInChunks(
-            newProcedures,
-            MAX_CHUNK_SIZE,
-            async (chunk) => {
-              const chunkProcedures = await trx
-                .insert(proceduresTable)
-                .values(chunk)
-                .returning({
-                  id: proceduresTable.id,
-                  code: proceduresTable.code,
-                  name: proceduresTable.name,
-                });
-
-              return chunkProcedures;
-            }
-          )
-
-          // We need this to add proper procedureId to maxAllowedDays and waitingPeriods
-          const allProceduresWithDBIds =
-            existingProcedures.concat(insertedProcedures);
+          const {existingProcedures, allProceduresWithDBIds, insertedProcedures} = await insertProceduresTransaction(trx, notCompleteDataObj);
 
           // INSTITUTIONS
           const institutionsNamesToCheckIfExistsInDB = Array.from(
@@ -300,7 +323,7 @@ export async function POST(request: Request) {
 
           const totalRowsInserted =
             insertedJobs.length +
-            newProcedures.length +
+            insertedProcedures.length +
             newInstitutions.length +
             insertedMaxAllowedDays.length +
             insertedWaitingPeriods.length;
@@ -326,7 +349,7 @@ export async function POST(request: Request) {
                 },
                 procedures: {
                   total: notCompleteDataObj.procedures.length,
-                  inserted: newProcedures.length,
+                  inserted: insertedProcedures.length,
                   existing: existingProcedures.length,
                 },
                 institutions: {
