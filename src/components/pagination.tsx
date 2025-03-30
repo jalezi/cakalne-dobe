@@ -17,7 +17,7 @@ export function DataTablePagination<TData>({
 }: DataTablePaginationProps<TData>) {
   return (
     <div className="flex flex-col gap-y-2 px-4 py-2 sm:flex-row sm:items-center sm:justify-between">
-      <div className="text-sm text-muted-foreground sm:flex-1 ">
+      <div className="text-muted-foreground text-sm sm:flex-1">
         {table.getFilteredRowModel().rows.length} od{' '}
         {table.getCoreRowModel().rows.length} vrstic.
       </div>

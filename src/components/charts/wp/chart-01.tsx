@@ -88,11 +88,10 @@ export function AverageWaitingTimeChart<TLines extends string[]>({
     setDateRange(newDateRange);
   };
 
-
   return (
     <>
       <form onSubmit={onSubmit} className="space-y-2">
-        <div className="space-x-1 space-y-2">
+        <div className="space-y-2 space-x-1">
           <Label id="procedure-code-label" htmlFor="procedureCode">
             Postopek
           </Label>
@@ -104,7 +103,7 @@ export function AverageWaitingTimeChart<TLines extends string[]>({
             excludeOptionAll
           />
         </div>
-        <div className="space-x-1 space-y-2">
+        <div className="space-y-2 space-x-1">
           <TimeRangePicker
             initialDateRange={initialDateRange}
             onChange={onDateRangeChange}

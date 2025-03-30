@@ -10,11 +10,11 @@ import { db } from '@/db';
 import type { AllData } from '@/lib/zod-schemas/data-schemas';
 import { trimmedStringSchema } from '@/lib/zod-schemas/helpers-schema';
 import { revalidatePath } from 'next/cache';
-import { sql } from 'drizzle-orm';
+import { sql, type TablesRelationalConfig } from 'drizzle-orm';
 import { format } from 'date-fns';
 import { getLastJobId } from '@/utils/get-last-job-id';
 import { z } from 'zod';
-import type { ResultSet  } from '@libsql/client';
+import type { ResultSet } from '@libsql/client';
 import type { SQLiteTransaction } from 'drizzle-orm/sqlite-core';
 import type * as schema from '@/db/schema';
 
@@ -25,10 +25,10 @@ const EXPECTED_NUMBER_OF_JOBS = 1;
 
 const webhookPayloadSchema = z.discriminatedUnion('success', [
   z.object({
-    success: z.literal("ok"),
+    success: z.literal('ok'),
   }),
   z.object({
-    success: z.literal("error"),
+    success: z.literal('error'),
     error: z.string(),
   }),
 ]);
@@ -39,17 +39,31 @@ const BASE_URL = new URL('https://wayback-automachine.gitlab.io');
 const BASE_JOBS_URL = new URL('-/cakalne-dobe/-/jobs', BASE_URL);
 const JSON_OUT_PATH = '/artifacts/out.json';
 
-type ReturnType<TData, TMeta extends Record<string, unknown> = {}, TDetails extends Record<string, unknown> = {}> = {
-  success: true;
-  data: TData;
-  meta? : TMeta;
-} | {
-  success: false;
-  error: string;
-  details?: TDetails;
-}
+type ReturnType<
+  TData,
+  TMeta extends Record<string, unknown> = {},
+  TDetails extends Record<string, unknown> = {},
+> =
+  | {
+      success: true;
+      data: TData;
+      meta?: TMeta;
+    }
+  | {
+      success: false;
+      error: string;
+      details?: TDetails;
+    };
 
-async function insertJobTransaction(trx: SQLiteTransaction<'async', ResultSet, typeof schema, any>, jobData: schema.InsertJob) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Trx<TSchema extends TablesRelationalConfig = any> = SQLiteTransaction<
+  'async',
+  ResultSet,
+  typeof schema,
+  TSchema
+>;
+
+async function insertJobTransaction(trx: Trx, jobData: schema.InsertJob) {
   return trx
     .insert(jobsTable)
     .values(jobData)
@@ -67,16 +81,17 @@ async function insertJobTransaction(trx: SQLiteTransaction<'async', ResultSet, t
  * @returns Object with existing, inserted, and combined procedures
  */
 async function insertProceduresTransaction(
-  trx: SQLiteTransaction<'async', ResultSet, typeof schema, any>,
+  trx: Trx,
   notCompleteDataObj: NotCompleteDataByTable
 ): Promise<{
-  existingProcedures: Array<{id: string; code: string; name: string}>;
-  insertedProcedures: Array<{id: string; code: string; name: string}>;
-  allProceduresWithDBIds: Array<{id: string; code: string; name: string}>;
+  existingProcedures: Array<{ id: string; code: string; name: string }>;
+  insertedProcedures: Array<{ id: string; code: string; name: string }>;
+  allProceduresWithDBIds: Array<{ id: string; code: string; name: string }>;
 }> {
   // Get procedure codes to check in database
-  const procedureCodesToCheckIfExistsInDB = 
-    notCompleteDataObj.procedures.map((procedure) => procedure.code);
+  const procedureCodesToCheckIfExistsInDB = notCompleteDataObj.procedures.map(
+    (procedure) => procedure.code
+  );
 
   // Find existing procedures
   const existingProcedures = await trx.query.procedures.findMany({
@@ -125,12 +140,11 @@ async function insertProceduresTransaction(
   };
 }
 
-
 export async function POST(request: Request) {
   try {
-    const webhookJson = (await request.json());
+    const webhookJson = await request.json();
 
-   const validationResult = validateWebhookPayload(webhookJson);
+    const validationResult = validateWebhookPayload(webhookJson);
     if (!validationResult.success) {
       throw new Error(validationResult.error);
     }
@@ -155,7 +169,7 @@ export async function POST(request: Request) {
     if (!preparedJobData.success) {
       throw new Error(preparedJobData.error);
     }
-    const {notCompleteDataObj, jobData} = preparedJobData.data;
+    const { notCompleteDataObj, jobData } = preparedJobData.data;
 
     try {
       const transactionResponse = await db.transaction(async (trx) => {
@@ -164,7 +178,11 @@ export async function POST(request: Request) {
           const insertedJobs = await insertJobTransaction(trx, jobData);
 
           // PROCEDURES
-          const {existingProcedures, allProceduresWithDBIds, insertedProcedures} = await insertProceduresTransaction(trx, notCompleteDataObj);
+          const {
+            existingProcedures,
+            allProceduresWithDBIds,
+            insertedProcedures,
+          } = await insertProceduresTransaction(trx, notCompleteDataObj);
 
           // INSTITUTIONS
           const institutionsNamesToCheckIfExistsInDB = Array.from(
@@ -191,20 +209,21 @@ export async function POST(request: Request) {
               )
           );
 
-          const insertedInstitutions: typeof existingInstitutions = await insertInChunks(
-            newInstitutions,
-            MAX_CHUNK_SIZE,
-            async (chunk) => {
-              const chunkInstitutions = await trx
-                .insert(institutionsTable)
-                .values(chunk)
-                .returning({
-                  id: institutionsTable.id,
-                  name: institutionsTable.name,
-                });
-              return chunkInstitutions;
-            }
-          );
+          const insertedInstitutions: typeof existingInstitutions =
+            await insertInChunks(
+              newInstitutions,
+              MAX_CHUNK_SIZE,
+              async (chunk) => {
+                const chunkInstitutions = await trx
+                  .insert(institutionsTable)
+                  .values(chunk)
+                  .returning({
+                    id: institutionsTable.id,
+                    name: institutionsTable.name,
+                  });
+                return chunkInstitutions;
+              }
+            );
 
           const allInstitutionsWithDBId =
             existingInstitutions.concat(insertedInstitutions);
@@ -217,29 +236,31 @@ export async function POST(request: Request) {
             notCompleteDataObj.maxAllowedDays,
             MAX_CHUNK_SIZE,
             async (chunk) => {
-              const chunkWithJobIdAndProcedureId = chunk.map((maxAllowedDay) => {
-                const procedure = allProceduresWithDBIds.find(
-                  (proc) => proc.code === maxAllowedDay.procedureCode
-                );
-                if (!procedure) {
-                  console.error("Procedure doesn't exist in the database");
-                  throw new Error(
-                    `Procedure with code ${maxAllowedDay.procedureCode} not found in the database`
+              const chunkWithJobIdAndProcedureId = chunk.map(
+                (maxAllowedDay) => {
+                  const procedure = allProceduresWithDBIds.find(
+                    (proc) => proc.code === maxAllowedDay.procedureCode
                   );
+                  if (!procedure) {
+                    console.error("Procedure doesn't exist in the database");
+                    throw new Error(
+                      `Procedure with code ${maxAllowedDay.procedureCode} not found in the database`
+                    );
+                  }
+                  if (!procedure.id) {
+                    console.error('Procedure id is missing');
+                    throw new Error('Procedure id is missing');
+                  }
+                  // there is a procedureCode property in maxAllowedDay which is not needed
+                  return {
+                    regular: maxAllowedDay.regular,
+                    fast: maxAllowedDay.fast,
+                    veryFast: maxAllowedDay.veryFast,
+                    jobId: insertedJobs[0].id,
+                    procedureId: procedure.id,
+                  };
                 }
-                if (!procedure.id) {
-                  console.error('Procedure id is missing');
-                  throw new Error('Procedure id is missing');
-                }
-                // there is a procedureCode property in maxAllowedDay which is not needed
-                return {
-                  regular: maxAllowedDay.regular,
-                  fast: maxAllowedDay.fast,
-                  veryFast: maxAllowedDay.veryFast,
-                  jobId: insertedJobs[0].id,
-                  procedureId: procedure.id,
-                };
-              });
+              );
               const chunkMaxAllowedDays = await trx
                 .insert(maxAllowedDaysTable)
                 .values(chunkWithJobIdAndProcedureId)
@@ -250,7 +271,6 @@ export async function POST(request: Request) {
               return chunkMaxAllowedDays;
             }
           );
-         
 
           // WAITING PERIODS
           const insertedWaitingPeriods: {
@@ -364,7 +384,7 @@ export async function POST(request: Request) {
               },
             },
           };
-        } catch  {
+        } catch {
           trx.rollback(); // in documentation they are using await trx.rollback()
           return;
         }
@@ -393,35 +413,38 @@ export async function POST(request: Request) {
 }
 
 async function insertInChunks<T, R>(
-  items: T[], 
-  chunkSize: number, 
+  items: T[],
+  chunkSize: number,
   insertFn: (chunk: T[]) => Promise<R[]>
 ): Promise<R[]> {
   const result: R[] = [];
-  
+
   for (let i = 0; i < items.length; i += chunkSize) {
     const chunk = items.slice(i, i + chunkSize);
     if (chunk.length === 0) break;
-    
+
     const inserted = await insertFn(chunk);
     result.push(...inserted);
   }
-  
+
   return result;
 }
 
-function validateWebhookPayload (payload: unknown): ReturnType<Exclude<WebhookPayload, {success : "error"}>> {
+function validateWebhookPayload(
+  payload: unknown
+): ReturnType<Exclude<WebhookPayload, { success: 'error' }>> {
   const parsedPayload = webhookPayloadSchema.safeParse(payload);
   if (!parsedPayload.success) {
     return {
       success: false,
-      error: "Invalid webhook payload",
+      error: 'Invalid webhook payload',
       details: {
         message: parsedPayload.error.message,
         payload,
-        errors: parsedPayload.error.flatten(), 
-    }
-  }}
+        errors: parsedPayload.error.flatten(),
+      },
+    };
+  }
 
   if (parsedPayload.data.success === 'error') {
     return {
@@ -431,19 +454,17 @@ function validateWebhookPayload (payload: unknown): ReturnType<Exclude<WebhookPa
         message: 'GitLab job failed',
         payload,
         errors: parsedPayload.data.error,
-      }
-    }
+      },
+    };
   }
 
   return {
     success: true,
     data: parsedPayload.data,
   };
-};
+}
 
-async function shouldInsertLatestJob(): Promise<ReturnType<
-"ok">> {
-
+async function shouldInsertLatestJob(): Promise<ReturnType<'ok'>> {
   const latestJobInDbResult = await getLatestJobInDb();
 
   if (latestJobInDbResult.isInDB) {
@@ -454,21 +475,23 @@ async function shouldInsertLatestJob(): Promise<ReturnType<
         message: 'Latest job not found in the database',
         jobId: latestJobInDbResult.gitLabJobId,
         date: latestJobInDbResult.date,
-      }
-    }
+      },
+    };
   }
 
-  return {success: true, data: "ok"};
+  return { success: true, data: 'ok' };
 }
 
-async function getData(gitLabJobId: string): Promise<ReturnType<
-AllData, 
-{gitLabJobId: string, start: string, end: string}, {message: string, url: string, status: number, statusText: string}>
+async function getData(
+  gitLabJobId: string
+): Promise<
+  ReturnType<
+    AllData,
+    { gitLabJobId: string; start: string; end: string },
+    { message: string; url: string; status: number; statusText: string }
+  >
 > {
-  const jobUrl = new URL(
-    `jobs/${gitLabJobId}${JSON_OUT_PATH}`,
-    BASE_JOBS_URL
-  );
+  const jobUrl = new URL(`jobs/${gitLabJobId}${JSON_OUT_PATH}`, BASE_JOBS_URL);
 
   const responseOut = await fetch(jobUrl);
   if (!responseOut.ok) {
@@ -481,7 +504,7 @@ AllData,
         status: responseOut.status,
         statusText: responseOut.statusText,
       },
-    }
+    };
   }
 
   const data = (await responseOut.json()) as AllData;
@@ -492,16 +515,18 @@ AllData,
       gitLabJobId,
       start: data.start,
       end: data.end,
-    }
+    },
   };
 }
 
-async function prepareJobData(gitLabJobId: string): Promise<ReturnType<{
-  jobData: schema.InsertJob;
-  notCompleteDataObj: NotCompleteDataByTable;
-}>> {
+async function prepareJobData(gitLabJobId: string): Promise<
+  ReturnType<{
+    jobData: schema.InsertJob;
+    notCompleteDataObj: NotCompleteDataByTable;
+  }>
+> {
   const dataResponse = await getData(gitLabJobId);
-  
+
   if (!dataResponse.success) {
     return {
       success: false,
@@ -512,15 +537,22 @@ async function prepareJobData(gitLabJobId: string): Promise<ReturnType<{
         status: dataResponse.details?.status,
         statusText: dataResponse.details?.statusText,
       },
-    }
+    };
   }
-  
+
   const combinedData = { gitLabJobId, ...dataResponse.data };
   const { start, end } = combinedData;
-  
-  const jobData: schema.InsertJob = { gitLabJobId, startDate: start, endDate: end };
-  const notCompleteDataObj = getNotCompleteDataByTable(combinedData, gitLabJobId);
-  
+
+  const jobData: schema.InsertJob = {
+    gitLabJobId,
+    startDate: start,
+    endDate: end,
+  };
+  const notCompleteDataObj = getNotCompleteDataByTable(
+    combinedData,
+    gitLabJobId
+  );
+
   return {
     success: true,
     data: {
@@ -544,7 +576,10 @@ type NotCompleteDataByTable = {
   > & { procedureCode: string })[];
   waitingPeriods: Map<
     string,
-    Pick<schema.InsertWaitingPeriods, 'fast' | 'regular' | 'veryFast' | 'jobId'> & {
+    Pick<
+      schema.InsertWaitingPeriods,
+      'fast' | 'regular' | 'veryFast' | 'jobId'
+    > & {
       institutionName: string;
       procedureCode: string;
     }

@@ -20,7 +20,6 @@ export default async function Home() {
   });
   const lastJob = lastJobResult[0];
 
-
   return (
     <main className="z-0 space-y-2 p-4">
       <h1
@@ -31,15 +30,18 @@ export default async function Home() {
         Čakalne dobe
       </h1>
       <p id="attr-dataset-date-range">
-        {!firstJob || !lastJob ?  "Ni podatkov": <>
-          Podatki zbrani za obdobje:{' '}
-        <TimeRange
-          startDate={firstJob.startDate}
-          endDate={lastJob.startDate}
-          options={{ timeZone: 'Europe/Ljubljana' }}
-        />
-        </> }
-       
+        {!firstJob || !lastJob ? (
+          'Ni podatkov'
+        ) : (
+          <>
+            Podatki zbrani za obdobje:{' '}
+            <TimeRange
+              startDate={firstJob.startDate}
+              endDate={lastJob.startDate}
+              options={{ timeZone: 'Europe/Ljubljana' }}
+            />
+          </>
+        )}
       </p>
     </main>
   );
