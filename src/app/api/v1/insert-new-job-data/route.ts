@@ -123,28 +123,22 @@ export async function POST(request: Request) {
               )
           );
 
-          const insertedProcedures: typeof existingProcedures = [];
-          // create chunks of 50 procedures to insert
+          const insertedProcedures: typeof existingProcedures = await insertInChunks(
+            newProcedures,
+            MAX_CHUNK_SIZE,
+            async (chunk) => {
+              const chunkProcedures = await trx
+                .insert(proceduresTable)
+                .values(chunk)
+                .returning({
+                  id: proceduresTable.id,
+                  code: proceduresTable.code,
+                  name: proceduresTable.name,
+                });
 
-          for (
-            let i = 0;
-            i < notCompleteDataObj.procedures.length;
-            i += MAX_CHUNK_SIZE
-          ) {
-            const chunk = newProcedures.slice(i, i + MAX_CHUNK_SIZE);
-            if (chunk.length === 0) break;
-
-            const chunkProcedures = await trx
-              .insert(proceduresTable)
-              .values(chunk)
-              .returning({
-                id: proceduresTable.id,
-                code: proceduresTable.code,
-                name: proceduresTable.name,
-              });
-
-            insertedProcedures.push(...chunkProcedures);
-          }
+              return chunkProcedures;
+            }
+          )
 
           // We need this to add proper procedureId to maxAllowedDays and waitingPeriods
           const allProceduresWithDBIds =
@@ -175,21 +169,20 @@ export async function POST(request: Request) {
               )
           );
 
-          const insertedInstitutions: typeof existingInstitutions = [];
-          // create chunks of 50 institutions to insert
-          for (let i = 0; i < newInstitutions.length; i += MAX_CHUNK_SIZE) {
-            const chunk = newInstitutions.slice(i, i + MAX_CHUNK_SIZE);
-            if (chunk.length === 0) break;
-            const chunkInstitutions = await trx
-              .insert(institutionsTable)
-              .values(chunk)
-              .returning({
-                id: institutionsTable.id,
-                name: institutionsTable.name,
-              });
-
-            insertedInstitutions.push(...chunkInstitutions);
-          }
+          const insertedInstitutions: typeof existingInstitutions = await insertInChunks(
+            newInstitutions,
+            MAX_CHUNK_SIZE,
+            async (chunk) => {
+              const chunkInstitutions = await trx
+                .insert(institutionsTable)
+                .values(chunk)
+                .returning({
+                  id: institutionsTable.id,
+                  name: institutionsTable.name,
+                });
+              return chunkInstitutions;
+            }
+          );
 
           const allInstitutionsWithDBId =
             existingInstitutions.concat(insertedInstitutions);
@@ -198,125 +191,102 @@ export async function POST(request: Request) {
           const insertedMaxAllowedDays: {
             jobId: string;
             procedureId: string;
-          }[] = [];
-          // create chunks of 50 maxAllowedDays to insert
-          for (
-            let i = 0;
-            i < notCompleteDataObj.maxAllowedDays.length;
-            i += MAX_CHUNK_SIZE
-          ) {
-            const chunk = notCompleteDataObj.maxAllowedDays.slice(
-              i,
-              i + MAX_CHUNK_SIZE
-            );
-            if (chunk.length === 0) break;
-            const chunkWithJobIdAndProcedureId = chunk.map((maxAllowedDay) => {
-              const procedure = allProceduresWithDBIds.find(
-                (proc) => proc.code === maxAllowedDay.procedureCode
-              );
-
-              if (!procedure) {
-                console.error("Procedure doesn't exist in the database");
-                throw new Error(
-                  `Procedure with code ${maxAllowedDay.procedureCode} not found in the database`
+          }[] = await insertInChunks(
+            notCompleteDataObj.maxAllowedDays,
+            MAX_CHUNK_SIZE,
+            async (chunk) => {
+              const chunkWithJobIdAndProcedureId = chunk.map((maxAllowedDay) => {
+                const procedure = allProceduresWithDBIds.find(
+                  (proc) => proc.code === maxAllowedDay.procedureCode
                 );
-              }
-
-              if (!procedure.id) {
-                console.error('Procedure id is missing');
-                throw new Error('Procedure id is missing');
-              }
-
-              // there is a procedureCode property in maxAllowedDay which is not needed
-              return {
-                regular: maxAllowedDay.regular,
-                fast: maxAllowedDay.fast,
-                veryFast: maxAllowedDay.veryFast,
-                jobId: insertedJobs[0].id,
-                procedureId: procedure.id,
-              };
-            });
-
-            const chunkMaxAllowedDays = await trx
-              .insert(maxAllowedDaysTable)
-              .values(chunkWithJobIdAndProcedureId)
-              .returning({
-                jobId: maxAllowedDaysTable.jobId,
-                procedureId: maxAllowedDaysTable.procedureId,
+                if (!procedure) {
+                  console.error("Procedure doesn't exist in the database");
+                  throw new Error(
+                    `Procedure with code ${maxAllowedDay.procedureCode} not found in the database`
+                  );
+                }
+                if (!procedure.id) {
+                  console.error('Procedure id is missing');
+                  throw new Error('Procedure id is missing');
+                }
+                // there is a procedureCode property in maxAllowedDay which is not needed
+                return {
+                  regular: maxAllowedDay.regular,
+                  fast: maxAllowedDay.fast,
+                  veryFast: maxAllowedDay.veryFast,
+                  jobId: insertedJobs[0].id,
+                  procedureId: procedure.id,
+                };
               });
-            insertedMaxAllowedDays.push(...chunkMaxAllowedDays);
-          }
+              const chunkMaxAllowedDays = await trx
+                .insert(maxAllowedDaysTable)
+                .values(chunkWithJobIdAndProcedureId)
+                .returning({
+                  jobId: maxAllowedDaysTable.jobId,
+                  procedureId: maxAllowedDaysTable.procedureId,
+                });
+              return chunkMaxAllowedDays;
+            }
+          );
+         
 
           // WAITING PERIODS
           const insertedWaitingPeriods: {
             jobId: string;
             institutionId: string;
-          }[] = [];
-
-          for (
-            let i = 0;
-            i < notCompleteDataObj.waitingPeriods.size;
-            i += MAX_CHUNK_SIZE
-          ) {
-            const chunk = Array.from(
-              notCompleteDataObj.waitingPeriods.values()
-            ).slice(i, i + MAX_CHUNK_SIZE);
-            if (chunk.length === 0) break;
-            const chunkWithJobIdAndInstitutionId = chunk.map(
-              (waitingPeriod) => {
-                const institution = allInstitutionsWithDBId.find((inst) => {
-                  return inst.name === waitingPeriod.institutionName;
+          }[] = await insertInChunks(
+            Array.from(notCompleteDataObj.waitingPeriods.values()),
+            MAX_CHUNK_SIZE,
+            async (chunk) => {
+              const chunkWithJobIdAndInstitutionId = chunk.map(
+                (waitingPeriod) => {
+                  const institution = allInstitutionsWithDBId.find((inst) => {
+                    return inst.name === waitingPeriod.institutionName;
+                  });
+                  if (!institution) {
+                    console.error("Institution doesn't exist in the database");
+                    throw new Error(
+                      `Institution with name ${waitingPeriod.institutionName} not found in the database`
+                    );
+                  }
+                  if (!institution.id) {
+                    console.error('Institution id is missing');
+                    throw new Error('Institution id is missing');
+                  }
+                  const procedure = allProceduresWithDBIds.find(
+                    (proc) => proc.code === waitingPeriod.procedureCode
+                  );
+                  if (!procedure) {
+                    console.error("Procedure doesn't exist in the database");
+                    throw new Error(
+                      `Procedure with code ${waitingPeriod.procedureCode} not found in the database`
+                    );
+                  }
+                  if (!procedure.id) {
+                    console.error('Procedure id is missing');
+                    throw new Error('Procedure id is missing');
+                  }
+                  // there is a procedureCode and institutionName property in waitingPeriod which is not needed
+                  return {
+                    regular: waitingPeriod.regular,
+                    fast: waitingPeriod.fast,
+                    veryFast: waitingPeriod.veryFast,
+                    jobId: insertedJobs[0].id,
+                    institutionId: institution.id,
+                    procedureId: procedure.id,
+                  };
+                }
+              );
+              const chunkWaitingPeriods = await trx
+                .insert(waitingPeriodsTable)
+                .values(chunkWithJobIdAndInstitutionId)
+                .returning({
+                  jobId: waitingPeriodsTable.jobId,
+                  institutionId: waitingPeriodsTable.institutionId,
                 });
-
-                if (!institution) {
-                  console.error("Institution doesn't exist in the database");
-                  throw new Error(
-                    `Institution with name ${waitingPeriod.institutionName} not found in the database`
-                  );
-                }
-
-                if (!institution.id) {
-                  console.error('Institution id is missing');
-                  throw new Error('Institution id is missing');
-                }
-
-                const procedure = allProceduresWithDBIds.find(
-                  (proc) => proc.code === waitingPeriod.procedureCode
-                );
-
-                if (!procedure) {
-                  console.error("Procedure doesn't exist in the database");
-                  throw new Error(
-                    `Procedure with code ${waitingPeriod.procedureCode} not found in the database`
-                  );
-                }
-
-                if (!procedure.id) {
-                  console.error('Procedure id is missing');
-                  throw new Error('Procedure id is missing');
-                }
-
-                // there is a procedureCode and institutionName property in waitingPeriod which is not needed
-                return {
-                  regular: waitingPeriod.regular,
-                  fast: waitingPeriod.fast,
-                  veryFast: waitingPeriod.veryFast,
-                  jobId: insertedJobs[0].id,
-                  institutionId: institution.id,
-                  procedureId: procedure.id,
-                };
-              }
-            );
-
-            const chunkWaitingPeriods = await trx
-              .insert(waitingPeriodsTable)
-              .values(chunkWithJobIdAndInstitutionId)
-              .returning({
-                jobId: waitingPeriodsTable.jobId,
-                institutionId: waitingPeriodsTable.institutionId,
-              });
-            insertedWaitingPeriods.push(...chunkWaitingPeriods);
-          }
+              return chunkWaitingPeriods;
+            }
+          );
 
           const totalRows =
             EXPECTED_NUMBER_OF_JOBS +
@@ -398,6 +368,24 @@ export async function POST(request: Request) {
       status: 202,
     });
   }
+}
+
+async function insertInChunks<T, R>(
+  items: T[], 
+  chunkSize: number, 
+  insertFn: (chunk: T[]) => Promise<R[]>
+): Promise<R[]> {
+  const result: R[] = [];
+  
+  for (let i = 0; i < items.length; i += chunkSize) {
+    const chunk = items.slice(i, i + chunkSize);
+    if (chunk.length === 0) break;
+    
+    const inserted = await insertFn(chunk);
+    result.push(...inserted);
+  }
+  
+  return result;
 }
 
 function validateWebhookPayload (payload: unknown): ReturnType<Exclude<WebhookPayload, {success : "error"}>> {
