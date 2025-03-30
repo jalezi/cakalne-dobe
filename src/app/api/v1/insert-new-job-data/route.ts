@@ -80,25 +80,13 @@ export async function POST(request: Request) {
       throw new Error(dataResponse.error);
     }
 
-    const combinedData: { gitLabJobId: string } & AllData = Object.assign(
-      { gitLabJobId },
-      dataResponse.data 
-    );
-
-    const { start, end } = combinedData;
-
-    const notCompleteDataObj = getNotCompleteDataByTable(
-      combinedData,
-      gitLabJobId
-    );
+    const preparedJobData = await prepareJobData(gitLabJobId);
+    if (!preparedJobData.success) {
+      throw new Error(preparedJobData.error);
+    }
+    const {notCompleteDataObj, jobData} = preparedJobData.data;
 
     try {
-      const jobData: InsertJob = {
-        gitLabJobId,
-        startDate: start,
-        endDate: end,
-      };
-
       const transactionResponse = await db.transaction(async (trx) => {
         try {
           // JOB
@@ -463,7 +451,10 @@ async function shouldInsertLatestJob(): Promise<ReturnType<
   return {success: true, data: "ok"};
 }
 
-async function getData(gitLabJobId: string): Promise<ReturnType<AllData>> {
+async function getData(gitLabJobId: string): Promise<ReturnType<
+AllData, 
+{gitLabJobId: string, start: string, end: string}, {message: string, url: string, status: number, statusText: string}>
+> {
   const jobUrl = new URL(
     `jobs/${gitLabJobId}${JSON_OUT_PATH}`,
     BASE_JOBS_URL
@@ -492,7 +483,46 @@ async function getData(gitLabJobId: string): Promise<ReturnType<AllData>> {
       start: data.start,
       end: data.end,
     }
+  };
 }
+
+async function prepareJobData(gitLabJobId: string): Promise<ReturnType<{
+  jobData: InsertJob;
+  notCompleteDataObj: NotCompleteDataByTable;
+}>> {
+  const dataResponse = await getData(gitLabJobId);
+  
+  if (!dataResponse.success) {
+    return {
+      success: false,
+      error: dataResponse.error,
+      details: {
+        message: 'Failed to fetch job data',
+        url: dataResponse.details?.url,
+        status: dataResponse.details?.status,
+        statusText: dataResponse.details?.statusText,
+      },
+    }
+  }
+  
+  const combinedData = { gitLabJobId, ...dataResponse.data };
+  const { start, end } = combinedData;
+  
+  const jobData: InsertJob = { gitLabJobId, startDate: start, endDate: end };
+  const notCompleteDataObj = getNotCompleteDataByTable(combinedData, gitLabJobId);
+  
+  return {
+    success: true,
+    data: {
+      jobData,
+      notCompleteDataObj,
+    },
+    meta: {
+      gitLabJobId,
+      start,
+      end,
+    },
+  };
 }
 
 type NotCompleteDataByTable = {
