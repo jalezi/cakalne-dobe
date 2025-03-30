@@ -52,36 +52,7 @@ type ReturnType<TData, TMeta extends Record<string, unknown> = {}, TDetails exte
   details?: TDetails;
 }
 
-const validateWebhookPayload = (payload: unknown): ReturnType<Exclude<WebhookPayload, {success : "error"}>> => {
-  const parsedPayload = webhookPayloadSchema.safeParse(payload);
-  if (!parsedPayload.success) {
-    return {
-      success: false,
-      error: "Invalid webhook payload",
-      details: {
-        message: parsedPayload.error.message,
-        payload,
-        errors: parsedPayload.error.flatten(), 
-    }
-  }}
 
-  if (parsedPayload.data.success === 'error') {
-    return {
-      success: false,
-      error: parsedPayload.data.error,
-      details: {
-        message: 'GitLab job failed',
-        payload,
-        errors: parsedPayload.data.error,
-      }
-    }
-  }
-
-  return {
-    success: true,
-    data: parsedPayload.data,
-  };
-};
 
 
 export async function POST(request: Request) {
@@ -101,12 +72,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const lastGitlabIdResponse = await getLastJobId(10);
-    if (!lastGitlabIdResponse.success) {
-      throw new Error(lastGitlabIdResponse.error);
+    const lastGitLabIdResponse = await getLastJobId(10);
+    if (!lastGitLabIdResponse.success) {
+      throw new Error(lastGitLabIdResponse.error);
     }
 
-    const gitLabJobId = lastGitlabIdResponse.data.gitLabJobId;
+    const gitLabJobId = lastGitLabIdResponse.data.gitLabJobId;
 
     const jobUrl = new URL(
       `jobs/${gitLabJobId}${JSON_OUT_PATH}`,
@@ -128,7 +99,7 @@ export async function POST(request: Request) {
 
     const { start, end } = combinedData;
 
-    const notCompleteDataObj = getNotCompleteDatabyTable(
+    const notCompleteDataObj = getNotCompleteDataByTable(
       combinedData,
       gitLabJobId
     );
@@ -453,6 +424,37 @@ export async function POST(request: Request) {
   }
 }
 
+function validateWebhookPayload (payload: unknown): ReturnType<Exclude<WebhookPayload, {success : "error"}>> {
+  const parsedPayload = webhookPayloadSchema.safeParse(payload);
+  if (!parsedPayload.success) {
+    return {
+      success: false,
+      error: "Invalid webhook payload",
+      details: {
+        message: parsedPayload.error.message,
+        payload,
+        errors: parsedPayload.error.flatten(), 
+    }
+  }}
+
+  if (parsedPayload.data.success === 'error') {
+    return {
+      success: false,
+      error: parsedPayload.data.error,
+      details: {
+        message: 'GitLab job failed',
+        payload,
+        errors: parsedPayload.data.error,
+      }
+    }
+  }
+
+  return {
+    success: true,
+    data: parsedPayload.data,
+  };
+};
+
 type NotCompleteDataByTable = {
   procedures: Pick<InsertProcedure, 'code' | 'name'>[];
   institutions: Map<string, Pick<InsertInstitution, 'name'>>;
@@ -469,7 +471,7 @@ type NotCompleteDataByTable = {
   >;
 };
 
-function getNotCompleteDatabyTable(
+function getNotCompleteDataByTable(
   input: AllData,
   jobId: string
 ): NotCompleteDataByTable {
