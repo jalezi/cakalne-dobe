@@ -1,10 +1,6 @@
 import { handleError } from '@/utils/handle-error';
 import {
-  type InsertInstitution,
-  type InsertMaxAllowedDays,
-  type InsertProcedure,
-  type InsertWaitingPeriods,
-  type InsertJob,
+
   jobs as jobsTable,
   procedures as proceduresTable,
   institutions as institutionsTable,
@@ -19,7 +15,12 @@ import { sql } from 'drizzle-orm';
 import { format } from 'date-fns';
 import { getLastJobId } from '@/utils/get-last-job-id';
 import { z } from 'zod';
-import { T } from 'vitest/dist/chunks/environment.d.C8UItCbf.js';
+
+
+import { ResultSet,  } from '@libsql/client';
+import { SQLiteTransaction } from 'drizzle-orm/sqlite-core';
+
+import * as schema from '@/db/schema';
 
 export const maxDuration = 30;
 
@@ -52,7 +53,16 @@ type ReturnType<TData, TMeta extends Record<string, unknown> = {}, TDetails exte
   details?: TDetails;
 }
 
-
+async function insertJobTransaction(trx: SQLiteTransaction<'async', ResultSet, typeof schema, any>, jobData: schema.InsertJob) {
+  return trx
+    .insert(jobsTable)
+    .values(jobData)
+    .returning({
+      id: jobsTable.id,
+      gitLabJobId: jobsTable.gitLabJobId,
+    })
+    .onConflictDoNothing();
+}
 
 
 export async function POST(request: Request) {
@@ -90,14 +100,7 @@ export async function POST(request: Request) {
       const transactionResponse = await db.transaction(async (trx) => {
         try {
           // JOB
-          const insertedJobs = await trx
-            .insert(jobsTable)
-            .values(jobData)
-            .returning({
-              id: jobsTable.id,
-              gitLabJobId: jobsTable.gitLabJobId,
-            })
-            .onConflictDoNothing();
+          const insertedJobs = await insertJobTransaction(trx, jobData);
 
           // PROCEDURES
           const procedureCodesToCheckIfExistsInDB =
@@ -475,7 +478,7 @@ AllData,
 }
 
 async function prepareJobData(gitLabJobId: string): Promise<ReturnType<{
-  jobData: InsertJob;
+  jobData: schema.InsertJob;
   notCompleteDataObj: NotCompleteDataByTable;
 }>> {
   const dataResponse = await getData(gitLabJobId);
@@ -496,7 +499,7 @@ async function prepareJobData(gitLabJobId: string): Promise<ReturnType<{
   const combinedData = { gitLabJobId, ...dataResponse.data };
   const { start, end } = combinedData;
   
-  const jobData: InsertJob = { gitLabJobId, startDate: start, endDate: end };
+  const jobData: schema.InsertJob = { gitLabJobId, startDate: start, endDate: end };
   const notCompleteDataObj = getNotCompleteDataByTable(combinedData, gitLabJobId);
   
   return {
@@ -514,15 +517,15 @@ async function prepareJobData(gitLabJobId: string): Promise<ReturnType<{
 }
 
 type NotCompleteDataByTable = {
-  procedures: Pick<InsertProcedure, 'code' | 'name'>[];
-  institutions: Map<string, Pick<InsertInstitution, 'name'>>;
+  procedures: Pick<schema.InsertProcedure, 'code' | 'name'>[];
+  institutions: Map<string, Pick<schema.InsertInstitution, 'name'>>;
   maxAllowedDays: (Pick<
-    InsertMaxAllowedDays,
+    schema.InsertMaxAllowedDays,
     'fast' | 'regular' | 'veryFast' | 'jobId'
   > & { procedureCode: string })[];
   waitingPeriods: Map<
     string,
-    Pick<InsertWaitingPeriods, 'fast' | 'regular' | 'veryFast' | 'jobId'> & {
+    Pick<schema.InsertWaitingPeriods, 'fast' | 'regular' | 'veryFast' | 'jobId'> & {
       institutionName: string;
       procedureCode: string;
     }
