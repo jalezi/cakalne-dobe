@@ -19,6 +19,7 @@ import { sql } from 'drizzle-orm';
 import { format } from 'date-fns';
 import { getLastJobId } from '@/utils/get-last-job-id';
 import { z } from 'zod';
+import { T } from 'vitest/dist/chunks/environment.d.C8UItCbf.js';
 
 export const maxDuration = 30;
 
@@ -35,26 +36,62 @@ const webhookPayloadSchema = z.discriminatedUnion('success', [
   }),
 ]);
 
+type WebhookPayload = z.infer<typeof webhookPayloadSchema>;
+
 const BASE_URL = new URL('https://wayback-automachine.gitlab.io');
 const BASE_JOBS_URL = new URL('-/cakalne-dobe/-/jobs', BASE_URL);
 const JSON_OUT_PATH = '/artifacts/out.json';
+
+type ReturnType<TData, TMeta extends Record<string, unknown> = {}, TDetails extends Record<string, unknown> = {}> = {
+  success: true;
+  data: TData;
+  meta? : TMeta;
+} | {
+  success: false;
+  error: string;
+  details?: TDetails;
+}
+
+const validateWebhookPayload = (payload: unknown): ReturnType<Exclude<WebhookPayload, {success : "error"}>> => {
+  const parsedPayload = webhookPayloadSchema.safeParse(payload);
+  if (!parsedPayload.success) {
+    return {
+      success: false,
+      error: "Invalid webhook payload",
+      details: {
+        message: parsedPayload.error.message,
+        payload,
+        errors: parsedPayload.error.flatten(), 
+    }
+  }}
+
+  if (parsedPayload.data.success === 'error') {
+    return {
+      success: false,
+      error: parsedPayload.data.error,
+      details: {
+        message: 'GitLab job failed',
+        payload,
+        errors: parsedPayload.data.error,
+      }
+    }
+  }
+
+  return {
+    success: true,
+    data: parsedPayload.data,
+  };
+};
 
 
 export async function POST(request: Request) {
   try {
     const webhookJson = (await request.json());
 
-    const parsedWebhookPayload = webhookPayloadSchema.safeParse(webhookJson);
-    if (!parsedWebhookPayload.success) {
-      throw new Error('Invalid webhook payload', {cause: parsedWebhookPayload.error});
+   const validationResult = validateWebhookPayload(webhookJson);
+    if (!validationResult.success) {
+      throw new Error(validationResult.error);
     }
-
-    if (parsedWebhookPayload.data.success === 'error') {
-     throw new Error(
-        `GitLab job failed with error: ${parsedWebhookPayload.data.error}`, {cause: parsedWebhookPayload.data.error}
-      );
-    }
-
 
     const latestJobInDbResult = await getLatestJobInDb();
 
