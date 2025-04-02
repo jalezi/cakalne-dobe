@@ -12,10 +12,6 @@ import { shouldInsertLatestJob, prepareJobData } from './job-processing';
 import { processJobData } from './db-operations';
 import { getLastJobId } from '@/utils/get-last-job-id';
 
-export const maxDuration = 30;
-export const MAX_CHUNK_SIZE = 50;
-export const EXPECTED_NUMBER_OF_JOBS = 1;
-
 export async function POST(request: Request) {
   try {
     const webhookJson = await request.json();
@@ -41,23 +37,17 @@ export async function POST(request: Request) {
       throw new Error(preparedJobData.error);
     }
 
-    try {
-      const transactionResponse = await processJobData(
-        preparedJobData.data.jobData,
-        preparedJobData.data.notCompleteDataObj
-      );
+    const transactionResponse = await processJobData(
+      preparedJobData.data.jobData,
+      preparedJobData.data.notCompleteDataObj
+    );
 
-      revalidateAllPaths();
+    revalidateAllPaths();
 
-      return Response.json({
-        success: true,
-        data: transactionResponse,
-      });
-    } catch (error) {
-      const newError = handleError(error);
-      console.error(newError);
-      throw new Error(newError.message);
-    }
+    return Response.json({
+      success: true,
+      data: transactionResponse,
+    });
   } catch (error) {
     const newError = handleError(error);
     console.error(newError);

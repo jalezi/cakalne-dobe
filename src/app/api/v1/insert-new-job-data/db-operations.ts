@@ -7,8 +7,8 @@ import {
   waitingPeriods as waitingPeriodsTable,
 } from '@/db/schema';
 import type * as schema from '@/db/schema';
+import { MAX_CHUNK_SIZE, EXPECTED_NUMBER_OF_JOBS } from '@/lib/constants';
 import type { Trx, NotCompleteDataByTable } from './types';
-import { MAX_CHUNK_SIZE, EXPECTED_NUMBER_OF_JOBS } from './route';
 
 /**
  * Process job data and insert it into the database
