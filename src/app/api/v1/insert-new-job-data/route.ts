@@ -140,6 +140,12 @@ async function insertProceduresTransaction(
   };
 }
 
+/**
+ * Retrieves existing institutions and inserts new ones.
+ * @param trx Database transaction
+ * @param notCompleteDataObj Data containing institutions to process
+ * @returns Object with existing and inserted institutions
+ */
 async function insertInstitutionsTransaction(
   trx: Trx,
   notCompleteDataObj: NotCompleteDataByTable
@@ -198,6 +204,14 @@ async function insertInstitutionsTransaction(
   };
 }
 
+/**
+ * Inserts max allowed days for procedures.
+ * @param trx Database transaction
+ * @param notCompleteDataObj Data containing max allowed days to process
+ * @param allProceduresWithDBIds Array of all procedures with their DB IDs
+ * @param jobId Job ID to associate with the inserted data
+ * @returns Array of inserted max allowed days with job and procedure IDs
+ */
 async function insertMaxAllowedDays(
   trx: Trx,
   notCompleteDataObj: NotCompleteDataByTable,
@@ -251,6 +265,15 @@ async function insertMaxAllowedDays(
   return insertedMaxAllowedDays;
 }
 
+/**
+ * Inserts waiting periods for procedures and institutions.
+ * @param trx Database transaction
+ * @param notCompleteDataObj Data containing waiting periods to process
+ * @param allInstitutionsWithDBId Array of all institutions with their DB IDs
+ * @param allProceduresWithDBIds Array of all procedures with their DB IDs
+ * @param jobId Job ID to associate with the inserted data
+ * @returns Array of inserted waiting periods with job and institution IDs
+ */
 async function insertWaitingPeriodsTransaction(
   trx: Trx,
   notCompleteDataObj: NotCompleteDataByTable,
@@ -482,6 +505,13 @@ export async function POST(request: Request) {
   }
 }
 
+/**
+ * Inserts items in chunks using the provided insert function.
+ * @param items Array of items to insert
+ * @param chunkSize Size of each chunk
+ * @param insertFn Function to insert a chunk of items
+ * @returns Array of inserted items
+ */
 async function insertInChunks<T, R>(
   items: T[],
   chunkSize: number,
@@ -500,6 +530,11 @@ async function insertInChunks<T, R>(
   return result;
 }
 
+/**
+ * Validates the webhook payload.
+ * @param payload The payload to validate
+ * @returns Validation result
+ */
 function validateWebhookPayload(
   payload: unknown
 ): ReturnType<Exclude<WebhookPayload, { success: 'error' }>> {
@@ -534,6 +569,10 @@ function validateWebhookPayload(
   };
 }
 
+/**
+ * Checks if the latest job should be inserted into the database.
+ * @returns Result indicating whether the job should be inserted
+ */
 async function shouldInsertLatestJob(): Promise<ReturnType<'ok'>> {
   const latestJobInDbResult = await getLatestJobInDb();
 
@@ -589,6 +628,11 @@ async function getData(
   };
 }
 
+/**
+ * Prepares job data for insertion into the database.
+ * @param gitLabJobId The GitLab job ID
+ * @returns Prepared job data and additional information
+ */
 async function prepareJobData(gitLabJobId: string): Promise<
   ReturnType<{
     jobData: schema.InsertJob;
@@ -637,6 +681,9 @@ async function prepareJobData(gitLabJobId: string): Promise<
   };
 }
 
+/**
+ * Type representing the data structure for incomplete data by table.
+ */
 type NotCompleteDataByTable = {
   procedures: Pick<schema.InsertProcedure, 'code' | 'name'>[];
   institutions: Map<string, Pick<schema.InsertInstitution, 'name'>>;
@@ -656,6 +703,12 @@ type NotCompleteDataByTable = {
   >;
 };
 
+/**
+ * Processes and organizes incomplete data by table.
+ * @param input The input data containing procedures, institutions, max allowed days, and waiting periods
+ * @param jobId The job ID to associate with the data
+ * @returns Processed data organized by table
+ */
 function getNotCompleteDataByTable(
   input: AllData,
   jobId: string
@@ -723,6 +776,10 @@ function getNotCompleteDataByTable(
   };
 }
 
+/**
+ * Retrieves the latest job from the database.
+ * @returns Object containing information about the latest job in the database
+ */
 async function getLatestJobInDb() {
   const latestGitLabJobId = await getLastJobId(10);
 
