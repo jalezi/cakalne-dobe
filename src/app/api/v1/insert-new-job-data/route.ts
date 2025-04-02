@@ -1,3 +1,10 @@
+/**
+ * @module InsertNewJobData
+ * @description This module handles the insertion of new job data into the database.
+ * It listens for incoming webhook requests, validates the payload, fetches job data,
+ * and inserts the data into the database. It also handles errors and revalidates paths.
+ */
+
 import { handleError } from '@/utils/handle-error';
 import {
   jobs as jobsTable,
@@ -790,7 +797,11 @@ function getNotCompleteDataByTable(
 }
 
 /**
- * Retrieves the latest job from the database.
+ * Retrieves the latest job from the database if it exists based on the GitLab job ID.
+ * First fetches last ten jobs from GitLab and checks if the job is already in the database.
+ * If the job is found, it returns the job information.
+ * If the job is not found, it returns an object indicating that the job is not in the database.
+ * If an error occurs during the database query, it returns an error message.
  * @returns Object containing information about whether the job is already in the database
  */
 async function getLatestJobInDb(): Promise<
@@ -798,7 +809,7 @@ async function getLatestJobInDb(): Promise<
     isInDB: boolean;
     gitLabJobId: string;
     date: string;
-    job: typeof jobsTable.$inferSelect | undefined;
+    job: schema.SelectJob | undefined;
   }>
 > {
   const latestGitLabJobId = await getLastJobId(10);
