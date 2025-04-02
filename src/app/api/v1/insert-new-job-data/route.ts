@@ -576,14 +576,27 @@ function validateWebhookPayload(
 async function shouldInsertLatestJob(): Promise<ReturnType<'ok'>> {
   const latestJobInDbResult = await getLatestJobInDb();
 
-  if (latestJobInDbResult.isInDB) {
+  if (!latestJobInDbResult.success) {
     return {
       success: false,
-      error: 'Latest job not found in the database',
+      error: latestJobInDbResult.error,
       details: {
-        message: 'Latest job not found in the database',
-        jobId: latestJobInDbResult.gitLabJobId,
-        date: latestJobInDbResult.date,
+        message: 'Failed to get latest job from the database',
+        error: latestJobInDbResult.error,
+      },
+    };
+  }
+
+  if (latestJobInDbResult.data.isInDB) {
+    return {
+      success: false,
+      error: 'Latest job already exists in the database',
+      details: {
+        message: 'Latest job already exists in the database',
+        gitLabJobId: latestJobInDbResult.data.gitLabJobId,
+        date: latestJobInDbResult.data.date,
+        job: latestJobInDbResult.data.job,
+        jobId: latestJobInDbResult.data.job?.id,
       },
     };
   }
@@ -778,30 +791,52 @@ function getNotCompleteDataByTable(
 
 /**
  * Retrieves the latest job from the database.
- * @returns Object containing information about the latest job in the database
+ * @returns Object containing information about whether the job is already in the database
  */
-async function getLatestJobInDb() {
+async function getLatestJobInDb(): Promise<
+  ReturnType<{
+    isInDB: boolean;
+    gitLabJobId: string;
+    date: string;
+    job: typeof jobsTable.$inferSelect | undefined;
+  }>
+> {
   const latestGitLabJobId = await getLastJobId(10);
 
   if (!latestGitLabJobId.success) {
-    throw new Error(latestGitLabJobId.error);
+    return {
+      success: false,
+      error: `Failed to get latest GitLab job ID: ${latestGitLabJobId.error}`,
+    };
   }
 
   const jobDate = format(latestGitLabJobId.data.jobFinishedAt, 'yyyy-MM-dd');
   const sqlStartDate = sql<string>`strftime('%Y-%m-%d',${jobsTable.startDate})`;
 
-  const foundJob = await db.query.jobs.findFirst({
-    where: (jobs, operators) =>
-      operators.or(
-        operators.eq(jobs.gitLabJobId, latestGitLabJobId.data.gitLabJobId),
-        operators.eq(sqlStartDate, jobDate)
-      ),
-  });
+  try {
+    const foundJob = await db.query.jobs.findFirst({
+      where: (jobs, operators) =>
+        operators.or(
+          operators.eq(jobs.gitLabJobId, latestGitLabJobId.data.gitLabJobId),
+          operators.eq(sqlStartDate, jobDate)
+        ),
+    });
 
-  return {
-    isInDB: !!foundJob,
-    gitLabJobId: latestGitLabJobId.data.gitLabJobId,
-    date: jobDate,
-    job: foundJob,
-  };
+    return {
+      success: true,
+      data: {
+        isInDB: !!foundJob,
+        gitLabJobId: latestGitLabJobId.data.gitLabJobId,
+        date: jobDate,
+        job: foundJob,
+      },
+    };
+  } catch (error) {
+    const newError = handleError(error);
+    return {
+      success: false,
+      error: `Database query error: ${newError.message}`,
+      details: { error: newError },
+    };
+  }
 }
