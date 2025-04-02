@@ -251,6 +251,75 @@ async function insertMaxAllowedDays(
   return insertedMaxAllowedDays;
 }
 
+async function insertWaitingPeriodsTransaction(
+  trx: Trx,
+  notCompleteDataObj: NotCompleteDataByTable,
+  allInstitutionsWithDBId: Array<{ id: string; name: string }>,
+  allProceduresWithDBIds: Array<{ id: string; code: string; name: string }>,
+  jobId: string
+): Promise<
+  {
+    jobId: string;
+    institutionId: string;
+  }[]
+> {
+  const insertedWaitingPeriods: {
+    jobId: string;
+    institutionId: string;
+  }[] = await insertInChunks(
+    Array.from(notCompleteDataObj.waitingPeriods.values()),
+    MAX_CHUNK_SIZE,
+    async (chunk) => {
+      const chunkWithJobIdAndInstitutionId = chunk.map((waitingPeriod) => {
+        const institution = allInstitutionsWithDBId.find((inst) => {
+          return inst.name === waitingPeriod.institutionName;
+        });
+        if (!institution) {
+          console.error("Institution doesn't exist in the database");
+          throw new Error(
+            `Institution with name ${waitingPeriod.institutionName} not found in the database`
+          );
+        }
+        if (!institution.id) {
+          console.error('Institution id is missing');
+          throw new Error('Institution id is missing');
+        }
+        const procedure = allProceduresWithDBIds.find(
+          (proc) => proc.code === waitingPeriod.procedureCode
+        );
+        if (!procedure) {
+          console.error("Procedure doesn't exist in the database");
+          throw new Error(
+            `Procedure with code ${waitingPeriod.procedureCode} not found in the database`
+          );
+        }
+        if (!procedure.id) {
+          console.error('Procedure id is missing');
+          throw new Error('Procedure id is missing');
+        }
+        // there is a procedureCode and institutionName property in waitingPeriod which is not needed
+        return {
+          regular: waitingPeriod.regular,
+          fast: waitingPeriod.fast,
+          veryFast: waitingPeriod.veryFast,
+          jobId,
+          institutionId: institution.id,
+          procedureId: procedure.id,
+        };
+      });
+      const chunkWaitingPeriods = await trx
+        .insert(waitingPeriodsTable)
+        .values(chunkWithJobIdAndInstitutionId)
+        .returning({
+          jobId: waitingPeriodsTable.jobId,
+          institutionId: waitingPeriodsTable.institutionId,
+        });
+      return chunkWaitingPeriods;
+    }
+  );
+  return insertedWaitingPeriods;
+}
+
 export async function POST(request: Request) {
   try {
     const webhookJson = await request.json();
@@ -323,58 +392,12 @@ export async function POST(request: Request) {
           const insertedWaitingPeriods: {
             jobId: string;
             institutionId: string;
-          }[] = await insertInChunks(
-            Array.from(notCompleteDataObj.waitingPeriods.values()),
-            MAX_CHUNK_SIZE,
-            async (chunk) => {
-              const chunkWithJobIdAndInstitutionId = chunk.map(
-                (waitingPeriod) => {
-                  const institution = allInstitutionsWithDBId.find((inst) => {
-                    return inst.name === waitingPeriod.institutionName;
-                  });
-                  if (!institution) {
-                    console.error("Institution doesn't exist in the database");
-                    throw new Error(
-                      `Institution with name ${waitingPeriod.institutionName} not found in the database`
-                    );
-                  }
-                  if (!institution.id) {
-                    console.error('Institution id is missing');
-                    throw new Error('Institution id is missing');
-                  }
-                  const procedure = allProceduresWithDBIds.find(
-                    (proc) => proc.code === waitingPeriod.procedureCode
-                  );
-                  if (!procedure) {
-                    console.error("Procedure doesn't exist in the database");
-                    throw new Error(
-                      `Procedure with code ${waitingPeriod.procedureCode} not found in the database`
-                    );
-                  }
-                  if (!procedure.id) {
-                    console.error('Procedure id is missing');
-                    throw new Error('Procedure id is missing');
-                  }
-                  // there is a procedureCode and institutionName property in waitingPeriod which is not needed
-                  return {
-                    regular: waitingPeriod.regular,
-                    fast: waitingPeriod.fast,
-                    veryFast: waitingPeriod.veryFast,
-                    jobId: insertedJobs[0].id,
-                    institutionId: institution.id,
-                    procedureId: procedure.id,
-                  };
-                }
-              );
-              const chunkWaitingPeriods = await trx
-                .insert(waitingPeriodsTable)
-                .values(chunkWithJobIdAndInstitutionId)
-                .returning({
-                  jobId: waitingPeriodsTable.jobId,
-                  institutionId: waitingPeriodsTable.institutionId,
-                });
-              return chunkWaitingPeriods;
-            }
+          }[] = await insertWaitingPeriodsTransaction(
+            trx,
+            notCompleteDataObj,
+            allInstitutionsWithDBId,
+            allProceduresWithDBIds,
+            insertedJobs[0].id
           );
 
           const totalRows =
