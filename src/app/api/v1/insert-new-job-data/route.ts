@@ -140,6 +140,64 @@ async function insertProceduresTransaction(
   };
 }
 
+async function insertInstitutionsTransaction(
+  trx: Trx,
+  notCompleteDataObj: NotCompleteDataByTable
+): Promise<{
+  existingInstitutions: Array<{ id: string; name: string }>;
+  insertedInstitutions: Array<{ id: string; name: string }>;
+}> {
+  // Get institution names to check in database
+  const institutionsNamesToCheckIfExistsInDB = Array.from(
+    notCompleteDataObj.institutions.keys()
+  );
+
+  // Find existing institutions
+  const existingInstitutions = await trx.query.institutions.findMany({
+    columns: {
+      id: true,
+      name: true,
+    },
+    where: (institutions, operators) =>
+      operators.inArray(
+        institutions.name,
+        institutionsNamesToCheckIfExistsInDB
+      ),
+  });
+
+  // Find institutions that need to be inserted
+  const newInstitutions = Array.from(
+    notCompleteDataObj.institutions.values()
+  ).filter(
+    (inst) =>
+      !existingInstitutions.some(
+        (existingInstitution) => existingInstitution.name === inst.name
+      )
+  );
+
+  // Insert new institutions in chunks
+  const insertedInstitutions = await insertInChunks(
+    newInstitutions,
+    MAX_CHUNK_SIZE,
+    async (chunk) => {
+      const chunkInstitutions = await trx
+        .insert(institutionsTable)
+        .values(chunk)
+        .returning({
+          id: institutionsTable.id,
+          name: institutionsTable.name,
+        });
+
+      return chunkInstitutions;
+    }
+  );
+
+  return {
+    existingInstitutions,
+    insertedInstitutions,
+  };
+}
+
 export async function POST(request: Request) {
   try {
     const webhookJson = await request.json();
@@ -185,21 +243,8 @@ export async function POST(request: Request) {
           } = await insertProceduresTransaction(trx, notCompleteDataObj);
 
           // INSTITUTIONS
-          // TODO: extract this to a function
-          const institutionsNamesToCheckIfExistsInDB = Array.from(
-            notCompleteDataObj.institutions.keys()
-          );
-          const existingInstitutions = await trx.query.institutions.findMany({
-            columns: {
-              id: true,
-              name: true,
-            },
-            where: (institutions, operators) =>
-              operators.inArray(
-                institutions.name,
-                institutionsNamesToCheckIfExistsInDB
-              ),
-          });
+          const { existingInstitutions, insertedInstitutions } =
+            await insertInstitutionsTransaction(trx, notCompleteDataObj);
 
           const newInstitutions = Array.from(
             notCompleteDataObj.institutions.values()
@@ -209,22 +254,6 @@ export async function POST(request: Request) {
                 (existingInstitution) => existingInstitution.name === inst.name
               )
           );
-
-          const insertedInstitutions: typeof existingInstitutions =
-            await insertInChunks(
-              newInstitutions,
-              MAX_CHUNK_SIZE,
-              async (chunk) => {
-                const chunkInstitutions = await trx
-                  .insert(institutionsTable)
-                  .values(chunk)
-                  .returning({
-                    id: institutionsTable.id,
-                    name: institutionsTable.name,
-                  });
-                return chunkInstitutions;
-              }
-            );
 
           const allInstitutionsWithDBId =
             existingInstitutions.concat(insertedInstitutions);
