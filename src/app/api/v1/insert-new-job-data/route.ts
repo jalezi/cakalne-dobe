@@ -198,6 +198,59 @@ async function insertInstitutionsTransaction(
   };
 }
 
+async function insertMaxAllowedDays(
+  trx: Trx,
+  notCompleteDataObj: NotCompleteDataByTable,
+  allProceduresWithDBIds: Array<{ id: string; code: string; name: string }>,
+  jobId: string
+): Promise<
+  {
+    jobId: string;
+    procedureId: string;
+  }[]
+> {
+  const insertedMaxAllowedDays: { jobId: string; procedureId: string }[] =
+    await insertInChunks(
+      notCompleteDataObj.maxAllowedDays,
+      MAX_CHUNK_SIZE,
+      async (chunk) => {
+        const chunkWithJobIdAndProcedureId = chunk.map((maxAllowedDay) => {
+          const procedure = allProceduresWithDBIds.find(
+            (proc) => proc.code === maxAllowedDay.procedureCode
+          );
+          if (!procedure) {
+            console.error("Procedure doesn't exist in the database");
+            throw new Error(
+              `Procedure with code ${maxAllowedDay.procedureCode} not found in the database`
+            );
+          }
+          if (!procedure.id) {
+            console.error('Procedure id is missing');
+            throw new Error('Procedure id is missing');
+          }
+          // there is a procedureCode property in maxAllowedDay which is not needed
+          return {
+            regular: maxAllowedDay.regular,
+            fast: maxAllowedDay.fast,
+            veryFast: maxAllowedDay.veryFast,
+            jobId: jobId,
+            procedureId: procedure.id,
+          };
+        });
+        const chunkMaxAllowedDays = await trx
+          .insert(maxAllowedDaysTable)
+          .values(chunkWithJobIdAndProcedureId)
+          .returning({
+            jobId: maxAllowedDaysTable.jobId,
+            procedureId: maxAllowedDaysTable.procedureId,
+          });
+        return chunkMaxAllowedDays;
+      }
+    );
+
+  return insertedMaxAllowedDays;
+}
+
 export async function POST(request: Request) {
   try {
     const webhookJson = await request.json();
@@ -259,47 +312,11 @@ export async function POST(request: Request) {
             existingInstitutions.concat(insertedInstitutions);
 
           // MAX ALLOWED DAYS
-          const insertedMaxAllowedDays: {
-            jobId: string;
-            procedureId: string;
-          }[] = await insertInChunks(
-            notCompleteDataObj.maxAllowedDays,
-            MAX_CHUNK_SIZE,
-            async (chunk) => {
-              const chunkWithJobIdAndProcedureId = chunk.map(
-                (maxAllowedDay) => {
-                  const procedure = allProceduresWithDBIds.find(
-                    (proc) => proc.code === maxAllowedDay.procedureCode
-                  );
-                  if (!procedure) {
-                    console.error("Procedure doesn't exist in the database");
-                    throw new Error(
-                      `Procedure with code ${maxAllowedDay.procedureCode} not found in the database`
-                    );
-                  }
-                  if (!procedure.id) {
-                    console.error('Procedure id is missing');
-                    throw new Error('Procedure id is missing');
-                  }
-                  // there is a procedureCode property in maxAllowedDay which is not needed
-                  return {
-                    regular: maxAllowedDay.regular,
-                    fast: maxAllowedDay.fast,
-                    veryFast: maxAllowedDay.veryFast,
-                    jobId: insertedJobs[0].id,
-                    procedureId: procedure.id,
-                  };
-                }
-              );
-              const chunkMaxAllowedDays = await trx
-                .insert(maxAllowedDaysTable)
-                .values(chunkWithJobIdAndProcedureId)
-                .returning({
-                  jobId: maxAllowedDaysTable.jobId,
-                  procedureId: maxAllowedDaysTable.procedureId,
-                });
-              return chunkMaxAllowedDays;
-            }
+          const insertedMaxAllowedDays = await insertMaxAllowedDays(
+            trx,
+            notCompleteDataObj,
+            allProceduresWithDBIds,
+            insertedJobs[0].id
           );
 
           // WAITING PERIODS
