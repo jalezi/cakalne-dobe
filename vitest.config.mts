@@ -7,10 +7,4 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
   },
-  resolve: {
-    alias: {
-      '@lib': '/src/lib',
-      '@test': '/src/test',
-    },
-  },
 });
