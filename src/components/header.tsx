@@ -5,6 +5,9 @@ import { Button } from './ui/button';
 import { db } from '@/db';
 import { desc, sql } from 'drizzle-orm';
 import { jobs as jobsTable } from '@/db/schema';
+import { Suspense } from 'react';
+import { Skeleton } from './ui/skeleton';
+import { DatePickerDemo } from './job-picker';
 
 export async function Header({ id }: { id?: string }) {
   const jobs = await db.query.jobs.findMany({
@@ -32,6 +35,9 @@ export async function Header({ id }: { id?: string }) {
         </Link>
       </Button>
       <div className="ml-auto flex items-center">
+        <Suspense fallback={<Skeleton className="h-10 w-40" />}>
+          <DatePickerDemo jobsOptions={jobsOptions} />
+        </Suspense>
         <ThemeToggler className="ml-2 aspect-square" />
       </div>
     </header>
