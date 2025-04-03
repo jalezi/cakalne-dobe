@@ -1,4 +1,5 @@
 import {
+  index,
   integer,
   primaryKey,
   sqliteTable,
@@ -32,6 +33,16 @@ export const waitingPeriods = sqliteTable(
       pk: primaryKey({
         columns: [table.jobId, table.institutionId, table.procedureId],
       }),
+      // Index for job-based queries
+      jobIndex: index('waiting_periods_job_index').on(table.jobId),
+      // Index for institution-based queries
+      institutionIndex: index('waiting_periods_institution_index').on(
+        table.institutionId
+      ),
+      // Index for procedure-based queries
+      procedureIndex: index('waiting_periods_procedure_index').on(
+        table.procedureId
+      ),
     };
   }
 );

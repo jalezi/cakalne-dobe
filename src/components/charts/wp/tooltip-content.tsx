@@ -36,7 +36,7 @@ export function TooltipContent({
       );
 
     return (
-      <div className="border bg-background p-2 text-foreground">
+      <div className="bg-background text-foreground border p-2">
         <p className="max-w-64 truncate text-xs font-semibold">{xAxisLabel}</p>
         <ul>
           {payload.map((pld: Payload, index) => {

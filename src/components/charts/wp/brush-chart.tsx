@@ -15,8 +15,6 @@ import {
 import { TooltipContent } from './tooltip-content';
 import { useState } from 'react';
 
-
-
 type HexColor = `#${string}`;
 type HSL = string;
 
@@ -49,8 +47,6 @@ export function BrushChart<TLine extends string[]>({
       setActiveSeries((prev) => [...prev, dataKey]);
     }
   };
-
-
 
   return (
     <ResponsiveContainer height={480} width="100%">
@@ -95,7 +91,7 @@ export function BrushChart<TLine extends string[]>({
         <Brush
           dataKey="x"
           height={30}
-          stroke={"var(--muted-foreground)"}
+          stroke={'var(--muted-foreground)'}
           className="text-sm"
           endIndex={chartData.length - 1 >= 10 ? 10 : chartData.length - 1}
         />

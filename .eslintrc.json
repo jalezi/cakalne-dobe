@@ -41,6 +41,7 @@
       {
         "drizzleObjectName": ["db"]
       }
-    ]
+    ],
+    "prettier/prettier": "warn"
   }
 }

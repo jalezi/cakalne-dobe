@@ -1,7 +1,7 @@
 import { db } from '@/db';
 import { jobs as jobsTable, procedures as proceduresTable } from '@/db/schema';
 import { TimeRange } from '@/components/time';
-import { asc, desc, sql } from 'drizzle-orm';
+import { desc, asc, sql } from 'drizzle-orm';
 import ChartCard from '@/components/charts/wp/card';
 import { Suspense } from 'react';
 import { ClassicLoader } from '@/components/ui/loaders';
@@ -11,19 +11,26 @@ import { InstWTChart } from '@/components/charts/inst-wt';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 export default async function Home() {
+  // Query for the first job (earliest date)
+  const firstJobResult = await db.query.jobs.findMany({
+    columns: { id: true, startDate: true },
+    orderBy: [asc(jobsTable.startDate)],
+    limit: 1,
+  });
+  const firstJob = firstJobResult[0];
+
   const jobs = await db.query.jobs.findMany({
     columns: { id: true, startDate: true },
     orderBy: [desc(jobsTable.startDate)],
   });
 
-  const firstJob = jobs.at(-1);
-  const lastJob = jobs.at(0);
-
-  if (!firstJob || !lastJob) {
-    return (
-      <div className="grid min-h-[480px] place-items-center">Ni podatkov</div>
-    );
-  }
+  // Query for the last job (latest date)
+  const lastJobResult = await db.query.jobs.findMany({
+    columns: { id: true, startDate: true },
+    orderBy: [desc(jobsTable.startDate)],
+    limit: 1,
+  });
+  const lastJob = lastJobResult[0];
 
   const procedureOptions = await db
     .select({
@@ -43,14 +50,18 @@ export default async function Home() {
         Čakalne dobe
       </h1>
       <p id="attr-dataset-date-range">
-        Podatki zbrani za obdobje:{' '}
-        {firstJob && lastJob ? (
-          <TimeRange
-            startDate={firstJob.startDate}
-            endDate={lastJob.startDate}
-            options={{ timeZone: 'Europe/Ljubljana' }}
-          />
-        ) : null}
+        {!firstJob || !lastJob ? (
+          'Ni podatkov'
+        ) : (
+          <>
+            Podatki zbrani za obdobje:{' '}
+            <TimeRange
+              startDate={firstJob.startDate}
+              endDate={lastJob.startDate}
+              options={{ timeZone: 'Europe/Ljubljana' }}
+            />
+          </>
+        )}
       </p>
       <section>
         <h2 className="sr-only">Grafi</h2>

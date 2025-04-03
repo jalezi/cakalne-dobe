@@ -1,6 +1,6 @@
 export function Footer() {
   return (
-    <footer className="border-t-[1px] border-dashed p-4 text-sm text-muted-foreground">
+    <footer className="text-muted-foreground border-t-[1px] border-dashed p-4 text-sm">
       <div className="space-y-4">
         <div>
           <p>
