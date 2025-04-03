@@ -22,7 +22,7 @@
     "turso:prod:file": "turso dev --db-file prod.db"
   },
   "dependencies": {
-    "@libsql/client": "^0.15.0",
+    "@libsql/client": "^0.15.2",
     "@paralleldrive/cuid2": "^2.2.2",
     "@radix-ui/react-dialog": "^1.1.6",
     "@radix-ui/react-dropdown-menu": "^2.1.6",
@@ -70,7 +70,7 @@
     "@typescript-eslint/eslint-plugin": "^8.29.0",
     "@typescript-eslint/parser": "^8.29.0",
     "@vitejs/plugin-react": "^4.3.4",
-    "drizzle-kit": "^0.30.5",
+    "drizzle-kit": "^0.30.6",
     "esbuild-register": "^3.6.0",
     "eslint": "^9.23.0",
     "eslint-config-next": "15.2.4",
