@@ -5,8 +5,11 @@ import type * as schema from '@/db/schema';
 
 export type ReturnType<
   TData,
-  TMeta extends Record<string, unknown> = {},
-  TDetails extends Record<string, unknown> = {},
+  TMeta extends Record<string, unknown> | undefined = Record<string, unknown>,
+  TDetails extends Record<string, unknown> | undefined = Record<
+    string,
+    unknown
+  >,
 > =
   | {
       success: true;
