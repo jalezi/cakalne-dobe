@@ -2,7 +2,7 @@
  * @module InsertJobDataByGitLabId
  * @description This module handles the insertion of job data into the database
  * based on a specific GitLab job ID. It validates the input,
- * checks if gitLabId is already in jobs table in database and it's not for the same date (YYYY-MM-DD),
+ * checks if gitLabId is already in jobs table in database and if it's not for the same date (YYYY-MM-DD),
  * fetches job data,
  * and inserts the data into the database. It also handles errors and revalidates paths.
  */
@@ -13,11 +13,8 @@ import { sql } from 'drizzle-orm';
 import { jobs as jobsTable } from '@/db/schema';
 import { db } from '@/db';
 import { z } from 'zod';
-import type { AllData } from '@/lib/zod-schemas/data-schemas';
-
-const BASE_URL = new URL('https://wayback-automachine.gitlab.io');
-const BASE_JOBS_URL = new URL('-/cakalne-dobe/-/jobs', BASE_URL);
-const JSON_OUT_PATH = '/artifacts/out.json';
+import { prepareJobData } from '../insert-new-job-data/job-processing';
+import { processJobData } from '../insert-new-job-data/db-operations';
 
 const dateSchema = z
   .string()
@@ -197,43 +194,19 @@ export async function POST(request: Request) {
       );
     }
 
-    // Fetch the job data from the GitLab URL
-    const jobDataUrl = new URL(
-      `jobs/${gitLabJobId}${JSON_OUT_PATH}`,
-      BASE_JOBS_URL
-    ).toString();
-
-    const response = await fetch(jobDataUrl);
-
-    if (!response.ok) {
-      return Response.json(
-        {
-          success: false,
-          error: `Failed to fetch job data: ${response.statusText}`,
-          jobDataUrl,
-        },
-        {
-          status: response.status,
-        }
-      );
+    const preparedJobData = await prepareJobData(gitLabJobId);
+    if (!preparedJobData.success) {
+      throw new Error(preparedJobData.error);
     }
 
-    const jobData = (await response.json()) as AllData;
-    if (!jobData) {
-      return Response.json(
-        {
-          success: false,
-          error: 'No job data found',
-        },
-        {
-          status: 404,
-        }
-      );
-    }
+    const transactionResponse = await processJobData(
+      preparedJobData.data.jobData,
+      preparedJobData.data.notCompleteDataObj
+    );
 
     return Response.json({
       success: true,
-      data: jobData,
+      data: transactionResponse,
     });
   } catch (error) {
     const newError = handleError(error);
