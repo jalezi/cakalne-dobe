@@ -1,9 +1,10 @@
 import { z } from 'zod';
 import type { ReturnType } from './types';
 
+// TODO: Add a proper type for the webhook payload
 const webhookPayloadSchema = z.discriminatedUnion('success', [
   z.object({
-    success: z.literal('ok'),
+    success: z.literal(true).or(z.literal('ok')),
   }),
   z.object({
     success: z.literal('error'),
