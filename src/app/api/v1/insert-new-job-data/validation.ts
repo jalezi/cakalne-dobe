@@ -4,11 +4,11 @@ import type { ReturnType } from './types';
 // TODO: Add a proper type for the webhook payload
 const webhookPayloadSchema = z.discriminatedUnion('success', [
   z.object({
-    success: z.literal(true).or(z.literal('ok')),
+    success: z.literal(true),
   }),
   z.object({
-    success: z.literal('error'),
-    error: z.string(),
+    success: z.literal(false),
+    error: z.string().default('Unknown Error'),
   }),
 ]);
 
@@ -35,7 +35,7 @@ export function validateWebhookPayload(
     };
   }
 
-  if (parsedPayload.data.success === 'error') {
+  if (!parsedPayload.data.success) {
     return {
       success: false,
       error: parsedPayload.data.error,
