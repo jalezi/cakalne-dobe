@@ -7,7 +7,7 @@ export function Footer() {
             Podatke zbral{' '}
             <ExternalLink href="https://gitlab.com/mitar">Mitar</ExternalLink>.
             Izvorna koda na{' '}
-            <ExternalLink href="https://gitlab.com/mitar/cakalne-dobe">
+            <ExternalLink href="https://gitlab.com/wayback-automachine/cakalne-dobe">
               GitLab
             </ExternalLink>
             .
