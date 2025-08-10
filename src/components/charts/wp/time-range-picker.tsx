@@ -4,9 +4,9 @@ import React, { useState } from 'react';
 
 import { addDays } from 'date-fns';
 import type {
-  ActiveModifiers,
   DateRange,
   SelectRangeEventHandler,
+  Modifiers,
 } from 'react-day-picker';
 import { sl } from 'date-fns/locale';
 
@@ -53,8 +53,8 @@ export function TimeRangePicker({
   const onSelected: SelectRangeEventHandler = (
     range: DateRange | undefined,
     _selectedDay: Date,
-    _activeModifiers: ActiveModifiers,
-    _e: React.MouseEvent
+    _modifiers: Modifiers,
+    _e: React.MouseEvent<Element> | React.KeyboardEvent<Element>
   ) => {
     setDate(range);
     if (!range) {
@@ -205,8 +205,9 @@ export function TimeRangePicker({
               numberOfMonths={2}
               disabled={(day) => disabaledDates(day)}
               locale={sl}
-              fromDate={FIRST_DAY}
-              toDate={new Date()}
+              startMonth={FIRST_DAY}
+              endMonth={new Date()}
+              hidden={[{ before: FIRST_DAY }, { after: new Date() }]}
             />
           </div>
         </PopoverContent>

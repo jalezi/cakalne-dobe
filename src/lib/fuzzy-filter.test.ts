@@ -3,78 +3,114 @@ import { fuzzyFilter, fuzzySort } from './fuzzy-filter';
 import type { Row } from '@tanstack/table-core';
 
 // Create a more complete Row mock
-const createMockRow = (value: any): Partial<Row<unknown>> => ({
-    getValue: vi.fn().mockReturnValue(value),
-    getUniqueValues: vi.fn(),
-    getIsSelected: vi.fn(),
-    getIsGrouped: vi.fn(),
-    getCanExpand: vi.fn(),
-    subRows: [],
-    columnFiltersMeta: {},
-    // Add other required properties as needed
+const createMockRow = (value: string | number): Partial<Row<unknown>> => ({
+  getValue: vi.fn().mockReturnValue(value),
+  getUniqueValues: vi.fn(),
+  getIsSelected: vi.fn(),
+  getIsGrouped: vi.fn(),
+  getCanExpand: vi.fn(),
+  subRows: [],
+  columnFiltersMeta: {},
+  // Add other required properties as needed
 });
 
 describe('fuzzyFilter', () => {
-    it('should filter items based on fuzzy matching', () => {
-        // Create a more complete mock Row object
-        const row = createMockRow('Hello World');
+  it('should filter items based on fuzzy matching', () => {
+    // Create a more complete mock Row object
+    const row = createMockRow('Hello World');
 
-        // Mock addMeta function
-        const addMeta = vi.fn();
+    // Mock addMeta function
+    const addMeta = vi.fn();
 
-        // Test with matching value
-        const resultMatch = fuzzyFilter(row as Row<unknown>, 'columnId', 'Hello', addMeta);
-        expect(resultMatch).toBe(true);
-        expect(addMeta).toHaveBeenCalled();
-        expect(row.getValue).toHaveBeenCalledWith('columnId');
+    // Test with matching value
+    const resultMatch = fuzzyFilter(
+      row as Row<unknown>,
+      'columnId',
+      'Hello',
+      addMeta
+    );
+    expect(resultMatch).toBe(true);
+    expect(addMeta).toHaveBeenCalled();
+    expect(row.getValue).toHaveBeenCalledWith('columnId');
 
-        // Test with non-matching value
-        const resultNoMatch = fuzzyFilter(row as Row<unknown>, 'columnId', 'xyz', addMeta);
-        expect(resultNoMatch).toBe(false);
-    });
+    // Test with non-matching value
+    const resultNoMatch = fuzzyFilter(
+      row as Row<unknown>,
+      'columnId',
+      'xyz',
+      addMeta
+    );
+    expect(resultNoMatch).toBe(false);
+  });
 });
 
 describe('fuzzySort', () => {
-    it('should sort items based on rank when available', () => {
-        // Since we're testing the actual sorting logic, we'll need to focus on mocking just what's needed
-        // We'll use a minimal mock that has just what fuzzySort accesses
-        const createSortMockRow = (rankValue: number) => ({
-            columnFiltersMeta: {
-                testCol: {
-                    itemRank: { rank: rankValue },
-                },
-            },
-            // These are used by sortingFns.alphanumeric as a fallback, though we're not testing that path here
-            getValue: vi.fn(),
-            original: {},
-        });
+  it('should sort items based on rank when available', () => {
+    // Since we're testing the actual sorting logic, we'll need to focus on mocking just what's needed
+    // We'll use a minimal mock that has just what fuzzySort accesses
+    type PartialRow = {
+      columnFiltersMeta: {
+        [key: string]:
+          | {
+              itemRank: { rank: number };
+            }
+          | undefined;
+      };
+      getValue: ReturnType<typeof vi.fn>;
+      original: Record<string, unknown>;
+    };
 
-        const rowA = createSortMockRow(1);
-        const rowB = createSortMockRow(2);
-
-        // Use type assertion since we're only creating a partial mock
-        const result = fuzzySort(rowA as any, rowB as any, 'testCol');
-
-        // We're just testing that sorting is performed, not the specific result
-        // which depends on the implementation of compareItems
-        expect(typeof result).toBe('number');
+    const createSortMockRow = (rankValue: number): PartialRow => ({
+      columnFiltersMeta: {
+        testCol: {
+          itemRank: { rank: rankValue },
+        },
+      },
+      // These are used by sortingFns.alphanumeric as a fallback, though we're not testing that path here
+      getValue: vi.fn(),
+      original: {},
     });
 
-    it('should fall back to alphanumeric sorting when ranks are equal', () => {
-        // Create a minimal mock that allows the alphanumeric sorting path to be tested
-        const createAlphaRow = (value: string) => ({
-            columnFiltersMeta: {}, // Empty to trigger the fallback path
-            getValue: vi.fn().mockReturnValue(value),
-            original: { testCol: value }, // Used by alphanumeric sorting
-        });
+    const rowA = createSortMockRow(1);
+    const rowB = createSortMockRow(2);
 
-        const rowA = createAlphaRow('B');
-        const rowB = createAlphaRow('A');
+    // We can safely cast here since the fuzzySort function only uses properties we've defined
+    const result = fuzzySort(
+      rowA as unknown as Row<unknown>,
+      rowB as unknown as Row<unknown>,
+      'testCol'
+    );
 
-        // Use type assertion since we're only testing the alphanumeric fallback
-        const result = fuzzySort(rowA as any, rowB as any, 'testCol');
+    // We're just testing that sorting is performed, not the specific result
+    // which depends on the implementation of compareItems
+    expect(typeof result).toBe('number');
+  });
 
-        // B comes after A in alphabetical order, so the result should be positive
-        expect(result).toBeGreaterThan(0);
+  it('should fall back to alphanumeric sorting when ranks are equal', () => {
+    // Create a minimal mock that allows the alphanumeric sorting path to be tested
+    type PartialRow = {
+      columnFiltersMeta: Record<string, unknown>;
+      getValue: ReturnType<typeof vi.fn>;
+      original: Record<string, unknown>;
+    };
+
+    const createAlphaRow = (value: string): PartialRow => ({
+      columnFiltersMeta: {}, // Empty to trigger the fallback path
+      getValue: vi.fn().mockReturnValue(value),
+      original: { testCol: value }, // Used by alphanumeric sorting
     });
+
+    const rowA = createAlphaRow('B');
+    const rowB = createAlphaRow('A');
+
+    // We can safely cast here since the fuzzySort function only uses properties we've defined
+    const result = fuzzySort(
+      rowA as unknown as Row<unknown>,
+      rowB as unknown as Row<unknown>,
+      'testCol'
+    );
+
+    // B comes after A in alphabetical order, so the result should be positive
+    expect(result).toBeGreaterThan(0);
+  });
 });
