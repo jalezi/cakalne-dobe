@@ -1,90 +1,132 @@
 # Cakalne Dobe - AI Assistant Instructions
 
 ## Project Overview
-Cakalne Dobe is a Next.js application for tracking and visualizing waiting periods for medical procedures in Slovenia. The app collects, processes, and displays waiting time data across different medical institutions and procedures.
 
-## Architecture
+Cakalne Dobe is a Next.js 15 application tracking medical procedure waiting periods in Slovenia. It visualizes time-series data across medical institutions and procedures using Recharts with interactive controls.
 
-### Database
-- Uses **LibSQL/Turso** (SQLite-compatible) database with Drizzle ORM
-- Two database environments: `dev.db` (local) and `prod.db` (production)
-- Core schema entities:
-  - `jobs`: Represents data collection events with timestamps
+## Architecture & Tech Stack
+
+### Database (LibSQL/Turso + Drizzle)
+
+- **Local**: `dev.db` file with `pnpm turso:dev:file`
+- **Production**: Turso cloud database
+- **Core schema** (composite primary keys for time-series):
+  - `jobs`: Data collection timestamps (`start_date`, `end_date`, `git_lab_job_id`)
+  - `waitingPeriods`: Main entity with triple PK (`job_id`, `institution_id`, `procedure_id`)
   - `institutions`: Medical facilities
   - `procedures`: Medical procedures with codes
-  - `waitingPeriods`: Core data entity linking jobs, institutions, and procedures with waiting times
-  - `maxAllowedDays`: Maximum allowed waiting days for procedures
+  - `maxAllowedDays`: Regulatory limits per procedure
 
-### Framework & UI
-- Next.js 15 App Router architecture
-- Server components for data fetching (see `src/app/page.tsx`)
-- TailwindCSS with shadcn/ui components
-- React Charts for data visualization in `src/components/charts`
+### Framework Stack
 
-## Development Workflow
+- **Next.js 15 App Router** with React Server Components
+- **TurboPack** for development (`pnpm dev`)
+- **shadcn/ui + TailwindCSS 4** for UI components
+- **Recharts** for data visualization in `src/components/charts/`
+- **Vitest + Testing Library** with jsdom environment
 
-### Setup & Environment
-```bash
-# Install dependencies
-pnpm install
+## Critical Development Patterns
 
-# Start development server with TurboPack
-pnpm dev
+### Data Flow Architecture
 
-# Start Turso dev database
-pnpm turso:dev:file
+1. **Raw data**: JSON job files in `mock-data/jobs/` (massive files ~150k lines)
+2. **Seeding**: `seed/seed-db.ts` prompts for source ('jobs' vs 'rows') and processes data
+3. **Queries**: Server actions in `src/actions/` use complex Drizzle joins with aggregations
+4. **Rendering**: Server components fetch data, client components handle interactions
+
+### Database Patterns
+
+```typescript
+// Composite PKs are standard - waitingPeriods table
+primaryKey: [table.jobId, table.institutionId, table.procedureId];
+
+// Use Drizzle inferSelect/inferInsert for type safety
+export type WaitingPeriod = typeof waitingPeriods.$inferSelect;
+
+// SQL aggregations with cast for type safety
+const average = (col) => sql<number>`cast(${avg(col)} as FLOAT)`;
 ```
+
+### Server Action Pattern
+
+```typescript
+'use server';
+// All data fetching uses server actions for complex queries
+export async function getProcedureAvgWtForJob(params: Params) {
+  return await db.select({...}).from(waitingPeriodsTable)...
+}
+```
+
+## Essential Development Commands
 
 ### Database Operations
+
 ```bash
-# Apply schema changes to local DB
+# Start local DB (required before development)
+pnpm turso:dev:file
+
+# Push schema changes
 pnpm drizzle:local:push
 
-# Start Drizzle Studio to view/edit local DB
+# Browse data in Drizzle Studio
 pnpm drizzle:local:studio
 
-# Seed database from job files (default)
-pnpm db:local:seed
-# Use 'jobs' (default) or 'rows' as source when prompted
+# Seed with interactive prompts
+pnpm db:local:seed  # Choose 'jobs' (default) or 'rows'
 ```
 
-### Testing
+### Development & Testing
+
 ```bash
-# Run Vitest tests
-pnpm test
+pnpm dev           # Next.js with TurboPack
+pnpm test          # Vitest with mocked database
+pnpm lint          # ESLint (runs pre-build)
 ```
 
-## Project Conventions
+## Project-Specific Conventions
 
-### Data Flow Pattern
-1. Data is collected in job files (JSON) stored in `mock-data/jobs`
-2. Seed scripts in `seed/` parse and insert this data into the database
-3. Server components in `src/app` fetch data using Drizzle queries
-4. Server actions in `src/actions` handle complex data operations
+### Waiting Period Urgency Levels
 
-### Key Files to Reference
-- Database schema: `src/db/schema/*.ts`
-- Server actions: `src/actions/*.ts`
-- Main page component: `src/app/page.tsx`
-- Chart components: `src/components/charts/`
+Three urgency types tracked throughout codebase:
 
-### TypeScript Practices
-- Use Drizzle's `$inferSelect` and `$inferInsert` for schema type safety
-- Use Zod for environment variables and API validation
-- Server/client boundaries maintained by 'use server' directives
-
-## Important Concepts
-
-### Waiting Period Types
-Three levels of urgency are tracked:
 - `regular`: Standard waiting time
 - `fast`: Expedited waiting time
 - `veryFast`: Urgent waiting time
 
-### Job-based Data Collection
-Each data point is associated with a "job" representing when the data was collected, enabling time-series analysis.
+### Environment Configuration
 
-### Seeds vs Rows Data Sources
-Two data sourcing approaches:
-- `jobs`: Data from job files (preferred)
-- `rows`: Legacy data format
+- **Local**: `.env.development.local` with `DATABASE_URL` pointing to local file
+- **Production**: `.env.production.local` with Turso credentials
+- **Validation**: Zod schemas in `src/lib/env.ts` for type-safe env vars
+
+### Testing Patterns
+
+- Mock env module in tests: `vi.mock('@/lib/env', () => ({...}))`
+- In-memory SQLite for test isolation
+- Test fixtures in `src/db/test/` with setup/cleanup utilities
+
+### Chart Components Architecture
+
+- Server components fetch data via server actions
+- Client components in `src/components/charts/wp/` handle interactivity
+- Recharts with custom tooltip components and brush controls
+- Time-series data with date range pickers and procedure filtering
+
+## Key Files for Context
+
+- **Schema**: `src/db/schema/index.ts` (exports all entities)
+- **Main UI**: `src/app/page.tsx` (demonstrates server component data fetching)
+- **Server Actions**: `src/actions/get-procedure-avg-wt-*.ts` (complex aggregation queries)
+- **Seed Logic**: `seed/seed-db-from-jobs.ts` (JSON parsing and batch inserts)
+- **Test Setup**: `test/setup.ts` and `src/db/test/` (database mocking patterns)
+
+## Important
+
+- **Do not write to database without proper validation and error handling.**
+- **Always sanitize user inputs to prevent SQL injection attacks.**
+- **Use transactions for complex write operations to maintain data integrity.**
+- **Implement proper error handling and logging for all database operations.**
+- **Regularly review and update database access permissions.**
+- **Keep database schemas and migrations up to date.**
+- **Document all database changes and maintain an up-to-date changelog.**
+- **From chat Do not write to database unless user confirms.**
