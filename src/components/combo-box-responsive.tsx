@@ -22,6 +22,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { DialogTitle } from './ui/dialog';
+import type { Route } from 'next';
 
 export type SelectOption = {
   value: string;
@@ -181,7 +182,7 @@ function OptionList({
             >
               {asLink ? (
                 <Link
-                  href={option.value}
+                  href={option.value as Route}
                   aria-current={option.value === pathname ? 'page' : undefined}
                 >
                   <CheckIcon
