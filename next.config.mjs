@@ -8,6 +8,7 @@ const nextConfig = {
       fullUrl: true,
     },
   },
+  typedRoutes: true,
 };
 
 export default nextConfig;
