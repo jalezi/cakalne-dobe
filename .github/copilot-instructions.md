@@ -130,3 +130,17 @@ Three urgency types tracked throughout codebase:
 - **Keep database schemas and migrations up to date.**
 - **Document all database changes and maintain an up-to-date changelog.**
 - **From chat Do not write to database unless user confirms.**
+
+## Git
+
+- Follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/#specification) to create clear and consistent commit messages.
+- Use descriptive commit messages that accurately reflect the changes made.
+- Include issue references in commit messages (e.g., "Fixes #123").
+- Keep commits small and focused on a single task or issue.
+- Rebase commits to maintain a clean commit history.
+- Squash related commits together to create a more coherent history.
+- Avoid unnecessary merge commits by using rebase instead.
+- Always pull the latest changes from the main branch before pushing new commits.
+- Use feature branches for new development work.
+- Delete branches after they have been merged to keep the repository clean.
+- Regularly review and clean up stale branches.
