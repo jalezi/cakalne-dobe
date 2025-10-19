@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 /** biome-ignore-all lint/suspicious/noConsole: This is a CLI script */
 
 /**
@@ -11,7 +12,8 @@
  *   pnpm fetch:jobs --output ./custom/path   # Save to custom directory
  */
 
-import { mkdir, writeFile } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import { access, mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { JOB_NAME } from '@/lib/gql';
 import type { AllData } from '@/lib/zod-schemas/data-schemas';
@@ -70,6 +72,18 @@ async function fetchJobArtifact(jobId: string): Promise<AllData> {
 }
 
 /**
+ * Check if a file already exists
+ */
+async function fileExists(filePath: string): Promise<boolean> {
+  try {
+    await access(filePath, constants.F_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Save job artifact to file
  */
 async function saveJobArtifact(
@@ -108,24 +122,35 @@ async function fetchJobs(options: FetchJobsOptions = {}): Promise<void> {
   }
 
   const jobs = jobsResponse.data.jobs.nodes;
-  
+
   // Filter jobs: only "run" jobs have artifacts
   const runJobs = jobs.filter((job) => job.name === JOB_NAME);
-  
+
   // Apply date filter if provided
   const filteredJobs = fromDate
     ? runJobs.filter((job) => new Date(job.finishedAt) >= fromDate)
     : runJobs;
 
-  console.log(`📦 Processing ${filteredJobs.length} job(s) (filtered to '${JOB_NAME}' jobs)...\n`);
+  console.log(
+    `📦 Processing ${filteredJobs.length} job(s) (filtered to '${JOB_NAME}' jobs)...\n`
+  );
 
   let successCount = 0;
   let errorCount = 0;
+  let skippedCount = 0;
 
   for (const job of filteredJobs) {
     try {
       const jobId = extractJobId(job.detailedStatus.detailsPath);
       const filename = generateFilename(jobId, job.finishedAt);
+      const filePath = join(outputDir, filename);
+
+      // Check if file already exists
+      if (await fileExists(filePath)) {
+        console.log(`  ⏭️  Skipped: ${filename} (already exists)\n`);
+        skippedCount++;
+        continue;
+      }
 
       console.log(`  ⏳ Fetching job ${jobId} (${job.finishedAt})...`);
 
@@ -144,6 +169,7 @@ async function fetchJobs(options: FetchJobsOptions = {}): Promise<void> {
 
   console.log('\n📊 Summary:');
   console.log(`  ✅ Success: ${successCount}`);
+  console.log(`  ⏭️  Skipped: ${skippedCount}`);
   console.log(`  ❌ Errors: ${errorCount}`);
   console.log(`  📁 Output: ${outputDir}\n`);
 }
@@ -175,16 +201,17 @@ function parseArgs(): FetchJobsOptions {
 
 // Main execution
 if (import.meta.url === `file://${process.argv[1]}`) {
-	(async () => {
-		try {
-			const options = parseArgs();
-			await fetchJobs(options);
-		} catch (error) {
-			console.error(
-				'\n❌ Fatal error:',
-				error instanceof Error ? error.message : String(error),
-			);
-			process.exit(1);
-		}
-	})();
-}export { fetchJobs, extractJobId, formatJobDate, generateFilename };
+  (async () => {
+    try {
+      const options = parseArgs();
+      await fetchJobs(options);
+    } catch (error) {
+      console.error(
+        '\n❌ Fatal error:',
+        error instanceof Error ? error.message : String(error)
+      );
+      process.exit(1);
+    }
+  })();
+}
+export { fetchJobs, extractJobId, formatJobDate, generateFilename };
