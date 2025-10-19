@@ -2,7 +2,7 @@
 
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_LOCALE, Time, TimeRange } from '@/components/time';
+import { Time, TimeRange } from '@/components/time';
 
 describe('Time Component', () => {
   const testDate = new Date('2023-05-15T12:00:00Z');

@@ -1,4 +1,3 @@
-import { createId } from '@paralleldrive/cuid2';
 import { and, avg, count, eq, sum } from 'drizzle-orm';
 import {
   afterAll,
@@ -19,9 +18,6 @@ vi.mock('@/lib/env', () => ({
     DATABASE_AUTH_TOKEN: undefined,
   },
 }));
-
-// Import the action after the mocks
-import { getProcedureAvgWtForJob } from '../src/actions/get-procedure-avg-wt-for-job';
 
 describe('Server Action: getProcedureAvgWtForJob', () => {
   const db = getTestDb();

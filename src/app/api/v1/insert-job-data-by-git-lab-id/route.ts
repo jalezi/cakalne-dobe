@@ -86,7 +86,7 @@ async function isGitLabJobIDInDB(
     });
 
     const foundJobByDate = await db.query.jobs.findFirst({
-      where: (undefined, operators) => operators.eq(sqlStartDate, date),
+      where: (_undefined, operators) => operators.eq(sqlStartDate, date),
     });
 
     const foundJobWithDate = await db.query.jobs.findFirst({

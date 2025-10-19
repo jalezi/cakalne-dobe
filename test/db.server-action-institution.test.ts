@@ -20,9 +20,6 @@ vi.mock('@/lib/env', () => ({
   },
 }));
 
-// Import the action after the mocks
-import { getProcedureWtForInstOnDay } from '../src/actions/get-procedure-wt-for-inst-on-day';
-
 describe('Server Action: getProcedureWtForInstOnDay', () => {
   const db = getTestDb();
   let fixtures: Awaited<ReturnType<typeof setupTestDb>>;

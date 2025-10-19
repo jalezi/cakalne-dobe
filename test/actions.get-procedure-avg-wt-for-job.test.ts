@@ -1,15 +1,4 @@
-// Direct import of the drizzle ORM functions we need
-import { and, avg, count, eq, isNotNull, sql, sum } from 'drizzle-orm';
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
-import { type ProcedureAvgWtForJob } from '../src/actions/get-procedure-avg-wt-for-job';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import * as schema from '../src/db/schema';
 import { cleanupTestDb, getTestDb, setupTestDb } from '../src/db/test';
 
