@@ -1,12 +1,11 @@
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { count, eq, max, min, sql } from 'drizzle-orm';
+import { count, eq, max, min } from 'drizzle-orm';
 import { db } from '@/db';
 import { jobs } from '@/db/schema';
 import {
   calculateThreeMonthsBack,
   extractDateFromJobFilename,
-  isWithinRange,
 } from './date-range-calculator';
 
 /**
