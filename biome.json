@@ -1,0 +1,186 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.2.6/schema.json",
+	"vcs": {
+		"enabled": false,
+		"clientKind": "git",
+		"useIgnoreFile": false
+	},
+	"files": {
+		"ignoreUnknown": false
+	},
+	"formatter": {
+		"enabled": true,
+		"formatWithErrors": false,
+		"indentStyle": "space",
+		"indentWidth": 2,
+		"lineEnding": "lf",
+		"lineWidth": 80,
+		"attributePosition": "auto",
+		"bracketSameLine": false,
+		"bracketSpacing": true,
+		"expand": "auto",
+		"useEditorconfig": true
+	},
+	"linter": {
+		"domains": {
+			"next": "recommended"
+		},
+		"enabled": true,
+		"rules": {
+			"recommended": false
+		}
+	},
+	"javascript": {
+		"formatter": {
+			"jsxQuoteStyle": "double",
+			"quoteProperties": "asNeeded",
+			"trailingCommas": "es5",
+			"semicolons": "always",
+			"arrowParentheses": "always",
+			"bracketSameLine": false,
+			"quoteStyle": "single",
+			"attributePosition": "auto",
+			"bracketSpacing": true
+		}
+	},
+	"html": {
+		"formatter": {
+			"selfCloseVoidElements": "always"
+		}
+	},
+	"overrides": [
+		{
+			"includes": [
+				"**",
+				"!.next*"
+			],
+			"javascript": {
+				"globals": []
+			}
+		},
+		{
+			"includes": [
+				"**",
+				"!.next*"
+			],
+			"linter": {
+				"rules": {
+					"complexity": {
+						"noArguments": "error"
+					},
+					"correctness": {
+						"noConstAssign": "off",
+						"noGlobalObjectCalls": "off",
+						"noInvalidBuiltinInstantiation": "off",
+						"noInvalidConstructorSuper": "off",
+						"noSetterReturn": "off",
+						"noUndeclaredVariables": "off",
+						"noUnreachable": "off",
+						"noUnreachableSuper": "off"
+					},
+					"style": {
+						"useConst": "error"
+					},
+					"suspicious": {
+						"noClassAssign": "off",
+						"noDuplicateClassMembers": "off",
+						"noDuplicateObjectKeys": "off",
+						"noDuplicateParameters": "off",
+						"noFunctionAssign": "off",
+						"noImportAssign": "off",
+						"noRedeclare": "off",
+						"noUnsafeNegation": "off",
+						"noVar": "error",
+						"noWith": "off",
+						"useGetterReturn": "off"
+					}
+				}
+			}
+		},
+		{
+			"includes": [
+				"**",
+				"!.next*"
+			],
+			"linter": {
+				"rules": {
+					"complexity": {
+						"noUselessTypeConstraint": "error"
+					},
+					"correctness": {
+						"noUnusedVariables": "error"
+					},
+					"style": {
+						"noCommonJs": "error",
+						"noNamespace": "error",
+						"useArrayLiterals": "error",
+						"useAsConstAssertion": "error"
+					},
+					"suspicious": {
+						"noExplicitAny": "error",
+						"noExtraNonNullAssertion": "error",
+						"noMisleadingInstantiator": "error",
+						"noUnsafeDeclarationMerging": "error",
+						"useNamespaceKeyword": "error"
+					}
+				}
+			}
+		},
+		{
+			"includes": [
+				"**",
+				"!.next*"
+			],
+			"javascript": {
+				"globals": []
+			}
+		},
+		{
+			"includes": [
+				"**",
+				"!.next*"
+			],
+			"javascript": {
+				"globals": []
+			},
+			"linter": {
+				"rules": {}
+			}
+		},
+		{
+			"includes": [
+				"**",
+				"!.next*"
+			],
+			"javascript": {
+				"globals": []
+			},
+			"linter": {
+				"rules": {
+					"correctness": {
+						"noUnusedVariables": "error"
+					},
+					"suspicious": {
+						"noConsole": {
+							"level": "error",
+							"options": {
+								"allow": [
+									"warn",
+									"error"
+								]
+							}
+						}
+					}
+				}
+			}
+		}
+	],
+	"assist": {
+		"enabled": true,
+		"actions": {
+			"source": {
+				"organizeImports": "on"
+			}
+		}
+	}
+}
