@@ -25,7 +25,7 @@ Based on PRD: `prd-ensure-three-months-data.md`
 
 ## Tasks
 
-- [ ] 1.0 Create Date Range Calculator Utility Module
+- [x] 1.0 Create Date Range Calculator Utility Module
   - [x] 1.1 Create `seed/seed-helpers/date-range-calculator.ts` file
   - [x] 1.2 Implement `calculateThreeMonthsBack(fromDate: Date): Date` function that subtracts 3 months from a given date
   - [x] 1.3 Implement `formatDateForDisplay(date: Date): string` function to format dates consistently (e.g., "YYYY-MM-DD")
@@ -35,24 +35,24 @@ Based on PRD: `prd-ensure-three-months-data.md`
   - [x] 1.7 Export all functions with proper TypeScript types
 
 - [ ] 2.0 Create Data Coverage Validation Module
-  - [ ] 2.1 Create `seed/seed-helpers/validate-data-coverage.ts` file
-  - [ ] 2.2 Implement `getAvailableJobsDateRange(): Promise<{ earliest: Date | null; latest: Date | null; files: string[] }>` function that scans `mock-data/jobs/` directory
-  - [ ] 2.3 Filter out archived files and non-JSON files in the scan function
-  - [ ] 2.4 Extract dates from all valid job filenames using the date calculator utility
-  - [ ] 2.5 Sort files by date and return the earliest and latest dates along with file list
-  - [ ] 2.6 Implement `validateThreeMonthRequirement(latestDate: Date, earliestDate: Date): { isValid: boolean; requiredStart: Date; requiredEnd: Date; gaps: string[] }` function
-  - [ ] 2.7 Calculate required 3-month range based on the latest date
-  - [ ] 2.8 Identify any gaps in coverage by comparing available dates against required range
-  - [ ] 2.9 Handle edge cases (no files, invalid dates, empty directory)
+  - [x] 2.1 Create `seed/seed-helpers/validate-data-coverage.ts` file
+  - [x] 2.2 Implement `getAvailableJobsDateRange(): Promise<{ earliest: Date | null; latest: Date | null; files: string[] }>` function that scans `mock-data/jobs/` directory
+  - [x] 2.3 Filter out archived files and non-JSON files in the scan function
+  - [x] 2.4 Extract dates from all valid job filenames using the date calculator utility
+  - [x] 2.5 Sort files by date and return the earliest and latest dates along with file list
+  - [x] 2.6 Implement `validateThreeMonthRequirement(latestDate: Date, earliestDate: Date): { isValid: boolean; requiredStart: Date; requiredEnd: Date; gaps: string[] }` function
+  - [x] 2.7 Calculate required 3-month range based on the latest date
+  - [x] 2.8 Identify any gaps in coverage by comparing available dates against required range
+  - [x] 2.9 Handle edge cases (no files, invalid dates, empty directory)
 
 - [ ] 3.0 Implement Database Coverage Query Functions
-  - [ ] 3.1 Create `getDatabaseDateRange()` function in `validate-data-coverage.ts`
-  - [ ] 3.2 Query the `jobs` table using Drizzle ORM to get `MIN(start_date)` and `MAX(start_date)`
-  - [ ] 3.3 Return result as `{ earliest: Date | null; latest: Date | null; jobCount: number }`
-  - [ ] 3.4 Handle empty database scenario (return null values)
-  - [ ] 3.5 Create `checkJobExists(gitLabJobId: string): Promise<boolean>` function to prevent duplicate insertions
-  - [ ] 3.6 Add proper error handling with try-catch blocks
-  - [ ] 3.7 Use existing database connection from `@/db`
+  - [x] 3.1 Create `getDatabaseDateRange()` function in `validate-data-coverage.ts`
+  - [x] 3.2 Query the `jobs` table using Drizzle ORM to get `MIN(start_date)` and `MAX(start_date)`
+  - [x] 3.3 Return result as `{ earliest: Date | null; latest: Date | null; jobCount: number }`
+  - [x] 3.4 Handle empty database scenario (return null values)
+  - [x] 3.5 Create `checkJobExists(gitLabJobId: string): Promise<boolean>` function to prevent duplicate insertions
+  - [x] 3.6 Add proper error handling with try-catch blocks
+  - [x] 3.7 Use existing database connection from `@/db`
 
 - [ ] 4.0 Build Console Reporting System
   - [ ] 4.1 Create `seed/seed-helpers/console-reporter.ts` file
