@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getJsonPath, getJson } from './get-json';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { allDataSchema } from '@/lib/zod-schemas/data-schemas';
+import { getJson, getJsonPath } from './get-json';
 
 // Mock global fetch
 vi.stubGlobal('fetch', vi.fn());

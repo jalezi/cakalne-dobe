@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { makeProcedureMaxAllowedWaiting } from './make-procedure-max-allowed-waiting';
 import type { ProcedureWithWaitingPeriod } from './zod-schemas/data-schemas';
 

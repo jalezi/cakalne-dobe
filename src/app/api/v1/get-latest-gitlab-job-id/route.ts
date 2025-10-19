@@ -1,6 +1,6 @@
 import { type NextRequest } from 'next/server';
-import { handleError } from '@/utils/handle-error';
 import { getLastJobId } from '@/utils/get-last-job-id';
+import { handleError } from '@/utils/handle-error';
 
 export type GetLatestGitLabJobId =
   | {

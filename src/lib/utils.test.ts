@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { cn, getSiteUrl, disabaledDates } from './utils';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FIRST_DAY } from './constants';
+import { cn, disabaledDates, getSiteUrl } from './utils';
 
 describe('cn', () => {
   it('should merge class names correctly', () => {

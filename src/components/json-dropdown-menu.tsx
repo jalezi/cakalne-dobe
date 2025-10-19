@@ -1,5 +1,7 @@
 'use client';
 
+import { Download, ExternalLink, MoreHorizontal } from 'lucide-react';
+import { toast } from 'sonner';
 import { downloadJson } from '@/components/downloadable-json';
 import {
   DropdownMenu,
@@ -8,10 +10,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Button } from './ui/button';
-import { Download, ExternalLink, MoreHorizontal } from 'lucide-react';
 import { getJsonPath } from '@/utils/get-json';
-import { toast } from 'sonner';
+import { Button } from './ui/button';
 
 interface JsonDropDownMenuProps {
   gitLabJobId: string;

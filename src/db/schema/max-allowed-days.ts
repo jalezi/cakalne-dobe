@@ -1,3 +1,4 @@
+import { relations } from 'drizzle-orm';
 import {
   integer,
   primaryKey,
@@ -7,7 +8,6 @@ import {
 import { timestamps } from '../schema-common-fields';
 import { jobs } from './jobs';
 import { procedures } from './procedures';
-import { relations } from 'drizzle-orm';
 
 export const maxAllowedDays = sqliteTable(
   'max_allowed_days',

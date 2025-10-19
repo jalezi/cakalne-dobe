@@ -1,17 +1,16 @@
 'use client';
 
-import { cn } from '@/lib/utils';
-import type { FacilityProcedureWaitingTimes } from '@/lib/zod-schemas/data-schemas';
-import { createColumnHelper, type ColumnDef } from '@tanstack/react-table';
-import { DataTableColumnHeader } from '@/components/table-header';
-
 import type {
   Column as TColumn,
-  Table as TTable,
   Row as TRow,
+  Table as TTable,
 } from '@tanstack/react-table';
-import { fuzzySort } from '@/lib/fuzzy-filter';
+import { type ColumnDef, createColumnHelper } from '@tanstack/react-table';
 import { MaxUrgency } from '@/components/max-urgency';
+import { DataTableColumnHeader } from '@/components/table-header';
+import { fuzzySort } from '@/lib/fuzzy-filter';
+import { cn } from '@/lib/utils';
+import type { FacilityProcedureWaitingTimes } from '@/lib/zod-schemas/data-schemas';
 
 const columnHelper = createColumnHelper<FacilityProcedureWaitingTimes>();
 

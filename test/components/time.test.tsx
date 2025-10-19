@@ -1,7 +1,8 @@
 // test/components/time.test.tsx
-import { describe, it, expect } from 'vitest';
+
 import { render, screen } from '@testing-library/react';
-import { Time, TimeRange, DEFAULT_LOCALE } from '@/components/time';
+import { describe, expect, it } from 'vitest';
+import { DEFAULT_LOCALE, Time, TimeRange } from '@/components/time';
 
 describe('Time Component', () => {
   const testDate = new Date('2023-05-15T12:00:00Z');

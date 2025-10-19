@@ -34,6 +34,26 @@ Based on PRD: `prd-ensure-three-months-data.md`
   - [x] 1.6 Implement `isWithinRange(date: Date, startDate: Date, endDate: Date): boolean` function to check if a date falls within a range
   - [x] 1.7 Export all functions with proper TypeScript types
 
+- [x] 2.0 Create Data Coverage Validation Module
+  - [x] 2.1 Create `seed/seed-helpers/validate-data-coverage.ts` file
+  - [x] 2.2 Implement `getAvailableJobsDateRange(): Promise<{ earliest: Date | null; latest: Date | null; files: string[] }>` function that scans `mock-data/jobs/` directory
+  - [x] 2.3 Filter out archived files and non-JSON files in the scan function
+  - [x] 2.4 Extract dates from all valid job filenames using the date calculator utility
+  - [x] 2.5 Sort files by date and return the earliest and latest dates along with file list
+  - [x] 2.6 Implement `validateThreeMonthRequirement(latestDate: Date, earliestDate: Date): { isValid: boolean; requiredStart: Date; requiredEnd: Date; gaps: string[] }` function
+  - [x] 2.7 Calculate required 3-month range based on the latest date
+  - [x] 2.8 Identify any gaps in coverage by comparing available dates against required range
+  - [x] 2.9 Handle edge cases (no files, invalid dates, empty directory)
+
+- [x] 3.0 Implement Database Coverage Query Functions
+  - [x] 3.1 Create `getDatabaseDateRange()` function in `validate-data-coverage.ts`
+  - [x] 3.2 Query the `jobs` table using Drizzle ORM to get `MIN(start_date)` and `MAX(start_date)`
+  - [x] 3.3 Return result as `{ earliest: Date | null; latest: Date | null; jobCount: number }`
+  - [x] 3.4 Handle empty database scenario (return null values)
+  - [x] 3.5 Create `checkJobExists(gitLabJobId: string): Promise<boolean>` function to prevent duplicate insertions
+  - [x] 3.6 Add proper error handling with try-catch blocks
+  - [x] 3.7 Use existing database connection from `@/db`
+
 - [ ] 2.0 Create Data Coverage Validation Module
   - [x] 2.1 Create `seed/seed-helpers/validate-data-coverage.ts` file
   - [x] 2.2 Implement `getAvailableJobsDateRange(): Promise<{ earliest: Date | null; latest: Date | null; files: string[] }>` function that scans `mock-data/jobs/` directory
@@ -55,15 +75,15 @@ Based on PRD: `prd-ensure-three-months-data.md`
   - [x] 3.7 Use existing database connection from `@/db`
 
 - [ ] 4.0 Build Console Reporting System
-  - [ ] 4.1 Create `seed/seed-helpers/console-reporter.ts` file
-  - [ ] 4.2 Implement `reportDatabaseCoverage(earliest: Date | null, latest: Date | null, jobCount: number)` function with formatted output
-  - [ ] 4.3 Implement `reportRequiredCoverage(requiredStart: Date, requiredEnd: Date)` function
-  - [ ] 4.4 Implement `reportAvailableFiles(files: string[], earliest: Date | null, latest: Date | null)` function
-  - [ ] 4.5 Implement `reportValidationStatus(isValid: boolean, gaps: string[])` function with status icons (✓/⚠️/✗)
-  - [ ] 4.6 Implement `reportSeedingProgress(filesProcessed: number, totalFiles: number, currentFile: string)` function
-  - [ ] 4.7 Create `generateSummaryReport()` function that combines all reporting sections
-  - [ ] 4.8 Add visual separators and section headers for readability
-  - [ ] 4.9 Include color coding if terminal supports it (use console colors or check if chalk is available)
+  - [x] 4.1 Create `seed/seed-helpers/console-reporter.ts` file
+  - [x] 4.2 Implement `reportDatabaseCoverage(earliest: Date | null, latest: Date | null, jobCount: number)` function with formatted output
+  - [x] 4.3 Implement `reportRequiredCoverage(requiredStart: Date, requiredEnd: Date)` function
+  - [x] 4.4 Implement `reportAvailableFiles(files: string[], earliest: Date | null, latest: Date | null)` function
+  - [x] 4.5 Implement `reportValidationStatus(isValid: boolean, gaps: string[])` function with status icons (✓/⚠️/✗)
+  - [x] 4.6 Implement `reportSeedingProgress(filesProcessed: number, totalFiles: number, currentFile: string)` function
+  - [x] 4.7 Create `generateSummaryReport()` function that combines all reporting sections
+  - [x] 4.8 Add visual separators and section headers for readability
+  - [x] 4.9 Include color coding if terminal supports it (use console colors or check if chalk is available)
 
 - [ ] 5.0 Enhance Seeding Logic for Smart Data Updates
   - [ ] 5.1 Create `getJobsToSeed(availableFiles: string[], requiredStartDate: Date, requiredEndDate: Date): string[]` function

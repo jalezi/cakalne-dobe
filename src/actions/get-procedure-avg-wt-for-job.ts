@@ -1,20 +1,20 @@
 'use server';
-import { db } from '@/db';
 import {
-  waitingPeriods as waitingPeriodsTable,
-  procedures as proceduresTable,
-  maxAllowedDays as maxAllowedDaysTable,
-} from '@/db/schema';
-import {
-  type Column as DrizzleColumn,
   and,
   avg,
   count,
+  type Column as DrizzleColumn,
   eq,
-  sql,
   isNotNull,
+  sql,
   sum,
 } from 'drizzle-orm';
+import { db } from '@/db';
+import {
+  maxAllowedDays as maxAllowedDaysTable,
+  procedures as proceduresTable,
+  waitingPeriods as waitingPeriodsTable,
+} from '@/db/schema';
 
 type Params = {
   jobId: string;

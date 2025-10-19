@@ -1,24 +1,24 @@
 'use server';
 
-import { db } from '@/db';
+import { format, subDays } from 'date-fns';
 import {
   and,
   asc,
   avg,
+  type Column as DrizzleColumn,
   desc,
   eq,
   gte,
   isNotNull,
   lte,
   sql,
-  type Column as DrizzleColumn,
 } from 'drizzle-orm';
+import { db } from '@/db';
 import {
   jobs as jobsTable,
   procedures as proceduresTable,
   waitingPeriods as waitingPeriodsTable,
 } from '@/db/schema';
-import { format, subDays } from 'date-fns';
 
 const average = (col: DrizzleColumn) =>
   sql<number>`round(cast(${avg(col)} as FLOAT),2)`;

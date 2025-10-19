@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getJobs } from './get-jobs';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as gqlModule from '@/lib/gql';
+import { getJobs } from './get-jobs';
 
 // Define mock types
 type MockFunction = ReturnType<typeof vi.fn>;

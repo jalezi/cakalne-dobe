@@ -1,3 +1,4 @@
+import { relations } from 'drizzle-orm';
 import {
   index,
   integer,
@@ -5,11 +6,10 @@ import {
   sqliteTable,
   text,
 } from 'drizzle-orm/sqlite-core';
-import { jobs } from './jobs';
-import { institutions } from './institution';
-import { procedures } from './procedures';
 import { timestamps } from '../schema-common-fields';
-import { relations } from 'drizzle-orm';
+import { institutions } from './institution';
+import { jobs } from './jobs';
+import { procedures } from './procedures';
 
 export const waitingPeriods = sqliteTable(
   'waiting_periods',

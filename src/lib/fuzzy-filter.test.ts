@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
-import { fuzzyFilter, fuzzySort } from './fuzzy-filter';
 import type { Row } from '@tanstack/table-core';
+import { describe, expect, it, vi } from 'vitest';
+import { fuzzyFilter, fuzzySort } from './fuzzy-filter';
 
 // Create a more complete Row mock
 const createMockRow = (value: string | number): Partial<Row<unknown>> => ({

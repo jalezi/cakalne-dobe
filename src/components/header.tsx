@@ -1,13 +1,13 @@
-import Link from 'next/link';
-import { ThemeToggler } from './theme-toggler';
-import { type SelectOption } from './combo-box-responsive';
-import { Button } from './ui/button';
-import { db } from '@/db';
 import { desc, sql } from 'drizzle-orm';
-import { jobs as jobsTable } from '@/db/schema';
+import Link from 'next/link';
 import { Suspense } from 'react';
-import { Skeleton } from './ui/skeleton';
+import { db } from '@/db';
+import { jobs as jobsTable } from '@/db/schema';
+import { type SelectOption } from './combo-box-responsive';
 import { DatePickerDemo } from './job-picker';
+import { ThemeToggler } from './theme-toggler';
+import { Button } from './ui/button';
+import { Skeleton } from './ui/skeleton';
 
 export async function Header({ id }: { id?: string }) {
   const jobs = await db.query.jobs.findMany({

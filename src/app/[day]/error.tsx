@@ -1,7 +1,7 @@
 'use client'; // Error components must be Client Components
 
-import { startTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { startTransition, useEffect } from 'react';
 
 export default function Error({
   error,

@@ -1,9 +1,9 @@
+import { createId } from '@paralleldrive/cuid2';
+import { relations } from 'drizzle-orm';
 import { sqliteTable, text, unique } from 'drizzle-orm/sqlite-core';
 import { timestamps } from '../schema-common-fields';
-import { relations } from 'drizzle-orm';
 import { maxAllowedDays } from './max-allowed-days';
 import { waitingPeriods } from './waiting-periods';
-import { createId } from '@paralleldrive/cuid2';
 
 export const jobs = sqliteTable(
   'jobs',

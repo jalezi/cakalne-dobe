@@ -1,8 +1,8 @@
-import type { AllData } from '@/lib/zod-schemas/data-schemas';
-import type { DataMap } from './types';
-import { institutions as institutionsTable } from '@/db/schema/institution';
 import { db } from '@/db';
+import { institutions as institutionsTable } from '@/db/schema/institution';
+import type { AllData } from '@/lib/zod-schemas/data-schemas';
 import { trimmedStringSchema } from '@/lib/zod-schemas/helpers-schema';
+import type { DataMap } from './types';
 
 export async function insertInstitutions(input: DataMap) {
   const institutions = getInstitutionsToInsert(Array.from(input.values()));

@@ -1,16 +1,18 @@
 'use client';
 
-import React, { useState } from 'react';
-
 import { addDays } from 'date-fns';
+import { sl } from 'date-fns/locale';
+import { CalendarIcon } from 'lucide-react';
+import React, { useState } from 'react';
 import type {
   DateRange,
-  SelectRangeEventHandler,
   Modifiers,
+  SelectRangeEventHandler,
 } from 'react-day-picker';
-import { sl } from 'date-fns/locale';
-
+import { Time, TimeRange } from '@/components/time';
+import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
+import { Label } from '@/components/ui/label';
 import {
   Popover,
   PopoverContent,
@@ -23,12 +25,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { cn, disabaledDates } from '@/lib/utils';
-import { CalendarIcon } from 'lucide-react';
-import { Time, TimeRange } from '@/components/time';
 import { FIRST_DAY } from '@/lib/constants';
+import { cn, disabaledDates } from '@/lib/utils';
 
 interface TimeRangePickerProps {
   initialDateRange?: {

@@ -1,11 +1,10 @@
 'use client';
 
+import { Download } from 'lucide-react';
 import { toast } from 'sonner';
-
+import type { FetchResponse } from '@/types';
 import { getJson } from '@/utils/get-json';
 import { Button } from './ui/button';
-import { Download } from 'lucide-react';
-import type { FetchResponse } from '@/types';
 
 interface DownloadableJsonProps {
   jsonId: string;

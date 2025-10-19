@@ -1,14 +1,14 @@
 'use server';
 
-import { db } from '@/db';
+import { format } from 'date-fns';
 import { and, desc, eq, sql } from 'drizzle-orm';
+import { db } from '@/db';
 import {
+  institutions as institutionsTable,
   jobs as jobsTable,
   procedures as proceduresTable,
   waitingPeriods as waitingPeriodsTable,
-  institutions as institutionsTable,
 } from '@/db/schema';
-import { format } from 'date-fns';
 
 export async function getProcedureWtForInstOnDay(
   procedureCode: string,

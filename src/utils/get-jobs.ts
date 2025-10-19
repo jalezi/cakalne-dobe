@@ -1,6 +1,6 @@
 import {
-  type ProjectJobs,
   graphQLClient,
+  type ProjectJobs,
   projectJobsQuery,
   requiredVars,
 } from '@/lib/gql';

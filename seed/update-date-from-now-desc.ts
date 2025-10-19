@@ -1,7 +1,6 @@
-import { db } from '@/db';
-
-import { jobs } from '@/db/schema';
 import { desc, eq } from 'drizzle-orm';
+import { db } from '@/db';
+import { jobs } from '@/db/schema';
 
 if (require.main === module) {
   (async () => {

@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
-import { getLastJobId } from './get-last-job-id';
+import { describe, expect, it, vi } from 'vitest';
 import { getJobs } from './get-jobs';
+import { getLastJobId } from './get-last-job-id';
 
 // Mock the getJobs function
 vi.mock('./get-jobs');

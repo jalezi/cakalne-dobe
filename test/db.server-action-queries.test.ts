@@ -1,16 +1,16 @@
+import { createId } from '@paralleldrive/cuid2';
+import { and, avg, count, eq, sum } from 'drizzle-orm';
 import {
-  describe,
-  it,
-  expect,
-  beforeAll,
   afterAll,
   afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
   vi,
 } from 'vitest';
-import { cleanupTestDb, getTestDb, setupTestDb } from '../src/db/test';
 import * as schema from '../src/db/schema';
-import { createId } from '@paralleldrive/cuid2';
-import { avg, sum, count, eq, and } from 'drizzle-orm';
+import { cleanupTestDb, getTestDb, setupTestDb } from '../src/db/test';
 
 // Mock the server action
 vi.mock('@/lib/env', () => ({

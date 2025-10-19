@@ -1,18 +1,17 @@
+// Direct import of the drizzle ORM functions we need
+import { and, avg, count, eq, isNotNull, sql, sum } from 'drizzle-orm';
 import {
-  describe,
-  it,
-  expect,
-  beforeAll,
   afterAll,
   afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
   vi,
 } from 'vitest';
-import { cleanupTestDb, getTestDb, setupTestDb } from '../src/db/test';
-import * as schema from '../src/db/schema';
 import { type ProcedureAvgWtForJob } from '../src/actions/get-procedure-avg-wt-for-job';
-
-// Direct import of the drizzle ORM functions we need
-import { and, avg, count, eq, sql, isNotNull, sum } from 'drizzle-orm';
+import * as schema from '../src/db/schema';
+import { cleanupTestDb, getTestDb, setupTestDb } from '../src/db/test';
 
 // Mock the getProcedureAvgWtForJob function
 const mockGetProcedureAvgWtForJob = vi.fn();

@@ -17,7 +17,16 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-
+import { useState } from 'react';
+import { DebouncedInput } from '@/components/debounced-input';
+import { DataTablePagination } from '@/components/pagination';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -26,17 +35,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { DataTablePagination } from '@/components/pagination';
-import { useState } from 'react';
-
-import { DebouncedInput } from '@/components/debounced-input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { fuzzyFilter } from '@/lib/fuzzy-filter';
 import { ColumnsToggler, groupByParent } from './columns-toggler';
 

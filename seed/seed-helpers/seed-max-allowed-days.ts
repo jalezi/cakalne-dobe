@@ -1,7 +1,7 @@
-import type { DataMap } from './types';
 import { db } from '@/db';
 import { maxAllowedDays as maxAllowedDaysTable } from '@/db/schema';
 import { seedHelpers } from '.';
+import type { DataMap } from './types';
 
 export async function insertMaxAllowedDays(input: DataMap) {
   const dataMapEntries = Array.from(input.entries());

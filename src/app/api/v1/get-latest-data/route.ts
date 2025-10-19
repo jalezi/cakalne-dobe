@@ -1,6 +1,6 @@
-import { handleError } from '@/utils/handle-error';
 import type { AllData } from '@/lib/zod-schemas/data-schemas';
 import { getLastJobId } from '@/utils/get-last-job-id';
+import { handleError } from '@/utils/handle-error';
 
 const BASE_URL = new URL('https://wayback-automachine.gitlab.io');
 const BASE_JOBS_URL = new URL('-/cakalne-dobe/-/jobs', BASE_URL);

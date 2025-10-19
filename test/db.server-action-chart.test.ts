@@ -1,16 +1,16 @@
+import { format } from 'date-fns';
+import { and, avg, eq, sql } from 'drizzle-orm';
 import {
-  describe,
-  it,
-  expect,
-  beforeAll,
   afterAll,
   afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
   vi,
 } from 'vitest';
-import { cleanupTestDb, getTestDb, setupTestDb } from '../src/db/test';
 import * as schema from '../src/db/schema';
-import { avg, eq, and, sql } from 'drizzle-orm';
-import { format } from 'date-fns';
+import { cleanupTestDb, getTestDb, setupTestDb } from '../src/db/test';
 
 // Mock the db module to use test database
 vi.mock('@/db', async () => {

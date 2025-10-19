@@ -1,18 +1,17 @@
+import { format } from 'date-fns';
+import { desc, sql } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
-import { format } from 'date-fns';
-
+import { JobsPagination } from '@/components/jobs-pagination';
 import { JsonDropDownMenu } from '@/components/json-dropdown-menu';
 import { ProceduresPicker } from '@/components/procedures-picker';
 import { DataTableSkeleton } from '@/components/skeleton/data-table';
+import { JobsPaginationSkeleton } from '@/components/skeleton/jobs-pagination';
 import { ProcedureWTTable } from '@/components/tables/procedure-wt/procedure-wt-table';
 import { Time } from '@/components/time';
 import { Skeleton } from '@/components/ui/skeleton';
 import { db } from '@/db';
-import { JobsPaginationSkeleton } from '@/components/skeleton/jobs-pagination';
-import { JobsPagination } from '@/components/jobs-pagination';
 import { jobs as jobsTable } from '@/db/schema';
-import { desc, sql } from 'drizzle-orm';
 
 type ProcedureCodePageProps = {
   params: Promise<{ day: string; procedureCode: string }>;

@@ -1,14 +1,13 @@
-import { db } from '@/db';
-import { jobs as jobsTable, procedures as proceduresTable } from '@/db/schema';
-import { TimeRange } from '@/components/time';
-import { desc, asc, sql } from 'drizzle-orm';
-import ChartCard from '@/components/charts/wp/card';
+import { asc, desc, sql } from 'drizzle-orm';
 import { Suspense } from 'react';
-import { ClassicLoader } from '@/components/ui/loaders';
-
 import { AvgWTChart } from '@/components/charts/avg-wt';
 import { InstWTChart } from '@/components/charts/inst-wt';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import ChartCard from '@/components/charts/wp/card';
+import { TimeRange } from '@/components/time';
+import { ClassicLoader } from '@/components/ui/loaders';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { db } from '@/db';
+import { jobs as jobsTable, procedures as proceduresTable } from '@/db/schema';
 
 export default async function Home() {
   // Query for the first job (earliest date)

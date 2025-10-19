@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
-import { cleanupTestDb, getTestDb, setupTestDb } from '../src/db/test';
-import * as schema from '../src/db/schema';
-import { eq } from 'drizzle-orm';
 import { createId } from '@paralleldrive/cuid2';
+import { eq } from 'drizzle-orm';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import * as schema from '../src/db/schema';
+import { cleanupTestDb, getTestDb, setupTestDb } from '../src/db/test';
 
 describe('Database Constraints', () => {
   const db = getTestDb();

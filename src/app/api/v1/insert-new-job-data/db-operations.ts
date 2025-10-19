@@ -1,14 +1,14 @@
 import { db } from '@/db';
+import type * as schema from '@/db/schema';
 import {
-  jobs as jobsTable,
-  procedures as proceduresTable,
   institutions as institutionsTable,
+  jobs as jobsTable,
   maxAllowedDays as maxAllowedDaysTable,
+  procedures as proceduresTable,
   waitingPeriods as waitingPeriodsTable,
 } from '@/db/schema';
-import type * as schema from '@/db/schema';
-import { MAX_CHUNK_SIZE, EXPECTED_NUMBER_OF_JOBS } from '@/lib/constants';
-import type { Trx, NotCompleteDataByTable } from './types';
+import { EXPECTED_NUMBER_OF_JOBS, MAX_CHUNK_SIZE } from '@/lib/constants';
+import type { NotCompleteDataByTable, Trx } from './types';
 
 /**
  * Process job data and insert it into the database

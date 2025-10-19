@@ -5,12 +5,12 @@
  * and inserts the data into the database. It also handles errors and revalidates paths.
  */
 
-import { handleError } from '@/utils/handle-error';
 import { revalidatePath } from 'next/cache';
-import { validateWebhookPayload } from './validation';
-import { shouldInsertLatestJob, prepareJobData } from './job-processing';
-import { processJobData } from './db-operations';
 import { getLastJobId } from '@/utils/get-last-job-id';
+import { handleError } from '@/utils/handle-error';
+import { processJobData } from './db-operations';
+import { prepareJobData, shouldInsertLatestJob } from './job-processing';
+import { validateWebhookPayload } from './validation';
 
 export async function POST(request: Request) {
   try {

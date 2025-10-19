@@ -1,8 +1,8 @@
-import { drizzle } from 'drizzle-orm/libsql';
 import { createClient } from '@libsql/client';
-import { sql } from 'drizzle-orm';
-import * as schema from '../schema';
 import { createId } from '@paralleldrive/cuid2';
+import { sql } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/libsql';
+import * as schema from '../schema';
 
 /**
  * Creates an in-memory SQLite database for testing

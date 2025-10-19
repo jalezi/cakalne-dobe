@@ -1,8 +1,8 @@
 import fs from 'fs/promises';
 
-import { allDataSchema, type AllData } from '@/lib/zod-schemas/data-schemas';
-import type { CustomError, DataMap } from './types';
+import { type AllData, allDataSchema } from '@/lib/zod-schemas/data-schemas';
 import { handleError } from '@/utils/handle-error';
+import type { CustomError, DataMap } from './types';
 
 const getJobIdFromFileName = (fileName: string) =>
   fileName.split('.')[0].split('-').pop();

@@ -1,9 +1,8 @@
 import { createId } from '@paralleldrive/cuid2';
-
-import { timestamps } from '../schema-common-fields';
-import { sqliteTable, text, unique } from 'drizzle-orm/sqlite-core';
-import { maxAllowedDays } from './max-allowed-days';
 import { relations } from 'drizzle-orm';
+import { sqliteTable, text, unique } from 'drizzle-orm/sqlite-core';
+import { timestamps } from '../schema-common-fields';
+import { maxAllowedDays } from './max-allowed-days';
 import { waitingPeriods } from './waiting-periods';
 
 export const procedures = sqliteTable(

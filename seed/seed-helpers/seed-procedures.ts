@@ -1,10 +1,10 @@
-import type { InsertProcedure } from '@/db/schema/procedures';
-import type { AllData } from '@/lib/zod-schemas/data-schemas';
-import type { CustomError, ProcedureInsertData } from './types';
 import { db } from '@/db';
+import type { InsertProcedure } from '@/db/schema/procedures';
 import { procedures as proceduresTable } from '@/db/schema/procedures';
-import { handleError } from '@/utils/handle-error';
+import type { AllData } from '@/lib/zod-schemas/data-schemas';
 import { trimStringWithDashes } from '@/lib/zod-schemas/helpers-schema';
+import { handleError } from '@/utils/handle-error';
+import type { CustomError, ProcedureInsertData } from './types';
 
 export function getProceduresToInsert(
   jobs: AllData[]

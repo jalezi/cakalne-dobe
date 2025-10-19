@@ -1,12 +1,11 @@
 'use client';
 
+import type { ColumnDef } from '@tanstack/table-core';
+import { createColumnHelper } from '@tanstack/table-core';
+import Link from 'next/link';
 import { DataTableColumnHeader } from '@/components/table-header';
 import { Button } from '@/components/ui/button';
 import type { ProcedureAvgWaitingTimes } from '@/lib/zod-schemas/data-schemas';
-import type { ColumnDef } from '@tanstack/table-core';
-
-import { createColumnHelper } from '@tanstack/table-core';
-import Link from 'next/link';
 
 const columnHelper = createColumnHelper<ProcedureAvgWaitingTimes>();
 

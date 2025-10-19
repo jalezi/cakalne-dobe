@@ -1,10 +1,10 @@
 import { addDays, addMonths, format } from 'date-fns';
-import { AverageWaitingTimeChart } from './wp/chart-01';
-import type { SelectOption } from '../combo-box-responsive';
-import { getProcedureAvgWtPerJobChart } from '@/actions/get-procedure-avg-wt-per-job-chart';
-import { FIRST_DAY } from '@/lib/constants';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { InfoIcon } from 'lucide-react';
+import { getProcedureAvgWtPerJobChart } from '@/actions/get-procedure-avg-wt-per-job-chart';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { FIRST_DAY } from '@/lib/constants';
+import type { SelectOption } from '../combo-box-responsive';
+import { AverageWaitingTimeChart } from './wp/chart-01';
 
 interface AvgWTChartProps {
   procedureCode: string;

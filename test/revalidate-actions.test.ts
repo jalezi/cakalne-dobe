@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock Next.js cache functions
 vi.mock('next/cache', () => ({
@@ -6,12 +6,12 @@ vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
 }));
 
+import { revalidatePath, revalidateTag } from 'next/cache';
 // Import after mocking
 import {
   revalidateGetJson,
   revalidatePathId,
 } from '../src/actions/revalidate-tag';
-import { revalidateTag, revalidatePath } from 'next/cache';
 
 describe('Revalidate Actions', () => {
   // Reset mocks before each test

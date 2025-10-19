@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import {
   Bar,
   BarChart,
@@ -13,7 +14,6 @@ import {
   YAxis,
 } from 'recharts';
 import { TooltipContent } from './tooltip-content';
-import { useState } from 'react';
 
 type HexColor = `#${string}`;
 type HSL = string;

@@ -1,12 +1,16 @@
-import { DataTable } from '../../data-table';
+import { and, eq, isNotNull } from 'drizzle-orm';
 import {
   columns,
   headerTextMap,
 } from '@/components/tables/procedure-wt/columns';
 import { db } from '@/db';
-import { institutions, maxAllowedDays, waitingPeriods } from '@/db/schema';
-import { procedures as proceduresTable } from '@/db/schema';
-import { and, eq, isNotNull } from 'drizzle-orm';
+import {
+  institutions,
+  maxAllowedDays,
+  procedures as proceduresTable,
+  waitingPeriods,
+} from '@/db/schema';
+import { DataTable } from '../../data-table';
 
 interface ProcedureWTTableProps {
   dbJobId: string;
