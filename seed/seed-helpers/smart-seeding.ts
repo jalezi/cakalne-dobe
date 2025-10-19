@@ -6,10 +6,7 @@ import {
   isWithinRange,
 } from './date-range-calculator';
 import { getDataFromFiles } from './get-data-from-file';
-import {
-  getInstitutionsToInsert,
-  insertInstitutions,
-} from './seed-institutions';
+import { insertInstitutions } from './seed-institutions';
 import { insertJobs } from './seed-jobs';
 import { insertMaxAllowedDays } from './seed-max-allowed-days';
 import { getProceduresToInsert, insertProcedures } from './seed-procedures';
