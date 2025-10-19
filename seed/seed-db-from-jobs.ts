@@ -1,5 +1,4 @@
-/* eslint-disable drizzle/enforce-delete-with-where */
-/* eslint-disable no-console */
+/** biome-ignore-all lint/suspicious/noConsole: We need for debug */
 import fs from 'fs/promises';
 import { cwd } from 'process';
 

@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+/** biome-ignore-all lint/suspicious/noConsole: We need for debug */
 
 import * as readline from 'readline';
 import { seedDBFromJobs } from './seed-db-from-jobs';

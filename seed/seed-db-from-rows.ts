@@ -1,17 +1,17 @@
-/* eslint-disable no-console */
+/** biome-ignore-all lint/suspicious/noConsole: We need for debug */
 import fs from 'fs/promises';
 import { cwd } from 'process';
-import { seedHelpers } from './seed-helpers';
+import { z } from 'zod';
 import { db } from '@/db';
 
 import {
-  jobs as jobsTable,
   institutions as institutionsTable,
+  jobs as jobsTable,
+  maxAllowedDays as maxAllowedDaysTable,
   procedures as proceduresTable,
   waitingPeriods as waitingPeriodsTable,
-  maxAllowedDays as maxAllowedDaysTable,
 } from '@/db/schema';
-import { z } from 'zod';
+import { seedHelpers } from './seed-helpers';
 
 const dirName = `${cwd()}/mock-data/rows`;
 const getDataFileNames = async () => await fs.readdir(dirName);

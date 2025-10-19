@@ -195,7 +195,7 @@ describe('Server Action: getProcedureWtForInstOnDay', () => {
     const differentDate = new Date();
     differentDate.setFullYear(differentDate.getFullYear() - 1); // 1 year ago
 
-    const differentDateJob = await db
+    const _differentDateJob = await db
       .insert(schema.jobs)
       .values({
         id: 'test-job-different-date',

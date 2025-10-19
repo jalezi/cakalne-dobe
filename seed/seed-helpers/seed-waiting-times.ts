@@ -1,9 +1,9 @@
-/* eslint-disable no-console */
-import { makeFacilityRows } from '@/lib/make-facility-row';
-import type { DataMap } from './types';
-import { normalizeFPWTSchema } from '@/lib/zod-schemas/helpers-schema';
+/** biome-ignore-all lint/suspicious/noConsole: We need for debug */
 import { db } from '@/db';
 import { waitingPeriods } from '@/db/schema';
+import { makeFacilityRows } from '@/lib/make-facility-row';
+import { normalizeFPWTSchema } from '@/lib/zod-schemas/helpers-schema';
+import type { DataMap } from './types';
 
 export async function insertWaitingTimes(input: DataMap) {
   for (const [gitLabJobId, jobData] of Array.from(input.entries())) {

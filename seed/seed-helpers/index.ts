@@ -1,18 +1,17 @@
-/* eslint-disable drizzle/enforce-delete-with-where */
-/* eslint-disable no-console */
+/** biome-ignore-all lint/suspicious/noConsole: We need for debug */
 import { db } from '@/db';
+import { institutions, maxAllowedDays } from '@/db/schema';
 import { jobs } from '@/db/schema/jobs';
 import { procedures } from '@/db/schema/procedures';
 import { handleError } from '@/utils/handle-error';
 import { getDataFromFiles } from './get-data-from-file';
-import { getProceduresToInsert, insertProcedures } from './seed-procedures';
-import { insertJobs } from './seed-jobs';
-import { insertMaxAllowedDays } from './seed-max-allowed-days';
-import { institutions, maxAllowedDays } from '@/db/schema';
 import {
   getInstitutionsToInsert,
   insertInstitutions,
 } from './seed-institutions';
+import { insertJobs } from './seed-jobs';
+import { insertMaxAllowedDays } from './seed-max-allowed-days';
+import { getProceduresToInsert, insertProcedures } from './seed-procedures';
 import { insertWaitingTimes } from './seed-waiting-times';
 
 export async function deleteTables() {
