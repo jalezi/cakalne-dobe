@@ -22,7 +22,7 @@ export type ReturnType<
       details?: TDetails;
     };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny: We will fix in the future
 export type Trx<TSchema extends TablesRelationalConfig = any> =
   SQLiteTransaction<'async', ResultSet, typeof schema, TSchema>;
 

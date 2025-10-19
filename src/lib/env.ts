@@ -19,9 +19,8 @@ type Env = z.infer<typeof envServerVarsSchema> &
   z.infer<typeof envClientVarsSchema>;
 
 declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
+  // biome-ignore lint/style/noNamespace: Needed for NodeJS namespace augmentation
   namespace NodeJS {
-    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
     interface ProcessEnv extends Env {}
   }
 }

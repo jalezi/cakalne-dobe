@@ -1,4 +1,6 @@
-import type { Table as TTable, Column as TColumn } from '@tanstack/table-core';
+import type { Column as TColumn, Table as TTable } from '@tanstack/table-core';
+import { Fragment } from 'react';
+import { Button } from './ui/button';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -8,12 +10,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
-import { Button } from './ui/button';
-import { Fragment } from 'react';
 
 interface ColumnsTogglerProps<TData, TValue> {
   groupedColumns: GroupedByParent<TData, TValue>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // biome-ignore lint/suspicious/noExplicitAny: Will fix in the future
   table: TTable<any>;
 }
 export function ColumnsToggler<TData, TValue>({

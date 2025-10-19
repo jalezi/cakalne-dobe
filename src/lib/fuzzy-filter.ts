@@ -1,8 +1,8 @@
 import { compareItems, rankItem } from '@tanstack/match-sorter-utils';
 import {
+  type FilterFn,
   type SortingFn,
   sortingFns,
-  type FilterFn,
 } from '@tanstack/table-core';
 
 export const fuzzyFilter: FilterFn<unknown> = (
@@ -23,7 +23,7 @@ export const fuzzyFilter: FilterFn<unknown> = (
   return itemRank.passed;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- This is a generic sorting function from Tanstack Table example
+// biome-ignore lint/suspicious/noExplicitAny: Needed for generic sorting function
 export const fuzzySort: SortingFn<any> = (rowA, rowB, columnId) => {
   let dir = 0;
 

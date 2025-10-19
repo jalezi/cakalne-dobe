@@ -1,5 +1,10 @@
 'use client';
 
+import { Check } from 'lucide-react';
+import type { Route } from 'next';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Command,
@@ -17,12 +22,7 @@ import {
 } from '@/components/ui/popover';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { cn } from '@/lib/utils';
-import { Check } from 'lucide-react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useState } from 'react';
 import { DialogTitle } from './ui/dialog';
-import type { Route } from 'next';
 
 export type SelectOption = {
   value: string;
@@ -157,7 +157,7 @@ function OptionList({
         return isMatch ? 1 : 0;
       }}
     >
-      <CommandInput placeholder={inputPlaceholder} typeof="search" />
+      <CommandInput placeholder={inputPlaceholder} />
       <CommandList>
         <CommandEmpty>Žal, nisem našel iskanega.</CommandEmpty>
         <CommandGroup>

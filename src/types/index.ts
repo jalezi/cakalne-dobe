@@ -1,9 +1,9 @@
-import type { ProcedureWithMaxAllowedDays } from '@/lib/zod-schemas/data-schemas';
 import { type RankingInfo } from '@tanstack/match-sorter-utils';
 import type { FilterFn, RowData } from '@tanstack/react-table';
+import type { ProcedureWithMaxAllowedDays } from '@/lib/zod-schemas/data-schemas';
 
 declare module '@tanstack/table-core' {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // biome-ignore lint/correctness/noUnusedVariables: Needed for types
   interface TableMeta<TData extends RowData> {
     allowedMaxWaitingTimes?: ProcedureWithMaxAllowedDays[];
     procedureCode?: string;

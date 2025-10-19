@@ -1,24 +1,24 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import type { TimeSeriesChartData } from './time-series-chart';
 import { useState } from 'react';
+import type { DateRange } from 'react-day-picker';
 import { getProcedureAvgWtPerJobChart } from '@/actions/get-procedure-avg-wt-per-job-chart';
 import {
   ComboBoxResponsive,
   type SelectOption,
 } from '@/components/combo-box-responsive';
-import { TimeRangePicker } from './time-range-picker';
 import { Label } from '@/components/ui/label';
-import type { DateRange } from 'react-day-picker';
 import { ClassicLoader } from '@/components/ui/loaders';
+import { TimeRangePicker } from './time-range-picker';
+import type { TimeSeriesChartData } from './time-series-chart';
 
 // Override console.error
 // This is a hack to suppress the warning about missing defaultProps in recharts library as of version 2.12
 // @link https://github.com/recharts/recharts/issues/3615
 const error = console.error;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny: Will fix in the future
 console.error = (...args: any) => {
   if (!Array.isArray(args) || !args[0] || typeof args[0] !== 'string') return;
   if (/defaultProps/.test(args[0])) return;
@@ -68,23 +68,23 @@ export function AverageWaitingTimeChart<TLines extends string[]>({
   };
 
   const onProcedureSelect = async (value: string) => {
-    const newChartData = (await getProcedureAvgWtPerJobChart(
+    const result = await getProcedureAvgWtPerJobChart(
       value,
       dateRange?.to ?? dateRange?.from ?? initialDateRange.from,
       dateRange?.from ?? initialDateRange.from
-    )) as TimeSeriesChartData<TLines>[];
-    setChartData(newChartData);
+    );
+    setChartData(result.data as TimeSeriesChartData<TLines>[]);
     setProcedure(value);
   };
 
   const onDateRangeChange = async (newDateRange: DateRange) => {
     if (!newDateRange || !newDateRange.from) return;
-    const newChartData = (await getProcedureAvgWtPerJobChart(
+    const result = await getProcedureAvgWtPerJobChart(
       procedure,
       newDateRange.to ?? newDateRange.from,
       newDateRange.from ?? initialDateRange.from
-    )) as TimeSeriesChartData<TLines>[];
-    setChartData(newChartData);
+    );
+    setChartData(result.data as TimeSeriesChartData<TLines>[]);
     setDateRange(newDateRange);
   };
 

@@ -1,34 +1,34 @@
 'use client';
 
+import { format } from 'date-fns';
+import { sl } from 'date-fns/locale';
+import { CalendarIcon } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useState } from 'react';
+import { getProcedureWtForInstOnDay } from '@/actions/get-procedure-wt-for-inst-on-day';
 import {
   ComboBoxResponsive,
   type SelectOption,
 } from '@/components/combo-box-responsive';
+import { Time } from '@/components/time';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import { Label } from '@/components/ui/label';
 import { ClassicLoader } from '@/components/ui/loaders';
-import type { BrushChartData } from './brush-chart';
-import { getProcedureWtForInstOnDay } from '@/actions/get-procedure-wt-for-inst-on-day';
-import { Calendar } from '@/components/ui/calendar';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Time } from '@/components/time';
-import { CalendarIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { sl } from 'date-fns/locale';
-import { format } from 'date-fns';
+import type { BrushChartData } from './brush-chart';
 
 // Override console.error
 // This is a hack to suppress the warning about missing defaultProps in recharts library as of version 2.12
 // @link https://github.com/recharts/recharts/issues/3615
 const error = console.error;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny: Will fix in the future
 console.error = (...args: any) => {
   if (!Array.isArray(args) || !args[0] || typeof args[0] !== 'string') return;
   if (/defaultProps/.test(args[0])) return;
