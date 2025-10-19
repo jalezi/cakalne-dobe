@@ -34,6 +34,33 @@ pnpm turso:dev:file
 
 This starts a local Turso database instance using the `dev.db` file.
 
+### Fetching Job Artifacts from GitLab
+
+Download job artifacts from the GitLab CI/CD pipeline:
+
+```bash
+# Fetch 10 latest jobs (default)
+pnpm fetch:jobs
+
+# Fetch specific number of jobs
+pnpm fetch:jobs --count 20
+
+# Fetch jobs from specific date
+pnpm fetch:jobs --from-date 2024-03-01
+
+# Save to custom directory
+pnpm fetch:jobs --output ./custom/path
+```
+
+The script:
+- Queries GitLab GraphQL API for job list
+- Downloads artifacts from GitLab Pages
+- Saves files as `mock-data/jobs/wp-YYYY-MM-DD-HH-MM-SS-{JOB_ID}.json`
+- Handles errors gracefully (many jobs don't have artifacts)
+- Provides progress feedback with success/error counts
+
+**Note:** Only successfully completed CI/CD jobs have artifacts available. Failed or running jobs will be skipped with error messages.
+
 ### Seeding the Database
 
 #### Full Seed (Interactive)

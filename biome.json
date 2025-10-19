@@ -70,7 +70,14 @@
             "noSetterReturn": "off",
             "noUndeclaredVariables": "off",
             "noUnreachable": "off",
-            "noUnreachableSuper": "off"
+            "noUnreachableSuper": "off",
+            "noUnusedImports": "error",
+            "noUnusedFunctionParameters": "error",
+            "noUnusedVariables": {
+              "level": "error",
+              "options": {}
+            },
+            "noUnusedLabels": "error"
           },
           "style": {
             "useConst": "error"
