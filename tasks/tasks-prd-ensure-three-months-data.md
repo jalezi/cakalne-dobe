@@ -4,15 +4,15 @@ Based on PRD: `prd-ensure-three-months-data.md`
 
 ## Relevant Files
 
-- `seed/seed-helpers/validate-data-coverage.ts` - New module containing validation functions for data coverage checks.
-- `seed/seed-helpers/validate-data-coverage.test.ts` - Unit tests for validation module.
-- `seed/seed-helpers/date-range-calculator.ts` - New utility module for date calculations and range operations.
+- `seed/seed-helpers/date-range-calculator.ts` - Date calculations and range operations utility module.
 - `seed/seed-helpers/date-range-calculator.test.ts` - Unit tests for date calculation utilities.
-- `seed/ensure-fresh-data.ts` - New entry point script for the `pnpm db:ensure-fresh-data` command.
-- `seed/seed-db-from-jobs.ts` - Existing seed script that needs enhancement for smart seeding logic.
+- `seed/seed-helpers/validate-data-coverage.ts` - Validation functions for data coverage checks (file scanning, DB queries).
+- `seed/seed-helpers/console-reporter.ts` - Console reporting system with colored output and progress indicators.
+- `seed/seed-helpers/smart-seeding.ts` - Smart seeding logic for incremental database updates.
+- `seed/ensure-fresh-data.ts` - Main entry point script for the `pnpm db:ensure-fresh-data` command with database environment detection.
 - `seed/seed-db.ts` - Existing main seed script that needs validation integration.
 - `seed/seed-helpers/index.ts` - Existing helper exports that need to include new validation functions.
-- `seed/seed-helpers/get-data-from-file.ts` - Existing file reading logic that may need date extraction enhancement.
+- `package.json` - Add new npm scripts for local and production database commands.
 - `package.json` - Add new npm script for the command.
 - `README.md` - Documentation for the new feature and command.
 
@@ -96,7 +96,7 @@ Based on PRD: `prd-ensure-three-months-data.md`
   - [x] 5.8 Maintain transaction safety for each job insertion to prevent partial data
   - [x] 5.9 Collect and return statistics (seeded count, skipped count, errors)
 
-- [ ] 6.0 Create Main Command Entry Point
+- [x] 6.0 Create Main Command Entry Point
   - [x] 6.1 Create `seed/ensure-fresh-data.ts` file as the main entry point
   - [x] 6.2 Import all validation, reporting, and seeding functions
   - [x] 6.3 Implement main async function `ensureFreshData()` that orchestrates the entire process

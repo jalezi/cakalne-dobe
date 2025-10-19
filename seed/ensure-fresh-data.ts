@@ -1,9 +1,9 @@
 /** biome-ignore-all lint/suspicious/noConsole: This is a CLI script */
 
+import { ENV_SERVER_VARS } from '@/lib/env';
 import {
   generateSummaryReport,
   reportFinalSummary,
-  reportSeedingProgress,
 } from './seed-helpers/console-reporter';
 import { formatDateForDisplay } from './seed-helpers/date-range-calculator';
 import {
@@ -17,20 +17,38 @@ import {
 } from './seed-helpers/validate-data-coverage';
 
 /**
+ * Determines the database environment from the DATABASE_URL
+ */
+function getDatabaseEnvironment(): string {
+  const dbUrl = ENV_SERVER_VARS.DATABASE_URL;
+
+  if (dbUrl.includes('file:') || dbUrl.includes('dev.db')) {
+    return '🗄️  Local File Database (dev.db)';
+  }
+  if (dbUrl.includes('prod.db')) {
+    return '🗄️  Production File Database (prod.db)';
+  }
+  if (dbUrl.includes('turso') || dbUrl.includes('libsql')) {
+    return '☁️  Turso Cloud Database';
+  }
+
+  return '🗄️  Database';
+}
+
+/**
  * Main function that orchestrates the entire data coverage check and seeding process
  */
 async function ensureFreshData(): Promise<void> {
   let exitCode = 0;
 
   try {
-    // Step 1: Display header banner
+    // Step 1: Display header banner with database info
     console.log('\n');
     console.log('═'.repeat(60));
     console.log('📊 Checking Local Database Data Coverage...');
     console.log('═'.repeat(60));
-    console.log('\n');
-
-    // Step 2: Query database for current coverage
+    console.log(`\n${getDatabaseEnvironment()}`);
+    console.log(`🔗 ${ENV_SERVER_VARS.DATABASE_URL}\n`); // Step 2: Query database for current coverage
     console.log('🔍 Querying database...');
     const dbCoverage = await getDatabaseDateRange();
 
