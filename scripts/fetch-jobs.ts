@@ -110,21 +110,46 @@ async function fetchJobs(options: FetchJobsOptions = {}): Promise<void> {
   console.log(`  Count: ${count}`);
   console.log(`  Output: ${outputDir}\n`);
 
-  // Fetch job list from GitLab GraphQL API
+  // Fetch job list from GitLab GraphQL API with pagination
   console.log('📋 Fetching job list from GitLab GraphQL API...');
-  const jobsResponse = await getJobs({ first: count });
 
-  if (!jobsResponse.success) {
-    const errorMessage = !jobsResponse.success
-      ? jobsResponse.error
-      : 'Unknown error';
-    throw new Error(`Failed to fetch jobs: ${errorMessage}`);
+  const allJobs = [];
+  let hasNextPage = true;
+  let after: string | undefined = undefined;
+  let pageCount = 0;
+
+  // Fetch jobs with pagination until we have enough or no more pages
+  while (hasNextPage && allJobs.length < count) {
+    const batchSize = Math.min(100, count - allJobs.length); // Max 100 per request
+    const jobsResponse = await getJobs({ first: batchSize, after });
+
+    if (!jobsResponse.success) {
+      const errorMessage = !jobsResponse.success
+        ? jobsResponse.error
+        : 'Unknown error';
+      throw new Error(`Failed to fetch jobs: ${errorMessage}`);
+    }
+
+    const jobs = jobsResponse.data.jobs.nodes;
+    allJobs.push(...jobs);
+
+    hasNextPage = jobsResponse.data.jobs.pageInfo.hasNextPage;
+    after = jobsResponse.data.jobs.pageInfo.endCursor;
+    pageCount++;
+
+    console.log(
+      `  📄 Fetched page ${pageCount}: ${jobs.length} jobs (total: ${allJobs.length})`
+    );
+
+    // Stop if we've reached the end
+    if (!hasNextPage) {
+      console.log('  ✓ Reached end of available jobs\n');
+      break;
+    }
   }
 
-  const jobs = jobsResponse.data.jobs.nodes;
-
   // Filter jobs: only "run" jobs have artifacts
-  const runJobs = jobs.filter((job) => job.name === JOB_NAME);
+  const runJobs = allJobs.filter((job) => job.name === JOB_NAME);
 
   // Apply date filter if provided
   const filteredJobs = fromDate
