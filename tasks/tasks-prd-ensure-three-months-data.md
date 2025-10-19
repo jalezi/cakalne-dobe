@@ -123,20 +123,20 @@ Based on PRD: `prd-ensure-three-months-data.md`
   - [ ] 7.8 Export validation functions from `seed/seed-helpers/index.ts` for reuse
 
 - [ ] 8.0 Add Command to package.json and Update Documentation
-  - [ ] 8.1 Add new script to `package.json`: `"db:ensure-fresh-data": "node -r dotenv/config -r esbuild-register seed/ensure-fresh-data.ts dotenv_config_path=.env.development.local"`
-  - [ ] 8.2 Update README.md with new "Database Operations" section
-  - [ ] 8.3 Document the `pnpm db:ensure-fresh-data` command with description and use cases
-  - [ ] 8.4 Add examples showing expected output (successful case and warning case)
-  - [ ] 8.5 Document the 3-month requirement and how dates are calculated
-  - [ ] 8.6 Add troubleshooting section for common issues (no files, missing data, etc.)
-  - [ ] 8.7 Update existing database seeding documentation to mention coverage validation
-  - [ ] 8.8 Add note about historical data preservation strategy
+  - [x] 8.1 Add new script to `package.json`: `"db:local:ensure-fresh-data"` and `"db:prod:ensure-fresh-data"`
+  - [x] 8.2 Update README.md with new "Database Operations" section
+  - [x] 8.3 Document the `pnpm db:ensure-fresh-data` command with description and use cases
+  - [x] 8.4 Add examples showing expected output (successful case and warning case)
+  - [x] 8.5 Document the 3-month requirement and how dates are calculated
+  - [x] 8.6 Add troubleshooting section for common issues (no files, missing data, etc.)
+  - [x] 8.7 Update existing database seeding documentation to mention coverage validation
+  - [x] 8.8 Add note about historical data preservation strategy
 
 - [ ] 9.0 Write Comprehensive Tests
-  - [ ] 9.1 Create `seed/seed-helpers/date-range-calculator.test.ts`
-  - [ ] 9.2 Test `calculateThreeMonthsBack()` with various dates including edge cases (end of month, leap years)
-  - [ ] 9.3 Test `extractDateFromJobFilename()` with valid and invalid filename formats
-  - [ ] 9.4 Test date formatting and comparison functions
+  - [x] 9.1 Create `seed/seed-helpers/date-range-calculator.test.ts`
+  - [x] 9.2 Test `calculateThreeMonthsBack()` with various dates including edge cases (end of month, leap years)
+  - [x] 9.3 Test `extractDateFromJobFilename()` with valid and invalid filename formats
+  - [x] 9.4 Test date formatting and comparison functions
   - [ ] 9.5 Create `seed/seed-helpers/validate-data-coverage.test.ts`
   - [ ] 9.6 Mock file system operations using Vitest mocks for `getAvailableJobsDateRange()`
   - [ ] 9.7 Test validation with various scenarios: adequate coverage, missing recent data, gaps in coverage, no files
