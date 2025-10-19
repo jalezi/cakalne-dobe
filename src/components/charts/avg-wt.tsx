@@ -1,8 +1,10 @@
-import { getProcedureAvgWtPerJobChart } from '@/actions/get-procedure-avg-wt-per-job-chart';
-import { addDays, addMonths } from 'date-fns';
+import { addDays, addMonths, format } from 'date-fns';
 import { AverageWaitingTimeChart } from './wp/chart-01';
 import type { SelectOption } from '../combo-box-responsive';
+import { getProcedureAvgWtPerJobChart } from '@/actions/get-procedure-avg-wt-per-job-chart';
 import { FIRST_DAY } from '@/lib/constants';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { InfoIcon } from 'lucide-react';
 
 interface AvgWTChartProps {
   procedureCode: string;
@@ -19,28 +21,48 @@ export async function AvgWTChart({
       ? addMonths(addDays(toDate, 1), -1)
       : FIRST_DAY;
 
-  const chartData = await getProcedureAvgWtPerJobChart(
+  const result = await getProcedureAvgWtPerJobChart(
     procedureCode,
     toDate,
     fromDate
   );
 
-  if (chartData.length === 0) {
+  if (result.data.length === 0) {
     return (
       <div className="grid min-h-[480px] place-items-center">Ni podatkov</div>
     );
   }
 
   return (
-    <AverageWaitingTimeChart
-      lineDatakeys={['regular', 'fast', 'veryFast']}
-      initialData={chartData}
-      initialDateRange={{
-        to: toDate,
-        from: fromDate,
-      }}
-      procedureOptions={procedureOptions}
-      initialProcedure={procedureCode}
-    />
+    <>
+      {result.isFallback && result.actualFromDate && result.actualToDate && (
+        <Alert className="mb-4">
+          <InfoIcon className="h-4 w-4" />
+          <AlertTitle>Prikazani so podatki iz drugega obdobja</AlertTitle>
+          <AlertDescription>
+            Za izbrano obdobje ni podatkov. Prikazani so najnovejši
+            razpoložljivi podatki iz obdobja{' '}
+            {format(result.actualFromDate, 'dd.MM.yyyy')} -{' '}
+            {format(result.actualToDate, 'dd.MM.yyyy')}.
+          </AlertDescription>
+        </Alert>
+      )}
+      <AverageWaitingTimeChart
+        lineDatakeys={['regular', 'fast', 'veryFast']}
+        initialData={result.data}
+        initialDateRange={{
+          to:
+            result.isFallback && result.actualToDate
+              ? result.actualToDate
+              : toDate,
+          from:
+            result.isFallback && result.actualFromDate
+              ? result.actualFromDate
+              : fromDate,
+        }}
+        procedureOptions={procedureOptions}
+        initialProcedure={procedureCode}
+      />
+    </>
   );
 }
