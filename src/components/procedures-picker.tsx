@@ -1,5 +1,6 @@
 'use client';
 
+import type { Route } from 'next';
 import { useRouter } from 'next/navigation';
 import { ComboBoxResponsive, type SelectOption } from './combo-box-responsive';
 
@@ -21,7 +22,7 @@ export function ProceduresPicker({
       id={id}
       asLink
       onSelect={(value) => {
-        router.replace(value);
+        router.replace(value as Route);
         return;
       }}
       options={options}

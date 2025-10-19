@@ -7,14 +7,14 @@
  * and inserts the data into the database. It also handles errors and revalidates paths.
  */
 
-import { handleError } from '@/utils/handle-error';
-import type { ReturnType } from '../insert-new-job-data/types';
 import { sql } from 'drizzle-orm';
-import { jobs as jobsTable } from '@/db/schema';
-import { db } from '@/db';
 import { z } from 'zod';
-import { prepareJobData } from '../insert-new-job-data/job-processing';
+import { db } from '@/db';
+import { jobs as jobsTable } from '@/db/schema';
+import { handleError } from '@/utils/handle-error';
 import { processJobData } from '../insert-new-job-data/db-operations';
+import { prepareJobData } from '../insert-new-job-data/job-processing';
+import type { ReturnType } from '../insert-new-job-data/types';
 
 const dateSchema = z
   .string()
@@ -55,7 +55,7 @@ async function isGitLabJobIDInDB(
     {
       error?: unknown;
       code?: number;
-      issues?: z.typeToFlattenedError<
+      issues?: z.ZodFlattenedError<
         { gitLabJobId: string; date: string },
         string
       >;

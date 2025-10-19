@@ -1,11 +1,12 @@
-import { Button } from './ui/button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { JobLink } from './job-link';
-import { cn } from '@/lib/utils';
-import { Time } from './time';
 import { desc, sql } from 'drizzle-orm';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import type { Route } from 'next';
 import { db } from '@/db';
 import { jobs as jobsTable } from '@/db/schema';
+import { cn } from '@/lib/utils';
+import { JobLink } from './job-link';
+import { Time } from './time';
+import { Button } from './ui/button';
 
 interface JobsPaginationProps {
   id: string;
@@ -56,7 +57,7 @@ export async function JobsPagination({
             }
           >
             {prevHref ? (
-              <JobLink href={prevHref}>
+              <JobLink href={prevHref as Route}>
                 <ChevronLeft size={16} />
               </JobLink>
             ) : null}
@@ -67,7 +68,7 @@ export async function JobsPagination({
             className={cn(!nextJob && 'hidden', 'hidden pl-0 sm:inline-flex')}
           >
             {prevHref ? (
-              <JobLink href={prevHref}>
+              <JobLink href={prevHref as Route}>
                 <ChevronLeft size={16} />
                 {previousJobDate ? <Time date={previousJobDate} /> : null}
               </JobLink>
@@ -90,7 +91,7 @@ export async function JobsPagination({
             }
           >
             {nextHref ? (
-              <JobLink href={nextHref}>
+              <JobLink href={nextHref as Route}>
                 <ChevronRight size={16} />
               </JobLink>
             ) : null}
@@ -104,7 +105,7 @@ export async function JobsPagination({
             )}
           >
             {nextHref ? (
-              <JobLink href={nextHref}>
+              <JobLink href={nextHref as Route}>
                 {nextJobDate ? <Time date={nextJobDate} /> : null}
                 <ChevronRight size={16} />
               </JobLink>

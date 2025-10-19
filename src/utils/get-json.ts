@@ -1,4 +1,4 @@
-import { allDataSchema, type AllData } from '@/lib/zod-schemas/data-schemas';
+import { type AllData, allDataSchema } from '@/lib/zod-schemas/data-schemas';
 
 const BASE_URL = new URL('https://wayback-automachine.gitlab.io');
 export const BASE_JOBS_URL = new URL('-/cakalne-dobe/-/jobs', BASE_URL);
@@ -19,7 +19,7 @@ export const getJson = async (id: string): Promise<AllData> => {
     const data = await fileResponse.json();
     const parsedData = allDataSchema.safeParse(data);
     if (!parsedData.success) {
-      console.error(parsedData.error.errors);
+      console.error(parsedData.error.issues);
       throw new Error('Invalid data');
     }
 

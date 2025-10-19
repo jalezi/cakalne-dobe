@@ -1,5 +1,6 @@
 'use client';
 
+import type { Route } from 'next';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import {
   ComboBoxResponsive,
@@ -37,7 +38,7 @@ export function SelectDataset({
       key={selectedOption?.value}
       options={jobOptionsWithSearchParam ?? []}
       onSelect={(value) => {
-        router.replace(value);
+        router.replace(value as Route);
         return;
       }}
       defaultSelected={selectedJob ?? selectedOption}
