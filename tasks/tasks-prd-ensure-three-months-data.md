@@ -85,7 +85,7 @@ Based on PRD: `prd-ensure-three-months-data.md`
   - [x] 4.8 Add visual separators and section headers for readability
   - [x] 4.9 Include color coding if terminal supports it (use console colors or check if chalk is available)
 
-- [ ] 5.0 Enhance Seeding Logic for Smart Data Updates
+- [x] 5.0 Enhance Seeding Logic for Smart Data Updates
   - [x] 5.1 Create `getJobsToSeed(availableFiles: string[], requiredStartDate: Date, requiredEndDate: Date): string[]` function
   - [x] 5.2 Filter available files to only include those within the required 3-month window
   - [x] 5.3 Create `seedMissingJobsOnly(jobFiles: string[]): Promise<{ seeded: number; skipped: number; errors: CustomError[] }>` function
@@ -97,20 +97,20 @@ Based on PRD: `prd-ensure-three-months-data.md`
   - [x] 5.9 Collect and return statistics (seeded count, skipped count, errors)
 
 - [ ] 6.0 Create Main Command Entry Point
-  - [ ] 6.1 Create `seed/ensure-fresh-data.ts` file as the main entry point
-  - [ ] 6.2 Import all validation, reporting, and seeding functions
-  - [ ] 6.3 Implement main async function `ensureFreshData()` that orchestrates the entire process
-  - [ ] 6.4 Step 1: Display header banner ("📊 Checking Local Database Data Coverage...")
-  - [ ] 6.5 Step 2: Query database for current coverage using `getDatabaseDateRange()`
-  - [ ] 6.6 Step 3: Scan available JSON files using `getAvailableJobsDateRange()`
-  - [ ] 6.7 Step 4: Validate 3-month requirement and identify gaps
-  - [ ] 6.8 Step 5: Display comprehensive report using console reporter functions
-  - [ ] 6.9 Step 6: If coverage is inadequate, determine which files need seeding
-  - [ ] 6.10 Step 7: Execute smart seeding for missing jobs only
-  - [ ] 6.11 Step 8: Display final summary with before/after comparison
-  - [ ] 6.12 Exit with appropriate status code (0 for success, 1 for warnings)
-  - [ ] 6.13 Add proper error handling throughout the process
-  - [ ] 6.14 Ensure script can be run with `if (require.main === module)` pattern
+  - [x] 6.1 Create `seed/ensure-fresh-data.ts` file as the main entry point
+  - [x] 6.2 Import all validation, reporting, and seeding functions
+  - [x] 6.3 Implement main async function `ensureFreshData()` that orchestrates the entire process
+  - [x] 6.4 Step 1: Display header banner ("📊 Checking Local Database Data Coverage...")
+  - [x] 6.5 Step 2: Query database for current coverage using `getDatabaseDateRange()`
+  - [x] 6.6 Step 3: Scan available JSON files using `getAvailableJobsDateRange()`
+  - [x] 6.7 Step 4: Validate 3-month requirement and identify gaps
+  - [x] 6.8 Step 5: Display comprehensive report using console reporter functions
+  - [x] 6.9 Step 6: If coverage is inadequate, determine which files need seeding
+  - [x] 6.10 Step 7: Execute smart seeding for missing jobs only
+  - [x] 6.11 Step 8: Display final summary with before/after comparison
+  - [x] 6.12 Exit with appropriate status code (0 for success, 1 for warnings)
+  - [x] 6.13 Add proper error handling throughout the process
+  - [x] 6.14 Ensure script can be run with `if (require.main === module)` pattern
 
 - [ ] 7.0 Integrate with Existing Seed Process
   - [ ] 7.1 Update `seed/seed-db.ts` to add optional validation step
