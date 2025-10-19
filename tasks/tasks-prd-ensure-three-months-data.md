@@ -65,7 +65,7 @@ Based on PRD: `prd-ensure-three-months-data.md`
   - [x] 2.8 Identify any gaps in coverage by comparing available dates against required range
   - [x] 2.9 Handle edge cases (no files, invalid dates, empty directory)
 
-- [ ] 3.0 Implement Database Coverage Query Functions
+- [x] 3.0 Implement Database Coverage Query Functions
   - [x] 3.1 Create `getDatabaseDateRange()` function in `validate-data-coverage.ts`
   - [x] 3.2 Query the `jobs` table using Drizzle ORM to get `MIN(start_date)` and `MAX(start_date)`
   - [x] 3.3 Return result as `{ earliest: Date | null; latest: Date | null; jobCount: number }`
@@ -74,7 +74,7 @@ Based on PRD: `prd-ensure-three-months-data.md`
   - [x] 3.6 Add proper error handling with try-catch blocks
   - [x] 3.7 Use existing database connection from `@/db`
 
-- [ ] 4.0 Build Console Reporting System
+- [x] 4.0 Build Console Reporting System
   - [x] 4.1 Create `seed/seed-helpers/console-reporter.ts` file
   - [x] 4.2 Implement `reportDatabaseCoverage(earliest: Date | null, latest: Date | null, jobCount: number)` function with formatted output
   - [x] 4.3 Implement `reportRequiredCoverage(requiredStart: Date, requiredEnd: Date)` function
@@ -86,15 +86,15 @@ Based on PRD: `prd-ensure-three-months-data.md`
   - [x] 4.9 Include color coding if terminal supports it (use console colors or check if chalk is available)
 
 - [ ] 5.0 Enhance Seeding Logic for Smart Data Updates
-  - [ ] 5.1 Create `getJobsToSeed(availableFiles: string[], requiredStartDate: Date, requiredEndDate: Date): string[]` function
-  - [ ] 5.2 Filter available files to only include those within the required 3-month window
-  - [ ] 5.3 Create `seedMissingJobsOnly(jobFiles: string[]): Promise<{ seeded: number; skipped: number; errors: CustomError[] }>` function
-  - [ ] 5.4 For each job file, check if the job already exists in the database using `gitLabJobId`
-  - [ ] 5.5 Skip seeding if job already exists (increment skipped counter)
-  - [ ] 5.6 Seed only new jobs with their related data (institutions, procedures, waiting periods, max allowed days)
-  - [ ] 5.7 Reuse existing seed helper functions (`insertJobs`, `insertProcedures`, etc.) but with individual job processing
-  - [ ] 5.8 Maintain transaction safety for each job insertion to prevent partial data
-  - [ ] 5.9 Collect and return statistics (seeded count, skipped count, errors)
+  - [x] 5.1 Create `getJobsToSeed(availableFiles: string[], requiredStartDate: Date, requiredEndDate: Date): string[]` function
+  - [x] 5.2 Filter available files to only include those within the required 3-month window
+  - [x] 5.3 Create `seedMissingJobsOnly(jobFiles: string[]): Promise<{ seeded: number; skipped: number; errors: CustomError[] }>` function
+  - [x] 5.4 For each job file, check if the job already exists in the database using `gitLabJobId`
+  - [x] 5.5 Skip seeding if job already exists (increment skipped counter)
+  - [x] 5.6 Seed only new jobs with their related data (institutions, procedures, waiting periods, max allowed days)
+  - [x] 5.7 Reuse existing seed helper functions (`insertJobs`, `insertProcedures`, etc.) but with individual job processing
+  - [x] 5.8 Maintain transaction safety for each job insertion to prevent partial data
+  - [x] 5.9 Collect and return statistics (seeded count, skipped count, errors)
 
 - [ ] 6.0 Create Main Command Entry Point
   - [ ] 6.1 Create `seed/ensure-fresh-data.ts` file as the main entry point
