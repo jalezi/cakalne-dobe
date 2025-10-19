@@ -1,0 +1,37 @@
+# Lefthook configuration
+# https://github.com/evilmartians/lefthook
+
+pre-commit:
+  parallel: true
+  commands:
+    lint:
+      glob: '*.{js,jsx,ts,tsx,json,jsonc}'
+      run: pnpm biome check --write --no-errors-on-unmatched --files-ignore-unknown=true --staged {staged_files}
+      stage_fixed: true
+    
+    # Type check
+    type-check:
+      glob: '*.{ts,tsx}'
+      run: pnpm tsc --noEmit
+      skip:
+        - merge
+        - rebase
+
+  # Optionally run tests before commit (can be slow, commented out by default)
+  # commands:
+  #   test:
+  #     run: pnpm test run
+  #     skip:
+  #       - merge
+  #       - rebase
+
+# Pre-push hooks for more comprehensive checks
+pre-push:
+  parallel: false
+  commands:
+    # Run all tests before pushing
+    test:
+      run: pnpm test run
+      skip:
+        - merge
+        - rebase
