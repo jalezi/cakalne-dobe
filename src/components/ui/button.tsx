@@ -5,7 +5,16 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+  [
+    // Base styles - layout and interaction
+    'inline-flex items-center justify-center whitespace-nowrap',
+    // Visual styles - shape and typography
+    'rounded-md text-sm font-medium ',
+    // Focus and accessibility
+    'ring-offset-background transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ',
+    // Disabled state
+    'disabled:pointer-events-none disabled:opacity-50',
+  ],
   {
     variants: {
       variant: {
