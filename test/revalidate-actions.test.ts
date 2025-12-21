@@ -2,11 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock Next.js cache functions
 vi.mock('next/cache', () => ({
-  revalidateTag: vi.fn(),
+  updateTag: vi.fn(),
   revalidatePath: vi.fn(),
 }));
 
-import { revalidatePath, revalidateTag } from 'next/cache';
+import { revalidatePath, updateTag } from 'next/cache';
 // Import after mocking
 import {
   revalidateGetJson,
@@ -19,13 +19,13 @@ describe('Revalidate Actions', () => {
     vi.resetAllMocks();
   });
 
-  it('should call revalidateTag with "getJson"', async () => {
+  it('should call updateTag with "getJson"', async () => {
     // Call the action
     await revalidateGetJson();
 
     // Verify the mock was called with the correct parameter
-    expect(revalidateTag).toHaveBeenCalledWith('getJson');
-    expect(revalidateTag).toHaveBeenCalledTimes(1);
+    expect(updateTag).toHaveBeenCalledWith('getJson');
+    expect(updateTag).toHaveBeenCalledTimes(1);
   });
 
   it('should call revalidatePath with "/[id]" and "page"', async () => {
@@ -39,7 +39,7 @@ describe('Revalidate Actions', () => {
 
   it('should have mocks reset between tests', async () => {
     // This test demonstrates that beforeEach successfully resets mocks between tests
-    expect(revalidateTag).toHaveBeenCalledTimes(0);
+    expect(updateTag).toHaveBeenCalledTimes(0);
     expect(revalidatePath).toHaveBeenCalledTimes(0);
   });
 });
