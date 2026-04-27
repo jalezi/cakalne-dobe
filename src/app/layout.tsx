@@ -1,11 +1,13 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Geist, Inter } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
 import './globals.css';
 import { Footer } from '@/components/footer';
 import { Header } from '@/components/header';
 import { Toaster } from '@/components/ui/sonner';
-import { getSiteUrl } from '@/lib/utils';
+import { cn, getSiteUrl } from '@/lib/utils';
+
+const geist = Geist({ subsets: ['latin'], variable: '--font-sans' });
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -33,7 +35,11 @@ interface RootLayoutProps {
 
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={cn('font-sans', 'font-sans', geist.variable)}
+    >
       <head />
       <body className={inter.className}>
         <ThemeProvider
