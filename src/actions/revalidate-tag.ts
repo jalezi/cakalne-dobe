@@ -4,6 +4,6 @@ import { revalidatePath, updateTag } from 'next/cache';
 
 export const revalidateGetJson = async () => updateTag('getJson');
 
-export const revalidateHomePage = async () => revalidatePath('/', 'page');
+const _revalidateHomePage = async () => revalidatePath('/', 'page');
 
-export const revalidatePathId = revalidateHomePage;
+export const revalidatePathId = async () => revalidatePath('/', 'page');
