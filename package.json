@@ -31,6 +31,7 @@
     "db:prod:ensure-fresh-data": "node -r dotenv/config -r esbuild-register seed/ensure-fresh-data.ts dotenv_config_path=.env.production.local",
     "db:local:update-job-dates": "node -r dotenv/config  -r esbuild-register seed/update-date-from-now-desc.ts dotenv_config_path=.env.development.local",
     "fetch:jobs": "node -r esbuild-register scripts/fetch-jobs.ts",
+    "vercel:cleanup:prod": "node -r esbuild-register scripts/cleanup-vercel-prod.ts",
     "turso:dev": "turso dev",
     "turso:dev:file": "turso dev --db-file dev.db",
     "turso:prod:file": "turso dev --db-file prod.db",
