@@ -1,43 +1,16 @@
-import { desc, sql } from 'drizzle-orm';
 import Link from 'next/link';
-import { Suspense } from 'react';
-import { db } from '@/db';
-import { jobs as jobsTable } from '@/db/schema';
-import { type SelectOption } from './combo-box-responsive';
-import { DatePickerDemo } from './job-picker';
 import { ThemeToggler } from './theme-toggler';
 import { Button } from './ui/button';
-import { Skeleton } from './ui/skeleton';
 
-export async function Header({ id }: { id?: string }) {
-  const jobs = await db.query.jobs.findMany({
-    extras: {
-      dateStyle: sql<string>`DATE(${jobsTable.startDate})`.as('date-style'),
-    },
-    orderBy: [desc(jobsTable.startDate)],
-  });
-
-  const jobsOptions: SelectOption[] = [];
-  for (const job of jobs) {
-    const value = job.dateStyle;
-
-    jobsOptions.push({
-      value: `/${value}/`,
-      label: job.dateStyle,
-    });
-  }
-
+export function Header() {
   return (
     <header className="sticky top-0 left-0 z-50 flex items-center bg-transparent p-4 backdrop-blur-lg">
       <Button asChild variant="link" className="px-0">
-        <Link href="/" aria-current={id ? undefined : 'page'}>
+        <Link href="/" aria-current="page">
           Domov
         </Link>
       </Button>
       <div className="ml-auto flex items-center">
-        <Suspense fallback={<Skeleton className="h-10 w-40" />}>
-          <DatePickerDemo jobsOptions={jobsOptions} />
-        </Suspense>
         <ThemeToggler className="ml-2 aspect-square" />
       </div>
     </header>

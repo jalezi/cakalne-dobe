@@ -60,5 +60,4 @@ export async function POST(request: Request) {
 function revalidateAllPaths() {
   revalidatePath('/', 'layout');
   revalidatePath('/', 'page');
-  revalidatePath('/[id]/', 'page');
 }

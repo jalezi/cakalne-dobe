@@ -29,15 +29,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
 interface RootLayoutProps {
   children: React.ReactNode;
-  params: Promise<{ id?: string }>;
 }
 
-export default async function RootLayout({
-  params,
-  children,
-}: RootLayoutProps) {
-  const id = (await params).id;
-
+export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head />
@@ -48,8 +42,8 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="relative grid min-h-[100svh] grid-cols-1 grid-rows-[min-content_1fr_min-content] bg-inherit">
-            <Header id={id} />
+          <div className="relative grid min-h-svh grid-cols-1 grid-rows-[min-content_1fr_min-content] bg-inherit">
+            <Header />
             {children}
             <Footer />
           </div>

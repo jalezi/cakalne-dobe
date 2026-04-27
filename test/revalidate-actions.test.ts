@@ -28,12 +28,12 @@ describe('Revalidate Actions', () => {
     expect(updateTag).toHaveBeenCalledTimes(1);
   });
 
-  it('should call revalidatePath with "/[id]" and "page"', async () => {
+  it('should call revalidatePath with "/" and "page"', async () => {
     // Call the action
     await revalidatePathId();
 
     // Verify the mock was called with the correct parameters
-    expect(revalidatePath).toHaveBeenCalledWith('/[id]', 'page');
+    expect(revalidatePath).toHaveBeenCalledWith('/', 'page');
     expect(revalidatePath).toHaveBeenCalledTimes(1);
   });
 
