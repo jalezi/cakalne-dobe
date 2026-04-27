@@ -9,6 +9,7 @@ export function Header() {
         render={<Link href="/" aria-current="page" />}
         variant="link"
         className="px-0"
+        nativeButton={false}
       >
         Domov
       </Button>

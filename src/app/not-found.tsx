@@ -11,7 +11,9 @@ export default function NotFound() {
           Stran, ki jo iščete, ne obstaja ali je bila premaknjena.
         </p>
       </div>
-      <Button render={<Link href="/" />}>Nazaj na domačo stran</Button>
+      <Button render={<Link href="/" />} nativeButton={false}>
+        Nazaj na domačo stran
+      </Button>
     </main>
   );
 }
