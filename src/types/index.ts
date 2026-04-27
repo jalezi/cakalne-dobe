@@ -3,7 +3,6 @@ import type { FilterFn, RowData } from '@tanstack/react-table';
 import type { ProcedureWithMaxAllowedDays } from '@/lib/zod-schemas/data-schemas';
 
 declare module '@tanstack/table-core' {
-  // biome-ignore lint/correctness/noUnusedVariables: Needed for types
   interface TableMeta<TData extends RowData> {
     allowedMaxWaitingTimes?: ProcedureWithMaxAllowedDays[];
     procedureCode?: string;

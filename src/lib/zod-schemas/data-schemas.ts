@@ -5,7 +5,7 @@ export const waitingPeriodSchema = z.object({
   days: z.number().min(0),
 });
 
-export type WaitingPeriod = z.infer<typeof waitingPeriodSchema>;
+type _WaitingPeriod = z.infer<typeof waitingPeriodSchema>;
 
 export const waitingPeriodsByUrgencySchema = z.object({
   regular: z.array(waitingPeriodSchema).nullable(),
@@ -13,9 +13,7 @@ export const waitingPeriodsByUrgencySchema = z.object({
   veryFast: z.array(waitingPeriodSchema).nullable(),
 });
 
-export type WaitingPeriodsByUrgency = z.infer<
-  typeof waitingPeriodsByUrgencySchema
->;
+type _WaitingPeriodsByUrgency = z.infer<typeof waitingPeriodsByUrgencySchema>;
 
 export const maxAllowedDaysByUrgencySchema = z.object({
   regular: z.number().min(0),
@@ -23,9 +21,7 @@ export const maxAllowedDaysByUrgencySchema = z.object({
   veryFast: z.number().min(0),
 });
 
-export type MayAllowedDaysByUrgency = z.infer<
-  typeof maxAllowedDaysByUrgencySchema
->;
+type _MayAllowedDaysByUrgency = z.infer<typeof maxAllowedDaysByUrgencySchema>;
 
 export const procedureWithMaxAllowedDaysSchema = z.object({
   code: z.string(),
@@ -93,6 +89,4 @@ export const procedureAvgWaitingTimesSchema = z.object({
   jobId: z.string(),
 });
 
-export type ProcedureAvgWaitingTimes = z.infer<
-  typeof procedureAvgWaitingTimesSchema
->;
+type _ProcedureAvgWaitingTimes = z.infer<typeof procedureAvgWaitingTimesSchema>;

@@ -7,7 +7,7 @@ export const PROJECT_FULL_PATH = 'wayback-automachine/cakalne-dobe' as const;
 export const PROJECT_JOB_STATUSES = ['SUCCESS'] as const;
 export const JOB_NAME = 'run' as const;
 
-export const projectJobsQueryVariablesSchema = z.object({
+const _projectJobsQueryVariablesSchema = z.object({
   first: z.number().nullish(),
   after: z.string().nullish(),
   fullPath: z.string(),

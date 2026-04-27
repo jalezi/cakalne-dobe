@@ -1,10 +1,13 @@
 import { describe, expect, it, test } from 'vitest';
-
+import { z } from 'zod';
 import { makeFacilityRows } from './make-facility-row';
+
 import {
-  type MayAllowedDaysByUrgency,
+  maxAllowedDaysByUrgencySchema,
   type ProcedureWithWaitingPeriod,
 } from './zod-schemas/data-schemas';
+
+type MayAllowedDaysByUrgency = z.infer<typeof maxAllowedDaysByUrgencySchema>;
 
 const MAX_ALLOWED_DAYS: Record<string, MayAllowedDaysByUrgency> = {
   A: {
