@@ -45,9 +45,15 @@ describe('ThemeToggler - Simple Tests', () => {
     await user.click(button);
 
     // Verify dropdown menu appears with theme options
-    expect(screen.getByText(/Light/i)).toBeInTheDocument();
-    expect(screen.getByText(/Dark/i)).toBeInTheDocument();
-    expect(screen.getByText(/System/i)).toBeInTheDocument();
+    expect(
+      await screen.findByRole('menuitem', { name: /light/i })
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole('menuitem', { name: /dark/i })
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole('menuitem', { name: /system/i })
+    ).toBeInTheDocument();
   });
 
   it('sets the theme to dark when Dark option is clicked', async () => {
@@ -59,7 +65,7 @@ describe('ThemeToggler - Simple Tests', () => {
     await user.click(button);
 
     // Click dark option
-    const darkOption = screen.getByText(/Dark/i);
+    const darkOption = await screen.findByRole('menuitem', { name: /dark/i });
     await user.click(darkOption);
 
     // Verify setTheme was called with 'dark'
@@ -75,7 +81,9 @@ describe('ThemeToggler - Simple Tests', () => {
     await user.click(button);
 
     // Click system option
-    const systemOption = screen.getByText(/System/i);
+    const systemOption = await screen.findByRole('menuitem', {
+      name: /system/i,
+    });
     await user.click(systemOption);
 
     // Verify setTheme was called with 'system'
