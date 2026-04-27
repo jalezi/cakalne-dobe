@@ -27,7 +27,7 @@ export const isIntlLocale = (
  * @param locale - The locale string.
  * @returns The corresponding Intl locale.
  */
-export const getIntlLocale = (locale?: string) => {
+const _getIntlLocale = (locale?: string) => {
   if (!locale || !isIntlLocale(locale)) {
     return DEFAULT_LOCALE;
   }

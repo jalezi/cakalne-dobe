@@ -1,7 +1,7 @@
 export function Footer() {
   return (
-    <footer className="text-muted-foreground border-t-[1px] border-dashed p-4 text-sm">
-      <div className="space-y-4">
+    <footer className="text-muted-foreground border-t border-dashed p-4 text-sm">
+      <div className="mx-auto grid w-full max-w-3xl gap-4 wrap-break-word sm:grid-cols-2 sm:gap-6">
         <div>
           <p>
             Podatke zbral{' '}
@@ -34,8 +34,11 @@ export function Footer() {
             </ExternalLink>
             .
           </p>
-          <p>
-            &copy; 2024 - {new Date().getFullYear()} https://github.com/jalezi
+          <p className="break-all sm:wrap-break-word">
+            &copy; 2024 - {new Date().getFullYear()}{' '}
+            <ExternalLink href="https://github.com/jalezi">
+              github.com/jalezi
+            </ExternalLink>
           </p>
         </div>
       </div>
