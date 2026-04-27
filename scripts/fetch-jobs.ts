@@ -239,4 +239,5 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     }
   })();
 }
-export { fetchJobs, extractJobId, formatJobDate, generateFilename };
+
+export { extractJobId, fetchJobs, formatJobDate, generateFilename };
