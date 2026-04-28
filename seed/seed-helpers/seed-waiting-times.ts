@@ -1,7 +1,7 @@
 /** biome-ignore-all lint/suspicious/noConsole: We need for debug */
 import { db } from '@/db';
 import { waitingPeriods } from '@/db/schema';
-import { makeFacilityRows } from '@/lib/make-facility-row';
+import { makeFacilityRows } from '@/db/transforms/make-facility-row';
 import { normalizeFPWTSchema } from '@/lib/zod-schemas/helpers-schema';
 import type { DataMap } from './types';
 

@@ -1,7 +1,7 @@
 import type {
   FacilityProcedureWaitingTimes,
   ProcedureWithWaitingPeriod,
-} from './zod-schemas/data-schemas';
+} from '@/lib/zod-schemas/data-schemas';
 
 /**
  * Converts an array of procedures with waiting periods into an array of facility procedure waiting times.
