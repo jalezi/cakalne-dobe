@@ -3,9 +3,12 @@ import { db } from '@/db';
 import { waitingPeriods } from '@/db/schema';
 import { makeFacilityRows } from '@/db/transforms/make-facility-row';
 import { normalizeFPWTSchema } from '@/lib/zod-schemas/helpers-schema';
-import type { DataMap } from './types';
+import type { DataMap, SeedDbExecutor } from './types';
 
-export async function insertWaitingTimes(input: DataMap) {
+export async function insertWaitingTimes(
+  input: DataMap,
+  database: SeedDbExecutor = db
+) {
   for (const [gitLabJobId, jobData] of Array.from(input.entries())) {
     console.info(`\tInserting waiting times for job ${gitLabJobId}.`);
     const rows = makeFacilityRows(jobData.procedures).map((row) =>
@@ -13,7 +16,7 @@ export async function insertWaitingTimes(input: DataMap) {
     );
     console.info(`\t\tFound ${rows.length} rows.`);
 
-    const job = await db.query.jobs.findFirst({
+    const job = await database.query.jobs.findFirst({
       columns: { id: true },
       where: (job, operators) => operators.eq(job.gitLabJobId, gitLabJobId),
     });
@@ -24,7 +27,7 @@ export async function insertWaitingTimes(input: DataMap) {
     }
 
     for (const row of rows) {
-      const procedure = await db.query.procedures.findFirst({
+      const procedure = await database.query.procedures.findFirst({
         columns: { id: true },
         where: (p, operators) => operators.eq(p.code, row.procedure.code),
       });
@@ -36,7 +39,7 @@ export async function insertWaitingTimes(input: DataMap) {
         continue;
       }
 
-      const facility = await db.query.institutions.findFirst({
+      const facility = await database.query.institutions.findFirst({
         columns: { id: true },
         where: (i, operators) => operators.eq(i.name, row.facility),
       });
@@ -48,7 +51,7 @@ export async function insertWaitingTimes(input: DataMap) {
         continue;
       }
 
-      await db
+      await database
         .insert(waitingPeriods)
         .values({
           jobId: job.id,

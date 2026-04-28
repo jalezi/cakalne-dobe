@@ -1,15 +1,18 @@
 import { db } from '@/db';
 import { maxAllowedDays as maxAllowedDaysTable } from '@/db/schema';
 import { seedHelpers } from '.';
-import type { DataMap } from './types';
+import type { DataMap, SeedDbExecutor } from './types';
 
-export async function insertMaxAllowedDays(input: DataMap) {
+export async function insertMaxAllowedDays(
+  input: DataMap,
+  database: SeedDbExecutor = db
+) {
   const dataMapEntries = Array.from(input.entries());
   const procedures = seedHelpers.getProceduresToInsert(
     Array.from(input.values())
   );
   for (const [gitLabJobId, jobData] of dataMapEntries) {
-    const result = await db.query.jobs.findFirst({
+    const result = await database.query.jobs.findFirst({
       columns: { id: true },
       where: (jobs, operators) => operators.eq(jobs.gitLabJobId, gitLabJobId),
     });
@@ -24,7 +27,7 @@ export async function insertMaxAllowedDays(input: DataMap) {
         console.warn(`Procedure with code ${procedure.code} not found`);
         continue;
       }
-      const dbProcedure = await db.query.procedures.findFirst({
+      const dbProcedure = await database.query.procedures.findFirst({
         columns: { id: true },
         where: (procedures, operators) =>
           operators.eq(procedures.code, procedure.code),
@@ -41,7 +44,8 @@ export async function insertMaxAllowedDays(input: DataMap) {
         fast: procedure.maxAllowedDays.fast,
         veryFast: procedure.maxAllowedDays.veryFast,
       };
-      db.insert(maxAllowedDaysTable)
+      await database
+        .insert(maxAllowedDaysTable)
         .values(maxAllowedDays)
         .onConflictDoNothing()
         .run();
