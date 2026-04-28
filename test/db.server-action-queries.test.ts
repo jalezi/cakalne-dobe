@@ -1,4 +1,3 @@
-import { and, avg, count, eq, sum } from 'drizzle-orm';
 import {
   afterAll,
   afterEach,
@@ -8,6 +7,7 @@ import {
   it,
   vi,
 } from 'vitest';
+import { getProcedureAvgWtForJob } from '../src/db/queries/waiting-periods';
 import * as schema from '../src/db/schema';
 import { cleanupTestDb, getTestDb, setupTestDb } from '../src/db/test';
 
@@ -77,45 +77,9 @@ describe('Server Action: getProcedureAvgWtForJob', () => {
 
   // Test directly with a Drizzle query that simulates the server action
   it('should calculate the correct average waiting times', async () => {
-    // We'll test with a direct query instead of using the server action
-    // since the action depends on Next.js server components
-    const result = await db
-      .select({
-        avg: {
-          regular: avg(schema.waitingPeriods.regular).mapWith(Number),
-          fast: avg(schema.waitingPeriods.fast).mapWith(Number),
-          veryFast: avg(schema.waitingPeriods.veryFast).mapWith(Number),
-        },
-        total: {
-          regular: sum(schema.waitingPeriods.regular).mapWith(Number),
-          fast: sum(schema.waitingPeriods.fast).mapWith(Number),
-          veryFast: sum(schema.waitingPeriods.veryFast).mapWith(Number),
-        },
-        count: {
-          regular: count(schema.waitingPeriods.regular),
-          fast: count(schema.waitingPeriods.fast),
-          veryFast: count(schema.waitingPeriods.veryFast),
-        },
-        procedureCode: schema.procedures.code,
-        procedureName: schema.procedures.name,
-      })
-      .from(schema.waitingPeriods)
-      .where(eq(schema.waitingPeriods.jobId, fixtures.job.id))
-      .innerJoin(
-        schema.procedures,
-        eq(schema.waitingPeriods.procedureId, schema.procedures.id)
-      )
-      .innerJoin(
-        schema.maxAllowedDays,
-        and(
-          eq(
-            schema.waitingPeriods.procedureId,
-            schema.maxAllowedDays.procedureId
-          ),
-          eq(schema.waitingPeriods.jobId, schema.maxAllowedDays.jobId)
-        )
-      )
-      .groupBy(schema.waitingPeriods.procedureId);
+    const result = await getProcedureAvgWtForJob(db, {
+      jobId: fixtures.job.id,
+    });
 
     // Assertions
     expect(result).toHaveLength(1); // Should have one procedure
@@ -149,27 +113,9 @@ describe('Server Action: getProcedureAvgWtForJob', () => {
       })
       .returning();
 
-    // For this test, instead of checking if the result is empty (which it isn't - SQLite returns NULL values),
-    // let's check that we have NULL values for the averages
-    const result = await db
-      .select({
-        avg: {
-          regular: avg(schema.waitingPeriods.regular).mapWith(Number),
-          fast: avg(schema.waitingPeriods.fast).mapWith(Number),
-          veryFast: avg(schema.waitingPeriods.veryFast).mapWith(Number),
-        },
-      })
-      .from(schema.waitingPeriods)
-      .where(eq(schema.waitingPeriods.jobId, newJob[0].id))
-      .innerJoin(
-        schema.procedures,
-        eq(schema.waitingPeriods.procedureId, schema.procedures.id)
-      );
+    const result = await getProcedureAvgWtForJob(db, { jobId: newJob[0].id });
 
-    // SQLite returns a row with NULL values for aggregates on empty sets
-    // Let's verify the values are NULL
-    expect(result[0].avg.regular).toBeNull();
-    expect(result[0].avg.fast).toBeNull();
-    expect(result[0].avg.veryFast).toBeNull();
+    // With GROUP BY, no matching rows returns an empty array
+    expect(result).toHaveLength(0);
   });
 });

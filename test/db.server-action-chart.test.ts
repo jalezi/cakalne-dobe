@@ -1,5 +1,4 @@
 import { format } from 'date-fns';
-import { and, avg, eq, sql } from 'drizzle-orm';
 import {
   afterAll,
   afterEach,
@@ -9,16 +8,9 @@ import {
   it,
   vi,
 } from 'vitest';
+import { getProcedureAvgWtPerJobChart } from '../src/db/queries/waiting-periods';
 import * as schema from '../src/db/schema';
 import { cleanupTestDb, getTestDb, setupTestDb } from '../src/db/test';
-
-// Mock the db module to use test database
-vi.mock('@/db', async () => {
-  const { getTestDb } = await import('../src/db/test');
-  return {
-    db: getTestDb(),
-  };
-});
 
 // Mock the env module
 vi.mock('@/lib/env', () => ({
@@ -106,37 +98,11 @@ describe('Server Action: getProcedureAvgWtPerJobChart', () => {
     const fromDate = new Date('2023-01-01T00:00:00Z');
     const toDate = new Date('2023-01-03T00:00:00Z');
 
-    // Get the SQLite date format from the dates
-    const fromDateString = format(fromDate, 'yyyy-MM-dd');
-    const toDateString = format(toDate, 'yyyy-MM-dd');
-
-    // Use SQL query to get the same data as the server action
-    const sqlStartDate = sql<string>`strftime('%Y-%m-%d',${schema.jobs.startDate})`;
-
-    const result = await db
-      .select({
-        x: sqlStartDate,
-        y: {
-          regular: avg(schema.waitingPeriods.regular).mapWith(Number),
-          fast: avg(schema.waitingPeriods.fast).mapWith(Number),
-          veryFast: avg(schema.waitingPeriods.veryFast).mapWith(Number),
-        },
-      })
-      .from(schema.waitingPeriods)
-      .where(
-        and(
-          eq(schema.procedures.code, fixtures.procedure.code),
-          sql`${sqlStartDate} >= ${fromDateString}`,
-          sql`${sqlStartDate} <= ${toDateString}`
-        )
-      )
-      .innerJoin(schema.jobs, eq(schema.waitingPeriods.jobId, schema.jobs.id))
-      .innerJoin(
-        schema.procedures,
-        eq(schema.waitingPeriods.procedureId, schema.procedures.id)
-      )
-      .groupBy(schema.waitingPeriods.jobId, schema.waitingPeriods.procedureId)
-      .orderBy(schema.jobs.startDate);
+    const result = await getProcedureAvgWtPerJobChart(db, {
+      procedureCode: fixtures.procedure.code,
+      fromDate: format(fromDate, 'yyyy-MM-dd'),
+      toDate: format(toDate, 'yyyy-MM-dd'),
+    });
 
     // Assertions
     expect(result).toHaveLength(3); // Should have three jobs
@@ -164,127 +130,17 @@ describe('Server Action: getProcedureAvgWtPerJobChart', () => {
     const fromDate = new Date('2023-02-01T00:00:00Z');
     const toDate = new Date('2023-02-28T00:00:00Z');
 
-    // Get the SQLite date format from the dates
-    const fromDateString = format(fromDate, 'yyyy-MM-dd');
-    const toDateString = format(toDate, 'yyyy-MM-dd');
-
-    // Use SQL query to get the same data as the server action
-    const sqlStartDate = sql<string>`strftime('%Y-%m-%d',${schema.jobs.startDate})`;
-
-    const result = await db
-      .select({
-        x: sqlStartDate,
-        y: {
-          regular: avg(schema.waitingPeriods.regular).mapWith(Number),
-          fast: avg(schema.waitingPeriods.fast).mapWith(Number),
-          veryFast: avg(schema.waitingPeriods.veryFast).mapWith(Number),
-        },
-      })
-      .from(schema.waitingPeriods)
-      .where(
-        and(
-          eq(schema.procedures.code, fixtures.procedure.code),
-          sql`${sqlStartDate} >= ${fromDateString}`,
-          sql`${sqlStartDate} <= ${toDateString}`
-        )
-      )
-      .innerJoin(schema.jobs, eq(schema.waitingPeriods.jobId, schema.jobs.id))
-      .innerJoin(
-        schema.procedures,
-        eq(schema.waitingPeriods.procedureId, schema.procedures.id)
-      )
-      .groupBy(schema.waitingPeriods.jobId, schema.waitingPeriods.procedureId)
-      .orderBy(schema.jobs.startDate);
+    const result = await getProcedureAvgWtPerJobChart(db, {
+      procedureCode: fixtures.procedure.code,
+      fromDate: format(fromDate, 'yyyy-MM-dd'),
+      toDate: format(toDate, 'yyyy-MM-dd'),
+    });
 
     // Assertions
     expect(result).toHaveLength(0); // Should have no data
   });
 
-  it('should return data for requested date range (simulating no fallback)', async () => {
-    // This test verifies the primary query logic works correctly
-    const fromDate = '2023-01-01';
-    const toDate = '2023-01-03';
-
-    const sqlStartDate = sql<string>`strftime('%Y-%m-%d',${schema.jobs.startDate})`;
-
-    const result = await db
-      .select({
-        x: sqlStartDate,
-        regular: avg(schema.waitingPeriods.regular).mapWith(Number),
-        fast: avg(schema.waitingPeriods.fast).mapWith(Number),
-        veryFast: avg(schema.waitingPeriods.veryFast).mapWith(Number),
-      })
-      .from(schema.waitingPeriods)
-      .innerJoin(schema.jobs, eq(schema.waitingPeriods.jobId, schema.jobs.id))
-      .innerJoin(
-        schema.procedures,
-        and(
-          eq(schema.waitingPeriods.procedureId, schema.procedures.id),
-          and(
-            sql`${schema.waitingPeriods.regular} is not null`,
-            sql`${schema.waitingPeriods.fast} is not null`,
-            sql`${schema.waitingPeriods.veryFast} is not null`
-          )
-        )
-      )
-      .where(
-        and(
-          eq(schema.procedures.code, fixtures.procedure.code),
-          sql`strftime('%Y-%m-%d',${schema.jobs.startDate}) >= ${fromDate}`,
-          sql`strftime('%Y-%m-%d',${schema.jobs.startDate}) <= ${toDate}`
-        )
-      )
-      .groupBy(schema.waitingPeriods.jobId, schema.waitingPeriods.procedureId)
-      .orderBy(schema.jobs.startDate);
-
-    // Should return data for the requested range (no fallback needed)
-    expect(result).toHaveLength(3);
-    expect(result[0].x).toBe('2023-01-01');
-  });
-
-  it('should return empty array when no data in range (simulating fallback scenario)', async () => {
-    // This test simulates the scenario where primary query returns empty
-    // In the real server action, this would trigger the fallback logic
-    const fromDate = '2024-01-01'; // Future date with no data
-    const toDate = '2024-01-31';
-
-    const sqlStartDate = sql<string>`strftime('%Y-%m-%d',${schema.jobs.startDate})`;
-
-    const result = await db
-      .select({
-        x: sqlStartDate,
-        regular: avg(schema.waitingPeriods.regular).mapWith(Number),
-        fast: avg(schema.waitingPeriods.fast).mapWith(Number),
-        veryFast: avg(schema.waitingPeriods.veryFast).mapWith(Number),
-      })
-      .from(schema.waitingPeriods)
-      .innerJoin(schema.jobs, eq(schema.waitingPeriods.jobId, schema.jobs.id))
-      .innerJoin(
-        schema.procedures,
-        and(
-          eq(schema.waitingPeriods.procedureId, schema.procedures.id),
-          and(
-            sql`${schema.waitingPeriods.regular} is not null`,
-            sql`${schema.waitingPeriods.fast} is not null`,
-            sql`${schema.waitingPeriods.veryFast} is not null`
-          )
-        )
-      )
-      .where(
-        and(
-          eq(schema.procedures.code, fixtures.procedure.code),
-          sql`strftime('%Y-%m-%d',${schema.jobs.startDate}) >= ${fromDate}`,
-          sql`strftime('%Y-%m-%d',${schema.jobs.startDate}) <= ${toDate}`
-        )
-      )
-      .groupBy(schema.waitingPeriods.jobId, schema.waitingPeriods.procedureId)
-      .orderBy(schema.jobs.startDate);
-
-    // Should return empty when no data in range (fallback would be triggered in server action)
-    expect(result).toHaveLength(0);
-  });
-
-  it('should return empty array for procedure with no data (simulating no fallback case)', async () => {
+  it('should return empty array for procedure with no data', async () => {
     // Create a procedure with no waiting periods
     const emptyProcedure = await db
       .insert(schema.procedures)
@@ -295,42 +151,12 @@ describe('Server Action: getProcedureAvgWtPerJobChart', () => {
       })
       .returning();
 
-    const fromDate = '2023-01-01';
-    const toDate = '2023-01-03';
+    const result = await getProcedureAvgWtPerJobChart(db, {
+      procedureCode: emptyProcedure[0].code,
+      fromDate: '2023-01-01',
+      toDate: '2023-01-03',
+    });
 
-    const sqlStartDate = sql<string>`strftime('%Y-%m-%d',${schema.jobs.startDate})`;
-
-    const result = await db
-      .select({
-        x: sqlStartDate,
-        regular: avg(schema.waitingPeriods.regular).mapWith(Number),
-        fast: avg(schema.waitingPeriods.fast).mapWith(Number),
-        veryFast: avg(schema.waitingPeriods.veryFast).mapWith(Number),
-      })
-      .from(schema.waitingPeriods)
-      .innerJoin(schema.jobs, eq(schema.waitingPeriods.jobId, schema.jobs.id))
-      .innerJoin(
-        schema.procedures,
-        and(
-          eq(schema.waitingPeriods.procedureId, schema.procedures.id),
-          and(
-            sql`${schema.waitingPeriods.regular} is not null`,
-            sql`${schema.waitingPeriods.fast} is not null`,
-            sql`${schema.waitingPeriods.veryFast} is not null`
-          )
-        )
-      )
-      .where(
-        and(
-          eq(schema.procedures.code, emptyProcedure[0].code),
-          sql`strftime('%Y-%m-%d',${schema.jobs.startDate}) >= ${fromDate}`,
-          sql`strftime('%Y-%m-%d',${schema.jobs.startDate}) <= ${toDate}`
-        )
-      )
-      .groupBy(schema.waitingPeriods.jobId, schema.waitingPeriods.procedureId)
-      .orderBy(schema.jobs.startDate);
-
-    // Should return empty for procedure with no data (no fallback triggered)
     expect(result).toHaveLength(0);
   });
 });

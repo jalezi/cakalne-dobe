@@ -1,5 +1,4 @@
 import { format } from 'date-fns';
-import { and, eq, sql } from 'drizzle-orm';
 import {
   afterAll,
   afterEach,
@@ -9,6 +8,7 @@ import {
   it,
   vi,
 } from 'vitest';
+import { getProcedureWtForInstOnDay } from '../src/db/queries/waiting-periods';
 import * as schema from '../src/db/schema';
 import { cleanupTestDb, getTestDb, setupTestDb } from '../src/db/test';
 
@@ -118,35 +118,10 @@ describe('Server Action: getProcedureWtForInstOnDay', () => {
       'yyyy-MM-dd'
     );
 
-    const sqlStartDate = sql<string>`strftime('%Y-%m-%d',${schema.jobs.startDate})`;
-
-    const result = await db
-      .select({
-        x: schema.institutions.name,
-        y: {
-          regular: schema.waitingPeriods.regular,
-          fast: schema.waitingPeriods.fast,
-          veryFast: schema.waitingPeriods.veryFast,
-        },
-      })
-      .from(schema.waitingPeriods)
-      .innerJoin(
-        schema.procedures,
-        eq(schema.waitingPeriods.procedureId, schema.procedures.id)
-      )
-      .innerJoin(schema.jobs, eq(schema.waitingPeriods.jobId, schema.jobs.id))
-      .innerJoin(
-        schema.institutions,
-        eq(schema.waitingPeriods.institutionId, schema.institutions.id)
-      )
-      .where(
-        and(
-          eq(schema.procedures.code, fixtures.procedure.code),
-          eq(sqlStartDate, toDateString)
-        )
-      )
-      .orderBy(schema.waitingPeriods.regular)
-      .groupBy(schema.institutions.name);
+    const result = await getProcedureWtForInstOnDay(db, {
+      procedureCode: fixtures.procedure.code,
+      date: toDateString,
+    });
 
     // Assertions
     expect(result).toHaveLength(3); // Should have three institutions
@@ -211,35 +186,10 @@ describe('Server Action: getProcedureWtForInstOnDay', () => {
       'yyyy-MM-dd'
     );
 
-    const sqlStartDate = sql<string>`strftime('%Y-%m-%d',${schema.jobs.startDate})`;
-
-    const result = await db
-      .select({
-        x: schema.institutions.name,
-        y: {
-          regular: schema.waitingPeriods.regular,
-          fast: schema.waitingPeriods.fast,
-          veryFast: schema.waitingPeriods.veryFast,
-        },
-      })
-      .from(schema.waitingPeriods)
-      .innerJoin(
-        schema.procedures,
-        eq(schema.waitingPeriods.procedureId, schema.procedures.id)
-      )
-      .innerJoin(schema.jobs, eq(schema.waitingPeriods.jobId, schema.jobs.id))
-      .innerJoin(
-        schema.institutions,
-        eq(schema.waitingPeriods.institutionId, schema.institutions.id)
-      )
-      .where(
-        and(
-          eq(schema.procedures.code, fixtures.procedure.code),
-          eq(sqlStartDate, toDateString)
-        )
-      )
-      .orderBy(schema.waitingPeriods.regular)
-      .groupBy(schema.institutions.name);
+    const result = await getProcedureWtForInstOnDay(db, {
+      procedureCode: fixtures.procedure.code,
+      date: toDateString,
+    });
 
     // Assertions
     expect(result).toHaveLength(0); // Should be empty for the wrong date
