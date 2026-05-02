@@ -7,6 +7,7 @@ import {
   getProcedureWtForInstOnDay as query,
 } from '@/db/queries/waiting-periods';
 import type { ActionResult } from './action-result';
+import { createAction } from './create-action';
 
 const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -24,37 +25,14 @@ export type GetProcedureWtForInstOnDayResult = ActionResult<
   InstitutionWaitingPeriod[]
 >;
 
-export async function getProcedureWtForInstOnDay(
-  params: unknown
-): Promise<GetProcedureWtForInstOnDayResult> {
-  const parsedParams = paramsSchema.safeParse(params);
-
-  if (!parsedParams.success) {
-    return {
-      success: false,
-      error: {
-        code: 'INVALID_INPUT',
-        message: 'Invalid input for getProcedureWtForInstOnDay.',
-        issues: parsedParams.error.issues,
-      },
-    };
+export const getProcedureWtForInstOnDay = createAction(
+  paramsSchema,
+  (params) => query(db, params),
+  {
+    messages: {
+      invalidInput: 'Invalid input for getProcedureWtForInstOnDay.',
+      queryFailed:
+        'Failed to fetch institution waiting periods for the selected date.',
+    },
   }
-
-  try {
-    const data = await query(db, parsedParams.data);
-
-    return {
-      success: true,
-      data,
-    };
-  } catch {
-    return {
-      success: false,
-      error: {
-        code: 'QUERY_FAILED',
-        message:
-          'Failed to fetch institution waiting periods for the selected date.',
-      },
-    };
-  }
-}
+);

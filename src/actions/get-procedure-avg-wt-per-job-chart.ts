@@ -6,7 +6,9 @@ import {
   type ChartDataPoint,
   getProcedureAvgWtPerJobChart as query,
 } from '@/db/queries/waiting-periods';
+import { addDays, formatDate, parseDate } from '@/lib/date-utils';
 import type { ActionResult } from './action-result';
+import { createAction } from './create-action';
 
 const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -40,52 +42,15 @@ const paramsSchema = z
     path: ['fromDate'],
   });
 
-function parseDate(value: string): Date {
-  return new Date(`${value}T00:00:00.000Z`);
-}
-
-function addDays(date: Date, days: number): Date {
-  const result = new Date(date);
-  result.setUTCDate(result.getUTCDate() + days);
-  return result;
-}
-
-function formatDate(date: Date): string {
-  return date.toISOString().slice(0, 10);
-}
-
 export type GetProcedureAvgWtPerJobChartResult = ActionResult<ChartDataPoint[]>;
 
-export async function getProcedureAvgWtPerJobChart(
-  params: unknown
-): Promise<GetProcedureAvgWtPerJobChartResult> {
-  const parsedParams = paramsSchema.safeParse(params);
-
-  if (!parsedParams.success) {
-    return {
-      success: false,
-      error: {
-        code: 'INVALID_INPUT',
-        message: 'Invalid input for getProcedureAvgWtPerJobChart.',
-        issues: parsedParams.error.issues,
-      },
-    };
+export const getProcedureAvgWtPerJobChart = createAction(
+  paramsSchema,
+  (params) => query(db, params),
+  {
+    messages: {
+      invalidInput: 'Invalid input for getProcedureAvgWtPerJobChart.',
+      queryFailed: 'Failed to fetch chart data for the selected procedure.',
+    },
   }
-
-  try {
-    const data = await query(db, parsedParams.data);
-
-    return {
-      success: true,
-      data,
-    };
-  } catch {
-    return {
-      success: false,
-      error: {
-        code: 'QUERY_FAILED',
-        message: 'Failed to fetch chart data for the selected procedure.',
-      },
-    };
-  }
-}
+);
