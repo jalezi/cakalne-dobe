@@ -1,7 +1,7 @@
 import type * as schema from '@/db/schema';
 import { type AllData, allDataSchema } from '@/lib/zod-schemas/data-schemas';
 import { trimmedStringSchema } from '@/lib/zod-schemas/helpers-schema';
-import type { ActionReturnType, NotCompleteDataByTable } from '@/types';
+import type { ActionReturnType, SnapshotInsertPayload } from '@/types';
 
 const BASE_JOBS_URL =
   'https://wayback-automachine.gitlab.io/-/cakalne-dobe/-/jobs';
@@ -33,7 +33,7 @@ export async function fetchSnapshot(
 
 export type PreparedSnapshot = {
   jobData: schema.InsertJob;
-  notCompleteDataObj: NotCompleteDataByTable;
+  snapshotInsertPayload: SnapshotInsertPayload;
 };
 
 export async function fetchAndPrepareSnapshot(
@@ -55,19 +55,19 @@ export async function fetchAndPrepareSnapshot(
     success: true,
     data: {
       jobData,
-      notCompleteDataObj: prepareNotCompleteDataByTable(data, gitLabJobId),
+      snapshotInsertPayload: prepareNotCompleteDataByTable(data, gitLabJobId),
     },
   };
 }
 
-export function prepareNotCompleteDataByTable(
+function prepareNotCompleteDataByTable(
   input: AllData,
   jobId: string
-): NotCompleteDataByTable {
-  const procedures: NotCompleteDataByTable['procedures'] = [];
-  const institutions: NotCompleteDataByTable['institutions'] = new Map();
-  const maxAllowedDays: NotCompleteDataByTable['maxAllowedDays'] = [];
-  const waitingPeriods: NotCompleteDataByTable['waitingPeriods'] = new Map();
+): SnapshotInsertPayload {
+  const procedures: SnapshotInsertPayload['procedures'] = [];
+  const institutions: SnapshotInsertPayload['institutions'] = new Map();
+  const maxAllowedDays: SnapshotInsertPayload['maxAllowedDays'] = [];
+  const waitingPeriods: SnapshotInsertPayload['waitingPeriods'] = new Map();
 
   for (const procedure of input.procedures) {
     procedures.push({

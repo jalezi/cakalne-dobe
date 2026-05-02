@@ -6,7 +6,7 @@ import { jobs as jobsTable } from '@/db/schema';
 import { fetchAndPrepareSnapshot } from '@/snapshot';
 import { getLastJobId } from '@/utils/get-last-job-id';
 import { handleError } from '@/utils/handle-error';
-import type { NotCompleteDataByTable, ReturnType } from './types';
+import type { ReturnType, SnapshotInsertPayload } from './types';
 
 /**
  * Checks if the latest job should be inserted into the database.
@@ -51,7 +51,7 @@ export async function shouldInsertLatestJob(): Promise<ReturnType<'ok'>> {
 export async function prepareJobData(gitLabJobId: string): Promise<
   ReturnType<{
     jobData: schema.InsertJob;
-    notCompleteDataObj: NotCompleteDataByTable;
+    snapshotInsertPayload: SnapshotInsertPayload;
   }>
 > {
   return fetchAndPrepareSnapshot(gitLabJobId);

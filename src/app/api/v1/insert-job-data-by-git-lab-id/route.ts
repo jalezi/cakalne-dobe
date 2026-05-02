@@ -201,7 +201,7 @@ export async function POST(request: Request) {
 
     const transactionResponse = await processJobData(
       preparedJobData.data.jobData,
-      preparedJobData.data.notCompleteDataObj
+      preparedJobData.data.snapshotInsertPayload
     );
 
     return Response.json({

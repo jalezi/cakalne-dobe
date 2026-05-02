@@ -34,7 +34,7 @@ export async function handleJobIngestionRequest(
   try {
     const transactionResponse = await processJobData(
       preparedJobData.data.jobData,
-      preparedJobData.data.notCompleteDataObj
+      preparedJobData.data.snapshotInsertPayload
     );
     return { success: true, data: transactionResponse };
   } catch (error) {

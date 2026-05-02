@@ -134,7 +134,7 @@ describe('handleJobIngestionRequest', () => {
     });
     mocks.prepareJobData.mockResolvedValueOnce({
       success: true,
-      data: { jobData: { gitLabJobId: 'gl-42' }, notCompleteDataObj: {} },
+      data: { jobData: { gitLabJobId: 'gl-42' }, snapshotInsertPayload: {} },
     });
     mocks.processJobData.mockRejectedValueOnce(
       new Error('Transaction rolled back')
@@ -165,7 +165,7 @@ describe('handleJobIngestionRequest', () => {
       success: true,
       data: {
         jobData: { gitLabJobId: 'gl-42' },
-        notCompleteDataObj: {},
+        snapshotInsertPayload: {},
       },
     });
     mocks.processJobData.mockResolvedValueOnce(TRANSACTION_RESULT);

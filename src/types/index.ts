@@ -37,7 +37,7 @@ export type ActionReturnType<
       details?: TDetails;
     };
 
-export type NotCompleteDataByTable = {
+export type SnapshotInsertPayload = {
   procedures: Pick<schema.InsertProcedure, 'code' | 'name'>[];
   institutions: Map<string, Pick<schema.InsertInstitution, 'name'>>;
   maxAllowedDays: (Pick<

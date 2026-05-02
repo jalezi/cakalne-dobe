@@ -5,7 +5,7 @@ import type * as schema from '@/db/schema';
 
 export type {
   ActionReturnType as ReturnType,
-  NotCompleteDataByTable,
+  SnapshotInsertPayload,
 } from '@/types';
 
 // biome-ignore lint/suspicious/noExplicitAny: We will fix in the future

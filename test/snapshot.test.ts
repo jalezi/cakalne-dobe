@@ -84,7 +84,7 @@ describe('fetchAndPrepareSnapshot', () => {
     }
   });
 
-  it('returns jobData and notCompleteDataObj on success', async () => {
+  it('returns jobData and snapshotInsertPayload on success', async () => {
     vi.mocked(fetch).mockResolvedValueOnce(
       new Response(JSON.stringify(VALID_SNAPSHOT), { status: 200 })
     );
@@ -98,10 +98,10 @@ describe('fetchAndPrepareSnapshot', () => {
         startDate: VALID_SNAPSHOT.start,
         endDate: VALID_SNAPSHOT.end,
       });
-      expect(result.data.notCompleteDataObj.procedures).toHaveLength(1);
-      expect(result.data.notCompleteDataObj.procedures[0].code).toBe('P1');
-      expect(result.data.notCompleteDataObj.institutions.size).toBe(1);
-      expect(result.data.notCompleteDataObj.maxAllowedDays).toHaveLength(1);
+      expect(result.data.snapshotInsertPayload.procedures).toHaveLength(1);
+      expect(result.data.snapshotInsertPayload.procedures[0].code).toBe('P1');
+      expect(result.data.snapshotInsertPayload.institutions.size).toBe(1);
+      expect(result.data.snapshotInsertPayload.maxAllowedDays).toHaveLength(1);
     }
   });
 });

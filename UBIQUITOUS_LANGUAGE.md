@@ -25,6 +25,7 @@
 | **Snapshot** | The complete set of waiting periods recorded during a single **Job** | Dataset, batch, import |
 | **Seeding** | The process of loading historical **Job** artifacts into the database | Migration, import, backfill |
 | **Coverage** | The continuous date range represented by **Jobs** stored in the database | Date range, span, history |
+| **Snapshot Insert Payload** | The in-memory, DB-ready shape derived from a **Snapshot** — procedures, institutions, max allowed days, and waiting periods keyed for bulk insertion, before any database IDs are assigned | NotCompleteDataByTable, raw data |
 
 ## Relationships
 
