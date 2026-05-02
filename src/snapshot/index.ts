@@ -1,34 +1,20 @@
 import type * as schema from '@/db/schema';
-import { type AllData, allDataSchema } from '@/lib/zod-schemas/data-schemas';
-import { trimmedStringSchema } from '@/lib/zod-schemas/helpers-schema';
+import type { AllData } from '@/lib/zod-schemas/data-schemas';
 import type { ActionReturnType, SnapshotInsertPayload } from '@/types';
-
-const BASE_JOBS_URL =
-  'https://wayback-automachine.gitlab.io/-/cakalne-dobe/-/jobs';
-
-export const snapshotUrl = (gitLabJobId: string) =>
-  `${BASE_JOBS_URL}/${gitLabJobId}/artifacts/out.json`;
+import {
+  createHttpSnapshotSource,
+  type SnapshotSource,
+  type SnapshotSourceErrorDetails,
+} from './source';
+import {
+  prepareSnapshotInsertPayload,
+  type SnapshotTransformerErrorDetails,
+} from './transformer';
 
 export async function fetchSnapshot(
   gitLabJobId: string
-): Promise<ActionReturnType<AllData>> {
-  const res = await fetch(snapshotUrl(gitLabJobId));
-  if (!res.ok) {
-    return {
-      success: false,
-      error: `Failed to fetch snapshot for job ${gitLabJobId}: ${res.status} ${res.statusText}`,
-    };
-  }
-  const raw = await res.json();
-  const parsed = allDataSchema.safeParse(raw);
-  if (!parsed.success) {
-    return {
-      success: false,
-      error: `Invalid snapshot data for job ${gitLabJobId}`,
-      details: { issues: parsed.error.issues },
-    };
-  }
-  return { success: true, data: parsed.data };
+): Promise<ActionReturnType<AllData, undefined, SnapshotSourceErrorDetails>> {
+  return createHttpSnapshotSource().fetchSnapshot(gitLabJobId);
 }
 
 export type PreparedSnapshot = {
@@ -36,10 +22,17 @@ export type PreparedSnapshot = {
   snapshotInsertPayload: SnapshotInsertPayload;
 };
 
-export async function fetchAndPrepareSnapshot(
-  gitLabJobId: string
-): Promise<ActionReturnType<PreparedSnapshot>> {
-  const fetchResult = await fetchSnapshot(gitLabJobId);
+type SnapshotPipelineErrorDetails =
+  | SnapshotSourceErrorDetails
+  | SnapshotTransformerErrorDetails;
+
+export async function fetchAndPrepareSnapshotFromSource(
+  gitLabJobId: string,
+  source: SnapshotSource
+): Promise<
+  ActionReturnType<PreparedSnapshot, undefined, SnapshotPipelineErrorDetails>
+> {
+  const fetchResult = await source.fetchSnapshot(gitLabJobId);
   if (!fetchResult.success) {
     return fetchResult;
   }
@@ -51,67 +44,27 @@ export async function fetchAndPrepareSnapshot(
     endDate: data.end,
   };
 
+  const payloadResult = prepareSnapshotInsertPayload(data, gitLabJobId);
+  if (!payloadResult.success) {
+    return payloadResult;
+  }
+
   return {
     success: true,
     data: {
       jobData,
-      snapshotInsertPayload: prepareNotCompleteDataByTable(data, gitLabJobId),
+      snapshotInsertPayload: payloadResult.data,
     },
   };
 }
 
-function prepareNotCompleteDataByTable(
-  input: AllData,
-  jobId: string
-): SnapshotInsertPayload {
-  const procedures: SnapshotInsertPayload['procedures'] = [];
-  const institutions: SnapshotInsertPayload['institutions'] = new Map();
-  const maxAllowedDays: SnapshotInsertPayload['maxAllowedDays'] = [];
-  const waitingPeriods: SnapshotInsertPayload['waitingPeriods'] = new Map();
-
-  for (const procedure of input.procedures) {
-    procedures.push({
-      code: procedure.code,
-      name: trimmedStringSchema.parse(procedure.name),
-    });
-
-    maxAllowedDays.push({
-      ...procedure.maxAllowedDays,
-      jobId,
-      procedureCode: procedure.code,
-    });
-
-    for (const [urgency, facilityUrgencyDays] of Object.entries(
-      procedure.waitingPeriods
-    )) {
-      if (!facilityUrgencyDays) continue;
-
-      for (const { facility, days } of facilityUrgencyDays) {
-        const trimmedFacility = trimmedStringSchema.parse(facility);
-
-        if (!institutions.has(trimmedFacility)) {
-          institutions.set(trimmedFacility, { name: trimmedFacility });
-        }
-
-        const key = `${trimmedFacility}-${procedure.code}`;
-        const existing = waitingPeriods.get(key);
-        if (existing) {
-          existing[urgency as 'regular' | 'fast' | 'veryFast'] = days;
-          continue;
-        }
-
-        waitingPeriods.set(key, {
-          regular: null,
-          fast: null,
-          veryFast: null,
-          [urgency]: days,
-          jobId,
-          procedureCode: procedure.code,
-          institutionName: trimmedFacility,
-        });
-      }
-    }
-  }
-
-  return { procedures, institutions, maxAllowedDays, waitingPeriods };
+export async function fetchAndPrepareSnapshot(
+  gitLabJobId: string
+): Promise<
+  ActionReturnType<PreparedSnapshot, undefined, SnapshotPipelineErrorDetails>
+> {
+  return fetchAndPrepareSnapshotFromSource(
+    gitLabJobId,
+    createHttpSnapshotSource()
+  );
 }
