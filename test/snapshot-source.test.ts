@@ -39,7 +39,7 @@ describe('createHttpSnapshotSource', () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.details?.code).toBe('FETCH_FAILED');
+      expect(result.error?.code).toBe('FETCH_FAILED');
     }
   });
 
@@ -53,7 +53,7 @@ describe('createHttpSnapshotSource', () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.details?.code).toBe('SNAPSHOT_INVALID');
+      expect(result.error?.code).toBe('SNAPSHOT_INVALID');
     }
   });
 });
@@ -74,7 +74,7 @@ describe('createInMemorySnapshotSource', () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.details?.code).toBe('FETCH_FAILED');
+      expect(result.error?.code).toBe('FETCH_FAILED');
     }
   });
 });
@@ -89,7 +89,7 @@ describe('createFileSnapshotSource', () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.details?.code).toBe('FETCH_FAILED');
+      expect(result.error?.code).toBe('FETCH_FAILED');
     }
   });
 
@@ -103,7 +103,7 @@ describe('createFileSnapshotSource', () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.details?.code).toBe('SNAPSHOT_INVALID');
+      expect(result.error?.code).toBe('SNAPSHOT_INVALID');
     }
   });
 });

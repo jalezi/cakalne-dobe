@@ -1,14 +1,19 @@
-import type { ActionReturnType as IngestReturnType } from '@/types';
+import type { Result } from '@/types';
 import { getLastJobId } from '@/utils/get-last-job-id';
 import { processJobData } from './db-operations';
 import { prepareJobData, shouldInsertLatestJob } from './job-processing';
 import { validateWebhookPayload } from './validation';
 
+const INGESTION_ERRORS = {
+  GET_JOB_ID_FAILED: 'GET_JOB_ID_FAILED',
+  TRANSACTION_FAILED: 'TRANSACTION_FAILED',
+} as const;
+
 type TransactionResult = Awaited<ReturnType<typeof processJobData>>;
 
 export async function handleJobIngestionRequest(
   rawBody: unknown
-): Promise<IngestReturnType<TransactionResult>> {
+): Promise<Result<TransactionResult>> {
   const validationResult = validateWebhookPayload(rawBody);
   if (!validationResult.success) {
     return { success: false, error: validationResult.error };
@@ -21,7 +26,13 @@ export async function handleJobIngestionRequest(
 
   const lastGitLabIdResponse = await getLastJobId(10);
   if (!lastGitLabIdResponse.success) {
-    return { success: false, error: lastGitLabIdResponse.error };
+    return {
+      success: false,
+      error: {
+        code: INGESTION_ERRORS.GET_JOB_ID_FAILED,
+        message: lastGitLabIdResponse.error,
+      },
+    };
   }
 
   const preparedJobData = await prepareJobData(
@@ -40,6 +51,9 @@ export async function handleJobIngestionRequest(
   } catch (error) {
     const message =
       error instanceof Error ? error.message : 'Transaction failed';
-    return { success: false, error: message };
+    return {
+      success: false,
+      error: { code: INGESTION_ERRORS.TRANSACTION_FAILED, message },
+    };
   }
 }

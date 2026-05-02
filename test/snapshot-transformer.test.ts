@@ -51,7 +51,7 @@ describe('prepareSnapshotInsertPayload', () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.details?.code).toBe('TRANSFORM_FAILED');
+      expect(result.error?.code).toBe('TRANSFORM_FAILED');
     }
   });
 });

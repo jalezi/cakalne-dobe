@@ -4,9 +4,17 @@ import { db } from '@/db';
 import type * as schema from '@/db/schema';
 import { jobs as jobsTable } from '@/db/schema';
 import { fetchAndPrepareSnapshot } from '@/snapshot';
+import type { Result } from '@/types';
 import { getLastJobId } from '@/utils/get-last-job-id';
 import { handleError } from '@/utils/handle-error';
 import type { ReturnType, SnapshotInsertPayload } from './types';
+
+export const JOB_PROCESSING_ERRORS = {
+  LATEST_JOB_CHECK_FAILED: 'LATEST_JOB_CHECK_FAILED',
+  JOB_ALREADY_EXISTS: 'JOB_ALREADY_EXISTS',
+  GITLAB_FETCH_FAILED: 'GITLAB_FETCH_FAILED',
+  DB_QUERY_ERROR: 'DB_QUERY_ERROR',
+} as const;
 
 /**
  * Checks if the latest job should be inserted into the database.
@@ -18,10 +26,9 @@ export async function shouldInsertLatestJob(): Promise<ReturnType<'ok'>> {
   if (!latestJobInDbResult.success) {
     return {
       success: false,
-      error: latestJobInDbResult.error,
-      details: {
-        message: 'Failed to get latest job from the database',
-        error: latestJobInDbResult.error,
+      error: {
+        code: JOB_PROCESSING_ERRORS.LATEST_JOB_CHECK_FAILED,
+        message: latestJobInDbResult.error.message,
       },
     };
   }
@@ -29,13 +36,9 @@ export async function shouldInsertLatestJob(): Promise<ReturnType<'ok'>> {
   if (latestJobInDbResult.data.isInDB) {
     return {
       success: false,
-      error: 'Latest job already exists in the database',
-      details: {
+      error: {
+        code: JOB_PROCESSING_ERRORS.JOB_ALREADY_EXISTS,
         message: 'Latest job already exists in the database',
-        gitLabJobId: latestJobInDbResult.data.gitLabJobId,
-        date: latestJobInDbResult.data.date,
-        job: latestJobInDbResult.data.job,
-        jobId: latestJobInDbResult.data.job?.id,
       },
     };
   }
@@ -49,12 +52,22 @@ export async function shouldInsertLatestJob(): Promise<ReturnType<'ok'>> {
  * @returns Prepared job data and additional information
  */
 export async function prepareJobData(gitLabJobId: string): Promise<
-  ReturnType<{
+  Result<{
     jobData: schema.InsertJob;
     snapshotInsertPayload: SnapshotInsertPayload;
   }>
 > {
-  return fetchAndPrepareSnapshot(gitLabJobId);
+  const result = await fetchAndPrepareSnapshot(gitLabJobId);
+  if (!result.success) {
+    return { success: false, error: result.error };
+  }
+  return {
+    success: true,
+    data: {
+      jobData: result.data.jobData,
+      snapshotInsertPayload: result.data.snapshotInsertPayload,
+    },
+  };
 }
 
 /**
@@ -78,7 +91,10 @@ export async function getLatestJobInDb(): Promise<
   if (!latestGitLabJobId.success) {
     return {
       success: false,
-      error: `Failed to get latest GitLab job ID: ${latestGitLabJobId.error}`,
+      error: {
+        code: JOB_PROCESSING_ERRORS.GITLAB_FETCH_FAILED,
+        message: `Failed to get latest GitLab job ID: ${latestGitLabJobId.error}`,
+      },
     };
   }
 
@@ -107,8 +123,10 @@ export async function getLatestJobInDb(): Promise<
     const newError = handleError(error);
     return {
       success: false,
-      error: `Database query error: ${newError.message}`,
-      details: { error: newError },
+      error: {
+        code: JOB_PROCESSING_ERRORS.DB_QUERY_ERROR,
+        message: `Database query error: ${newError.message}`,
+      },
     };
   }
 }

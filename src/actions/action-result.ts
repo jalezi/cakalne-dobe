@@ -1,22 +1,11 @@
 import type { ZodError } from 'zod';
+import type { Result } from '@/types';
 
-export type ActionError =
-  | {
-      code: 'INVALID_INPUT';
-      message: string;
-      issues: ZodError['issues'];
-    }
-  | {
-      code: 'QUERY_FAILED';
-      message: string;
-    };
+export const ACTION_ERRORS = {
+  INVALID_INPUT: 'INVALID_INPUT',
+  QUERY_FAILED: 'QUERY_FAILED',
+} as const;
 
-export type ActionResult<TData> =
-  | {
-      success: true;
-      data: TData;
-    }
-  | {
-      success: false;
-      error: ActionError;
-    };
+export type ActionInputMeta = { issues: ZodError['issues'] };
+
+export type ActionResult<TData> = Result<TData, ActionInputMeta>;

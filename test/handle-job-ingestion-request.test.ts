@@ -41,14 +41,14 @@ describe('handleJobIngestionRequest', () => {
   it('returns error and stops when payload validation fails', async () => {
     mocks.validateWebhookPayload.mockReturnValueOnce({
       success: false,
-      error: 'Invalid webhook payload',
+      error: { code: 'INVALID_PAYLOAD', message: 'Invalid webhook payload' },
     });
 
     const result = await handleJobIngestionRequest({ unknown: 'payload' });
 
     expect(result).toEqual({
       success: false,
-      error: 'Invalid webhook payload',
+      error: { code: 'INVALID_PAYLOAD', message: 'Invalid webhook payload' },
     });
     expect(mocks.shouldInsertLatestJob).not.toHaveBeenCalled();
   });
@@ -60,14 +60,20 @@ describe('handleJobIngestionRequest', () => {
     });
     mocks.shouldInsertLatestJob.mockResolvedValueOnce({
       success: false,
-      error: 'Latest job already exists in the database',
+      error: {
+        code: 'JOB_ALREADY_EXISTS',
+        message: 'Latest job already exists in the database',
+      },
     });
 
     const result = await handleJobIngestionRequest({ success: true });
 
     expect(result).toEqual({
       success: false,
-      error: 'Latest job already exists in the database',
+      error: {
+        code: 'JOB_ALREADY_EXISTS',
+        message: 'Latest job already exists in the database',
+      },
     });
     expect(mocks.getLastJobId).not.toHaveBeenCalled();
   });
@@ -88,7 +94,10 @@ describe('handleJobIngestionRequest', () => {
 
     const result = await handleJobIngestionRequest({ success: true });
 
-    expect(result).toEqual({ success: false, error: 'GitLab API error' });
+    expect(result).toEqual({
+      success: false,
+      error: { code: 'GET_JOB_ID_FAILED', message: 'GitLab API error' },
+    });
     expect(mocks.prepareJobData).not.toHaveBeenCalled();
   });
 
@@ -107,14 +116,14 @@ describe('handleJobIngestionRequest', () => {
     });
     mocks.prepareJobData.mockResolvedValueOnce({
       success: false,
-      error: 'Failed to fetch job data',
+      error: { code: 'FETCH_FAILED', message: 'Failed to fetch job data' },
     });
 
     const result = await handleJobIngestionRequest({ success: true });
 
     expect(result).toEqual({
       success: false,
-      error: 'Failed to fetch job data',
+      error: { code: 'FETCH_FAILED', message: 'Failed to fetch job data' },
     });
     expect(mocks.processJobData).not.toHaveBeenCalled();
   });
@@ -144,7 +153,7 @@ describe('handleJobIngestionRequest', () => {
 
     expect(result).toEqual({
       success: false,
-      error: 'Transaction rolled back',
+      error: { code: 'TRANSACTION_FAILED', message: 'Transaction rolled back' },
     });
   });
 

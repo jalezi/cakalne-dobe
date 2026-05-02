@@ -60,7 +60,7 @@ describe('Action seam: getProcedureAvgWtForJob', () => {
     if (!result.success) {
       expect(result.error.code).toBe('INVALID_INPUT');
       if (result.error.code === 'INVALID_INPUT') {
-        expect(result.error.issues).toHaveLength(1);
+        expect(result.meta?.issues).toHaveLength(1);
       }
     }
 
@@ -205,7 +205,7 @@ describe('Action seam: getProcedureWtForInstOnDay', () => {
     if (!result.success) {
       expect(result.error.code).toBe('INVALID_INPUT');
       if (result.error.code === 'INVALID_INPUT') {
-        expect(result.error.issues.length).toBeGreaterThan(0);
+        expect(result.meta?.issues.length).toBeGreaterThan(0);
       }
     }
 

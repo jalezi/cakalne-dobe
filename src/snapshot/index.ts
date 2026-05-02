@@ -1,19 +1,19 @@
 import type * as schema from '@/db/schema';
 import type { AllData } from '@/lib/zod-schemas/data-schemas';
-import type { ActionReturnType, SnapshotInsertPayload } from '@/types';
+import type { Result, SnapshotInsertPayload } from '@/types';
 import {
   createHttpSnapshotSource,
   type SnapshotSource,
-  type SnapshotSourceErrorDetails,
+  type SnapshotSourceMeta,
 } from './source';
 import {
   prepareSnapshotInsertPayload,
-  type SnapshotTransformerErrorDetails,
+  type SnapshotTransformerMeta,
 } from './transformer';
 
 export async function fetchSnapshot(
   gitLabJobId: string
-): Promise<ActionReturnType<AllData, undefined, SnapshotSourceErrorDetails>> {
+): Promise<Result<AllData, SnapshotSourceMeta>> {
   return createHttpSnapshotSource().fetchSnapshot(gitLabJobId);
 }
 
@@ -22,16 +22,12 @@ export type PreparedSnapshot = {
   snapshotInsertPayload: SnapshotInsertPayload;
 };
 
-type SnapshotPipelineErrorDetails =
-  | SnapshotSourceErrorDetails
-  | SnapshotTransformerErrorDetails;
+type SnapshotPipelineMeta = SnapshotSourceMeta | SnapshotTransformerMeta;
 
 export async function fetchAndPrepareSnapshotFromSource(
   gitLabJobId: string,
   source: SnapshotSource
-): Promise<
-  ActionReturnType<PreparedSnapshot, undefined, SnapshotPipelineErrorDetails>
-> {
+): Promise<Result<PreparedSnapshot, SnapshotPipelineMeta>> {
   const fetchResult = await source.fetchSnapshot(gitLabJobId);
   if (!fetchResult.success) {
     return fetchResult;
@@ -60,9 +56,7 @@ export async function fetchAndPrepareSnapshotFromSource(
 
 export async function fetchAndPrepareSnapshot(
   gitLabJobId: string
-): Promise<
-  ActionReturnType<PreparedSnapshot, undefined, SnapshotPipelineErrorDetails>
-> {
+): Promise<Result<PreparedSnapshot, SnapshotPipelineMeta>> {
   return fetchAndPrepareSnapshotFromSource(
     gitLabJobId,
     createHttpSnapshotSource()

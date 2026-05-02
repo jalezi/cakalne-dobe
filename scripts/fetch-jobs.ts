@@ -68,7 +68,7 @@ function generateFilename(jobId: string, finishedAt: string): string {
 async function fetchJobArtifact(jobId: string): Promise<AllData> {
   const result = await fetchSnapshot(jobId);
   if (!result.success) {
-    throw new Error(result.error);
+    throw new Error(result.error.message);
   }
   return result.data;
 }

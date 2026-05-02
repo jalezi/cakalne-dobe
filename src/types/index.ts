@@ -18,24 +18,9 @@ declare module '@tanstack/table-core' {
   }
 }
 
-export type ActionReturnType<
-  TData,
-  TMeta extends Record<string, unknown> | undefined = Record<string, unknown>,
-  TDetails extends Record<string, unknown> | undefined = Record<
-    string,
-    unknown
-  >,
-> =
-  | {
-      success: true;
-      data: TData;
-      meta?: TMeta;
-    }
-  | {
-      success: false;
-      error: string;
-      details?: TDetails;
-    };
+export type Result<TData, TMeta = undefined> =
+  | { success: true; data: TData }
+  | { success: false; error: { code: string; message: string }; meta?: TMeta };
 
 export type SnapshotInsertPayload = {
   procedures: Pick<schema.InsertProcedure, 'code' | 'name'>[];

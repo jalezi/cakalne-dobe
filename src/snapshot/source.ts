@@ -1,20 +1,22 @@
 import { readFile } from 'node:fs/promises';
 import type { ZodIssue } from 'zod';
 import { type AllData, allDataSchema } from '@/lib/zod-schemas/data-schemas';
-import type { ActionReturnType } from '@/types';
+import type { Result } from '@/types';
 
 const BASE_JOBS_URL =
   'https://wayback-automachine.gitlab.io/-/cakalne-dobe/-/jobs';
 
-export type SnapshotSourceErrorDetails = {
-  code: 'FETCH_FAILED' | 'SNAPSHOT_INVALID';
-  issues?: ZodIssue[];
-};
+export const SNAPSHOT_SOURCE_ERRORS = {
+  FETCH_FAILED: 'FETCH_FAILED',
+  SNAPSHOT_INVALID: 'SNAPSHOT_INVALID',
+} as const;
+
+export type SnapshotSourceMeta = { issues?: ZodIssue[] };
 
 export type SnapshotSource = {
   fetchSnapshot(
     gitLabJobId: string
-  ): Promise<ActionReturnType<AllData, undefined, SnapshotSourceErrorDetails>>;
+  ): Promise<Result<AllData, SnapshotSourceMeta>>;
 };
 
 export const snapshotUrl = (gitLabJobId: string) =>
@@ -30,8 +32,10 @@ export function createHttpSnapshotSource(
       if (!res.ok) {
         return {
           success: false,
-          error: `Failed to fetch snapshot for job ${gitLabJobId}: ${res.status} ${res.statusText}`,
-          details: { code: 'FETCH_FAILED' },
+          error: {
+            code: SNAPSHOT_SOURCE_ERRORS.FETCH_FAILED,
+            message: `Failed to fetch snapshot for job ${gitLabJobId}: ${res.status} ${res.statusText}`,
+          },
         };
       }
 
@@ -41,11 +45,11 @@ export function createHttpSnapshotSource(
       if (!parsed.success) {
         return {
           success: false,
-          error: `Invalid snapshot data for job ${gitLabJobId}`,
-          details: {
-            code: 'SNAPSHOT_INVALID',
-            issues: parsed.error.issues,
+          error: {
+            code: SNAPSHOT_SOURCE_ERRORS.SNAPSHOT_INVALID,
+            message: `Invalid snapshot data for job ${gitLabJobId}`,
           },
+          meta: { issues: parsed.error.issues },
         };
       }
 
@@ -64,8 +68,10 @@ export function createInMemorySnapshotSource(
       if (!snapshot) {
         return {
           success: false,
-          error: `No in-memory snapshot found for job ${gitLabJobId}`,
-          details: { code: 'FETCH_FAILED' },
+          error: {
+            code: SNAPSHOT_SOURCE_ERRORS.FETCH_FAILED,
+            message: `No in-memory snapshot found for job ${gitLabJobId}`,
+          },
         };
       }
 
@@ -87,8 +93,10 @@ export function createFileSnapshotSource(
       } catch {
         return {
           success: false,
-          error: `Failed to read snapshot file for job ${gitLabJobId}`,
-          details: { code: 'FETCH_FAILED' },
+          error: {
+            code: SNAPSHOT_SOURCE_ERRORS.FETCH_FAILED,
+            message: `Failed to read snapshot file for job ${gitLabJobId}`,
+          },
         };
       }
 
@@ -98,8 +106,10 @@ export function createFileSnapshotSource(
       } catch {
         return {
           success: false,
-          error: `Invalid snapshot data for job ${gitLabJobId}`,
-          details: { code: 'SNAPSHOT_INVALID' },
+          error: {
+            code: SNAPSHOT_SOURCE_ERRORS.SNAPSHOT_INVALID,
+            message: `Invalid snapshot data for job ${gitLabJobId}`,
+          },
         };
       }
 
@@ -107,11 +117,11 @@ export function createFileSnapshotSource(
       if (!parsed.success) {
         return {
           success: false,
-          error: `Invalid snapshot data for job ${gitLabJobId}`,
-          details: {
-            code: 'SNAPSHOT_INVALID',
-            issues: parsed.error.issues,
+          error: {
+            code: SNAPSHOT_SOURCE_ERRORS.SNAPSHOT_INVALID,
+            message: `Invalid snapshot data for job ${gitLabJobId}`,
           },
+          meta: { issues: parsed.error.issues },
         };
       }
 

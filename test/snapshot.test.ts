@@ -35,7 +35,7 @@ describe('fetchSnapshot', () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error).toContain('gl-123');
+      expect(result.error.message).toContain('gl-123');
     }
   });
 
@@ -48,7 +48,7 @@ describe('fetchSnapshot', () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error).toContain('gl-123');
+      expect(result.error.message).toContain('gl-123');
     }
   });
 
@@ -80,7 +80,7 @@ describe('fetchAndPrepareSnapshot', () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error).toContain('gl-999');
+      expect(result.error.message).toContain('gl-999');
     }
   });
 

@@ -1,21 +1,18 @@
 import { ZodError } from 'zod';
 import { type AllData } from '@/lib/zod-schemas/data-schemas';
 import { trimmedStringSchema } from '@/lib/zod-schemas/helpers-schema';
-import type { ActionReturnType, SnapshotInsertPayload } from '@/types';
+import type { Result, SnapshotInsertPayload } from '@/types';
 
-export type SnapshotTransformerErrorDetails = {
-  code: 'TRANSFORM_FAILED';
-  cause?: string;
-};
+export const SNAPSHOT_TRANSFORMER_ERRORS = {
+  TRANSFORM_FAILED: 'TRANSFORM_FAILED',
+} as const;
+
+export type SnapshotTransformerMeta = { cause?: string };
 
 export function prepareSnapshotInsertPayload(
   input: AllData,
   jobId: string
-): ActionReturnType<
-  SnapshotInsertPayload,
-  undefined,
-  SnapshotTransformerErrorDetails
-> {
+): Result<SnapshotInsertPayload, SnapshotTransformerMeta> {
   try {
     const procedures: SnapshotInsertPayload['procedures'] = [];
     const institutions: SnapshotInsertPayload['institutions'] = new Map();
@@ -77,11 +74,11 @@ export function prepareSnapshotInsertPayload(
 
     return {
       success: false,
-      error: `Failed to prepare snapshot insert payload for job ${jobId}`,
-      details: {
-        code: 'TRANSFORM_FAILED',
-        cause: error instanceof Error ? error.message : String(error),
+      error: {
+        code: SNAPSHOT_TRANSFORMER_ERRORS.TRANSFORM_FAILED,
+        message: `Failed to prepare snapshot insert payload for job ${jobId}`,
       },
+      meta: { cause: error instanceof Error ? error.message : String(error) },
     };
   }
 }

@@ -4,7 +4,7 @@ import type { SQLiteTransaction } from 'drizzle-orm/sqlite-core';
 import type * as schema from '@/db/schema';
 
 export type {
-  ActionReturnType as ReturnType,
+  Result as ReturnType,
   SnapshotInsertPayload,
 } from '@/types';
 
