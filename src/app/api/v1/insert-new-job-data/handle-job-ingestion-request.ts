@@ -1,7 +1,7 @@
+import type { ActionReturnType as IngestReturnType } from '@/types';
 import { getLastJobId } from '@/utils/get-last-job-id';
 import { processJobData } from './db-operations';
 import { prepareJobData, shouldInsertLatestJob } from './job-processing';
-import type { ReturnType as IngestReturnType } from './types';
 import { validateWebhookPayload } from './validation';
 
 type TransactionResult = Awaited<ReturnType<typeof processJobData>>;

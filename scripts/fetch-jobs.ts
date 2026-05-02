@@ -17,8 +17,8 @@ import { access, mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { JOB_NAME } from '@/lib/gql';
 import type { AllData } from '@/lib/zod-schemas/data-schemas';
+import { fetchSnapshot } from '@/snapshot';
 import { getJobs } from '@/utils/get-jobs';
-import { getJson } from '@/utils/get-json';
 
 interface FetchJobsOptions {
   count?: number;
@@ -66,9 +66,11 @@ function generateFilename(jobId: string, finishedAt: string): string {
  * Fetch job artifact from GitLab Pages
  */
 async function fetchJobArtifact(jobId: string): Promise<AllData> {
-  // getJson returns AllData directly or throws an error
-  const artifact = await getJson(jobId);
-  return artifact;
+  const result = await fetchSnapshot(jobId);
+  if (!result.success) {
+    throw new Error(result.error);
+  }
+  return result.data;
 }
 
 /**
