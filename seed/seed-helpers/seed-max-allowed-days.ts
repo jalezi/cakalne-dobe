@@ -1,6 +1,6 @@
 import { db } from '@/db';
 import { maxAllowedDays as maxAllowedDaysTable } from '@/db/schema';
-import { seedHelpers } from '.';
+import { getProceduresToInsert } from './seed-procedures';
 import type { DataMap, SeedDbExecutor } from './types';
 
 export async function insertMaxAllowedDays(
@@ -8,9 +8,7 @@ export async function insertMaxAllowedDays(
   database: SeedDbExecutor = db
 ) {
   const dataMapEntries = Array.from(input.entries());
-  const procedures = seedHelpers.getProceduresToInsert(
-    Array.from(input.values())
-  );
+  const procedures = getProceduresToInsert(Array.from(input.values()));
   for (const [gitLabJobId, jobData] of dataMapEntries) {
     const result = await database.query.jobs.findFirst({
       columns: { id: true },
