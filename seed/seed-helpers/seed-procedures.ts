@@ -4,7 +4,7 @@ import { procedures as proceduresTable } from '@/db/schema/procedures';
 import type { AllData } from '@/lib/zod-schemas/data-schemas';
 import { trimStringWithDashes } from '@/lib/zod-schemas/helpers-schema';
 import { handleError } from '@/utils/handle-error';
-import type { CustomError, ProcedureInsertData } from './types';
+import type { CustomError, ProcedureInsertData, SeedDbExecutor } from './types';
 
 export function getProceduresToInsert(
   jobs: AllData[]
@@ -25,14 +25,15 @@ export function getProceduresToInsert(
 }
 
 export async function insertProcedures(
-  procedures: Pick<InsertProcedure, 'code' | 'name'>[]
+  procedures: Pick<InsertProcedure, 'code' | 'name'>[],
+  database: SeedDbExecutor = db
 ) {
   const errors: CustomError[] = [];
   const unique: string[] = [];
   const existing: string[] = [];
   for (const procedure of procedures) {
     try {
-      const result = await db
+      const result = await database
         .insert(proceduresTable)
         .values(procedure)
         .onConflictDoNothing()

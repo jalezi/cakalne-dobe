@@ -1,63 +1,15 @@
-/**
- * @module InsertNewJobData
- * @description This module handles the insertion of new job data into the database.
- * It listens for incoming webhook requests, validates the payload, fetches job data,
- * and inserts the data into the database. It also handles errors and revalidates paths.
- */
-
-import { revalidatePath } from 'next/cache';
-import { getLastJobId } from '@/utils/get-last-job-id';
-import { handleError } from '@/utils/handle-error';
-import { processJobData } from './db-operations';
-import { prepareJobData, shouldInsertLatestJob } from './job-processing';
-import { validateWebhookPayload } from './validation';
+import { handleJobIngestionRequest } from './handle-job-ingestion-request';
 
 export async function POST(request: Request) {
-  try {
-    const webhookJson = await request.json();
+  const rawBody = await request.json();
+  const result = await handleJobIngestionRequest(rawBody);
 
-    const validationResult = validateWebhookPayload(webhookJson);
-    if (!validationResult.success) {
-      throw new Error(validationResult.error);
-    }
-
-    const shouldInsert = await shouldInsertLatestJob();
-    if (!shouldInsert.success) {
-      throw new Error(shouldInsert.error);
-    }
-
-    const lastGitLabIdResponse = await getLastJobId(10);
-    if (!lastGitLabIdResponse.success) {
-      throw new Error(lastGitLabIdResponse.error);
-    }
-    const gitLabJobId = lastGitLabIdResponse.data.gitLabJobId;
-
-    const preparedJobData = await prepareJobData(gitLabJobId);
-    if (!preparedJobData.success) {
-      throw new Error(preparedJobData.error);
-    }
-
-    const transactionResponse = await processJobData(
-      preparedJobData.data.jobData,
-      preparedJobData.data.notCompleteDataObj
-    );
-
-    revalidateAllPaths();
-
-    return Response.json({
-      success: true,
-      data: transactionResponse,
-    });
-  } catch (error) {
-    const newError = handleError(error);
-    console.error(newError);
-    return new Response(`Webhook error: ${newError.message}`, {
+  if (!result.success) {
+    console.error(result.error);
+    return new Response(`Webhook error: ${result.error.message}`, {
       status: 202,
     });
   }
-}
 
-function revalidateAllPaths() {
-  revalidatePath('/', 'layout');
-  revalidatePath('/', 'page');
+  return Response.json({ success: true, data: result.data });
 }

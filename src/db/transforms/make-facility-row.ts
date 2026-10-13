@@ -1,7 +1,7 @@
 import type {
   FacilityProcedureWaitingTimes,
   ProcedureWithWaitingPeriod,
-} from './zod-schemas/data-schemas';
+} from '@/lib/zod-schemas/data-schemas';
 
 /**
  * Converts an array of procedures with waiting periods into an array of facility procedure waiting times.
@@ -12,8 +12,9 @@ import type {
 export function makeFacilityRows(
   procedures: ProcedureWithWaitingPeriod[]
 ): FacilityProcedureWaitingTimes[] {
-  return procedures.reduce((acc, procedure) => {
-    const { code, name, waitingPeriods } = procedure;
+  const map = new Map<string, FacilityProcedureWaitingTimes>();
+
+  for (const { code, name, waitingPeriods } of procedures) {
     const urgencies = Object.keys(waitingPeriods) as Array<
       keyof typeof waitingPeriods
     >;
@@ -23,33 +24,20 @@ export function makeFacilityRows(
       if (!waitingPeriod) continue;
 
       for (const { facility, days } of waitingPeriod) {
-        const facilityRow = acc.find(
-          (row) => row.facility === facility && row.procedure.code === code
-        );
-        if (!facilityRow) {
-          acc.push({
+        const key = `${facility}|${code}`;
+        let row = map.get(key);
+        if (!row) {
+          row = {
             facility,
-            procedure: {
-              code,
-              name,
-            },
-            waitingPeriods: {
-              regular: null,
-              fast: null,
-              veryFast: null,
-            },
-          });
+            procedure: { code, name },
+            waitingPeriods: { regular: null, fast: null, veryFast: null },
+          };
+          map.set(key, row);
         }
-
-        const row = acc.find(
-          (row) => row.facility === facility && row.procedure.code === code
-        );
-        if (!row) continue;
-
         row.waitingPeriods[urgency] = days;
       }
     }
+  }
 
-    return acc;
-  }, [] as FacilityProcedureWaitingTimes[]);
+  return Array.from(map.values());
 }

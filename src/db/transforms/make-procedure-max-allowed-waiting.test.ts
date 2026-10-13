@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import type { ProcedureWithWaitingPeriod } from '@/lib/zod-schemas/data-schemas';
 import { makeProcedureMaxAllowedWaiting } from './make-procedure-max-allowed-waiting';
-import type { ProcedureWithWaitingPeriod } from './zod-schemas/data-schemas';
 
 describe('makeProcedureMaxAllowedWaiting', () => {
   it('should extract code, name, and maxAllowedDays from procedures', () => {

@@ -2,6 +2,7 @@
 import fs from 'fs/promises';
 import { cwd } from 'process';
 
+import { ingestSnapshot } from './ingest-snapshot';
 import { seedHelpers } from './seed-helpers';
 
 const dirName = `${cwd()}/mock-data/jobs`;
@@ -38,46 +39,16 @@ export const seedDBFromJobs = async (input: boolean = false) => {
     process.exit(1);
   }
 
-  // INSERT JOBS
-  console.info('--- Inserting jobs...');
-  const jobs = Array.from(dataMap.entries());
-  const { errors: insertJobErrors } = await seedHelpers.insertJobs(jobs);
-  if (insertJobErrors && insertJobErrors.length > 0) {
-    console.warn('Errors inserting jobs:');
-    for (const error of insertJobErrors) {
+  console.info('--- Ingesting snapshots...');
+  for (const [gitLabJobId, jobData] of Array.from(dataMap.entries())) {
+    try {
+      await ingestSnapshot(jobData, gitLabJobId);
+    } catch (error) {
+      console.warn(`Errors ingesting snapshot ${gitLabJobId}:`);
       console.error(error);
+      process.exit(1);
     }
-    process.exit(1);
   }
-
-  // INSERT PROCEDURES
-  console.info('--- Inserting procedures...');
-  const procedures = seedHelpers.getProceduresToInsert(
-    Array.from(dataMap.values())
-  );
-
-  const { errors: insertProcedureErrors } = await seedHelpers.insertProcedures(
-    Array.from(procedures.values())
-  );
-  if (insertProcedureErrors && insertProcedureErrors.length > 0) {
-    console.warn('Errors inserting procedures:');
-    for (const error of insertProcedureErrors) {
-      console.error(error);
-    }
-    process.exit(1);
-  }
-
-  // INSERT MAX ALLOWED DAYS
-  console.info('--- Inserting max waiting periods...');
-  await seedHelpers.insertMaxAllowedDays(dataMap);
-
-  // INSERT INSTITUTIONS AKA FACILITIES
-  console.info('--- Inserting institutions...');
-  await seedHelpers.insertInstitutions(dataMap);
-
-  // INSERT WAITING PERIODS
-  console.info('--- Inserting waiting periods...');
-  await seedHelpers.insertWaitingTimes(dataMap);
 
   console.info('--- Database seeded successfully!');
   process.exit(0);

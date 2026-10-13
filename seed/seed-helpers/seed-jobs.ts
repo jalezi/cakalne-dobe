@@ -2,15 +2,18 @@ import { db } from '@/db';
 import { jobs as jobsTable } from '@/db/schema/jobs';
 import type { AllData } from '@/lib/zod-schemas/data-schemas';
 import { handleError } from '@/utils/handle-error';
-import type { CustomError } from './types';
+import type { CustomError, SeedDbExecutor } from './types';
 
-export async function insertJobs(jobs: [string, AllData][]) {
+export async function insertJobs(
+  jobs: [string, AllData][],
+  database: SeedDbExecutor = db
+) {
   const errors: CustomError[] = [];
   const existing: string[] = [];
   const unique: string[] = [];
   for (const [jobId, jobData] of jobs) {
     try {
-      const result = await db
+      const result = await database
         .insert(jobsTable)
         .values({
           gitLabJobId: jobId,

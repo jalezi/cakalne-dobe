@@ -1,0 +1,10 @@
+allowBuilds:
+  better-sqlite3: false
+  esbuild: true
+  lefthook: false
+  msw: false
+  sharp: true
+overrides:
+  parse5: 7.2.1
+  '@types/react': 19.2.14
+  '@types/react-dom': 19.2.3

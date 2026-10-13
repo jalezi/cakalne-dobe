@@ -1,5 +1,6 @@
 import { type RankingInfo } from '@tanstack/match-sorter-utils';
 import type { FilterFn, RowData } from '@tanstack/react-table';
+import type * as schema from '@/db/schema';
 import type { ProcedureWithMaxAllowedDays } from '@/lib/zod-schemas/data-schemas';
 
 declare module '@tanstack/table-core' {
@@ -16,6 +17,29 @@ declare module '@tanstack/table-core' {
     itemRank: RankingInfo;
   }
 }
+
+export type Result<TData, TMeta = undefined> =
+  | { success: true; data: TData }
+  | { success: false; error: { code: string; message: string }; meta?: TMeta };
+
+export type SnapshotInsertPayload = {
+  procedures: Pick<schema.InsertProcedure, 'code' | 'name'>[];
+  institutions: Map<string, Pick<schema.InsertInstitution, 'name'>>;
+  maxAllowedDays: (Pick<
+    schema.InsertMaxAllowedDays,
+    'fast' | 'regular' | 'veryFast' | 'jobId'
+  > & { procedureCode: string })[];
+  waitingPeriods: Map<
+    string,
+    Pick<
+      schema.InsertWaitingPeriods,
+      'fast' | 'regular' | 'veryFast' | 'jobId'
+    > & {
+      institutionName: string;
+      procedureCode: string;
+    }
+  >;
+};
 
 export type FetchResponse<
   TData = null,

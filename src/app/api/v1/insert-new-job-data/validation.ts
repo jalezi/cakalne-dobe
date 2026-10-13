@@ -1,6 +1,11 @@
 import { z } from 'zod';
 import type { ReturnType } from './types';
 
+export const VALIDATION_ERRORS = {
+  INVALID_PAYLOAD: 'INVALID_PAYLOAD',
+  JOB_FAILED: 'JOB_FAILED',
+} as const;
+
 // TODO: Add a proper type for the webhook payload
 const webhookPayloadSchema = z.discriminatedUnion('success', [
   z.object({
@@ -26,11 +31,9 @@ export function validateWebhookPayload(
   if (!parsedPayload.success) {
     return {
       success: false,
-      error: 'Invalid webhook payload',
-      details: {
-        message: parsedPayload.error.message,
-        payload,
-        errors: parsedPayload.error.flatten(),
+      error: {
+        code: VALIDATION_ERRORS.INVALID_PAYLOAD,
+        message: 'Invalid webhook payload',
       },
     };
   }
@@ -38,11 +41,9 @@ export function validateWebhookPayload(
   if (!parsedPayload.data.success) {
     return {
       success: false,
-      error: parsedPayload.data.error,
-      details: {
-        message: 'GitLab job failed',
-        payload,
-        errors: parsedPayload.data.error,
+      error: {
+        code: VALIDATION_ERRORS.JOB_FAILED,
+        message: parsedPayload.data.error,
       },
     };
   }

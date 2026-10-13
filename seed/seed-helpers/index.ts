@@ -5,14 +5,6 @@ import { jobs } from '@/db/schema/jobs';
 import { procedures } from '@/db/schema/procedures';
 import { handleError } from '@/utils/handle-error';
 import { getDataFromFiles } from './get-data-from-file';
-import {
-  getInstitutionsToInsert,
-  insertInstitutions,
-} from './seed-institutions';
-import { insertJobs } from './seed-jobs';
-import { insertMaxAllowedDays } from './seed-max-allowed-days';
-import { getProceduresToInsert, insertProcedures } from './seed-procedures';
-import { insertWaitingTimes } from './seed-waiting-times';
 
 export async function deleteTables() {
   try {
@@ -36,12 +28,4 @@ export async function deleteTables() {
 export const seedHelpers = {
   deleteTables,
   getDataFromFiles,
-  getInstitutionsToInsert,
-  getProceduresToInsert,
-  handleError,
-  insertInstitutions,
-  insertJobs,
-  insertProcedures,
-  insertMaxAllowedDays,
-  insertWaitingTimes,
 };

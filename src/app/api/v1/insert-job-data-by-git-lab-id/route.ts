@@ -11,10 +11,10 @@ import { sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/db';
 import { jobs as jobsTable } from '@/db/schema';
+import type { Result } from '@/types';
 import { handleError } from '@/utils/handle-error';
 import { processJobData } from '../insert-new-job-data/db-operations';
 import { prepareJobData } from '../insert-new-job-data/job-processing';
-import type { ReturnType } from '../insert-new-job-data/types';
 
 const dateSchema = z
   .string()
@@ -44,23 +44,11 @@ async function isGitLabJobIDInDB(
   gitLabJobId: string,
   date: string
 ): Promise<
-  ReturnType<
-    | {
-        foundJobByGitLabId: boolean;
-        foundJobByDate: boolean;
-        foundJobWithDate: boolean;
-      }
-    | false,
-    Record<string, unknown>,
-    {
-      error?: unknown;
-      code?: number;
-      issues?: z.ZodFlattenedError<
-        { gitLabJobId: string; date: string },
-        string
-      >;
-    }
-  >
+  Result<{
+    foundJobByGitLabId: boolean;
+    foundJobByDate: boolean;
+    foundJobWithDate: boolean;
+  }>
 > {
   try {
     const validateArgs = isGitLabJobIDInDBSchema.safeParse({
@@ -71,11 +59,7 @@ async function isGitLabJobIDInDB(
     if (!validateArgs.success) {
       return {
         success: false,
-        error: 'Invalid arguments',
-        details: {
-          code: 422,
-          issues: validateArgs.error.flatten(),
-        },
+        error: { code: 'INVALID_ARGS', message: 'Invalid arguments' },
       };
     }
 
@@ -110,14 +94,20 @@ async function isGitLabJobIDInDB(
 
     return {
       success: true,
-      data: false,
+      data: {
+        foundJobByGitLabId: false,
+        foundJobByDate: false,
+        foundJobWithDate: false,
+      },
     };
   } catch (error) {
     const newError = handleError(error);
     return {
       success: false,
-      error: `Database query error: ${newError.message}`,
-      details: { error: newError, code: 500 },
+      error: {
+        code: 'DB_QUERY_ERROR',
+        message: `Database query error: ${newError.message}`,
+      },
     };
   }
 }
@@ -141,10 +131,7 @@ export async function POST(request: Request) {
       return Response.json(
         {
           success: false,
-          error: 'Invalid payload format',
-          details: {
-            issues: validationResult.error.flatten(),
-          },
+          error: { code: 'INVALID_PAYLOAD', message: 'Invalid payload format' },
         },
         {
           status: 422,
@@ -157,7 +144,10 @@ export async function POST(request: Request) {
       return Response.json(
         {
           success: false,
-          error: validationResult.data.error,
+          error: {
+            code: 'WEBHOOK_ERROR',
+            message: validationResult.data.error,
+          },
         },
         {
           status: 422,
@@ -175,18 +165,23 @@ export async function POST(request: Request) {
           error: isInDBResponse.error,
         },
         {
-          status: isInDBResponse.details?.code || 500,
+          status: 500,
         }
       );
     }
 
     // Check if the job ID or date already exists in the database
-    if (isInDBResponse.data) {
+    if (
+      isInDBResponse.data.foundJobByGitLabId ||
+      isInDBResponse.data.foundJobByDate
+    ) {
       return Response.json(
         {
           success: false,
-          error: 'GitLab job ID or for date already exists in the database',
-          details: isInDBResponse.data,
+          error: {
+            code: 'JOB_EXISTS',
+            message: 'GitLab job ID or for date already exists in the database',
+          },
         },
         {
           status: 409,
@@ -196,12 +191,20 @@ export async function POST(request: Request) {
 
     const preparedJobData = await prepareJobData(gitLabJobId);
     if (!preparedJobData.success) {
-      throw new Error(preparedJobData.error);
+      return Response.json(
+        {
+          success: false,
+          error: preparedJobData.error,
+        },
+        {
+          status: 400,
+        }
+      );
     }
 
     const transactionResponse = await processJobData(
       preparedJobData.data.jobData,
-      preparedJobData.data.notCompleteDataObj
+      preparedJobData.data.snapshotInsertPayload
     );
 
     return Response.json({

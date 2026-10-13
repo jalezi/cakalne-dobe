@@ -8,17 +8,17 @@ import {
   waitingPeriods as waitingPeriodsTable,
 } from '@/db/schema';
 import { EXPECTED_NUMBER_OF_JOBS, MAX_CHUNK_SIZE } from '@/lib/constants';
-import type { NotCompleteDataByTable, Trx } from './types';
+import type { SnapshotInsertPayload, Trx } from './types';
 
 /**
  * Process job data and insert it into the database
  * @param jobData Job data to insert
- * @param notCompleteDataObj Additional data to process and insert
+ * @param snapshotInsertPayload Additional data to process and insert
  * @returns Result of the database transaction
  */
 export async function processJobData(
   jobData: schema.InsertJob,
-  notCompleteDataObj: NotCompleteDataByTable
+  snapshotInsertPayload: SnapshotInsertPayload
 ) {
   return db.transaction(async (trx) => {
     try {
@@ -27,14 +27,14 @@ export async function processJobData(
 
       // PROCEDURES
       const { existingProcedures, allProceduresWithDBIds, insertedProcedures } =
-        await insertProceduresTransaction(trx, notCompleteDataObj);
+        await insertProceduresTransaction(trx, snapshotInsertPayload);
 
       // INSTITUTIONS
       const { existingInstitutions, insertedInstitutions } =
-        await insertInstitutionsTransaction(trx, notCompleteDataObj);
+        await insertInstitutionsTransaction(trx, snapshotInsertPayload);
 
       const newInstitutions = Array.from(
-        notCompleteDataObj.institutions.values()
+        snapshotInsertPayload.institutions.values()
       ).filter(
         (inst) =>
           !existingInstitutions.some(
@@ -48,7 +48,7 @@ export async function processJobData(
       // MAX ALLOWED DAYS
       const insertedMaxAllowedDays = await insertMaxAllowedDays(
         trx,
-        notCompleteDataObj,
+        snapshotInsertPayload,
         allProceduresWithDBIds,
         insertedJobs[0].id
       );
@@ -59,7 +59,7 @@ export async function processJobData(
         institutionId: string;
       }[] = await insertWaitingPeriodsTransaction(
         trx,
-        notCompleteDataObj,
+        snapshotInsertPayload,
         allInstitutionsWithDBId,
         allProceduresWithDBIds,
         insertedJobs[0].id
@@ -67,10 +67,10 @@ export async function processJobData(
 
       const totalRows =
         EXPECTED_NUMBER_OF_JOBS +
-        notCompleteDataObj.procedures.length +
-        notCompleteDataObj.institutions.size +
-        notCompleteDataObj.maxAllowedDays.length +
-        notCompleteDataObj.waitingPeriods.size;
+        snapshotInsertPayload.procedures.length +
+        snapshotInsertPayload.institutions.size +
+        snapshotInsertPayload.maxAllowedDays.length +
+        snapshotInsertPayload.waitingPeriods.size;
 
       const totalRowsInserted =
         insertedJobs.length +
@@ -95,21 +95,21 @@ export async function processJobData(
               inserted: insertedJobs.length,
             },
             procedures: {
-              total: notCompleteDataObj.procedures.length,
+              total: snapshotInsertPayload.procedures.length,
               inserted: insertedProcedures.length,
               existing: existingProcedures.length,
             },
             institutions: {
-              total: notCompleteDataObj.institutions.size,
+              total: snapshotInsertPayload.institutions.size,
               inserted: newInstitutions.length,
               existing: existingInstitutions.length,
             },
             maxAllowedDays: {
-              total: notCompleteDataObj.maxAllowedDays.length,
+              total: snapshotInsertPayload.maxAllowedDays.length,
               inserted: insertedMaxAllowedDays.length,
             },
             waitingPeriods: {
-              total: notCompleteDataObj.waitingPeriods.size,
+              total: snapshotInsertPayload.waitingPeriods.size,
               inserted: insertedWaitingPeriods.length,
             },
           },
@@ -136,21 +136,20 @@ async function insertJobTransaction(trx: Trx, jobData: schema.InsertJob) {
 /**
  * Retrieves existing procedures and inserts new ones.
  * @param trx Database transaction
- * @param notCompleteDataObj Data containing procedures to process
+ * @param snapshotInsertPayload Data containing procedures to process
  * @returns Object with existing, inserted, and combined procedures
  */
 async function insertProceduresTransaction(
   trx: Trx,
-  notCompleteDataObj: NotCompleteDataByTable
+  snapshotInsertPayload: SnapshotInsertPayload
 ): Promise<{
   existingProcedures: Array<{ id: string; code: string; name: string }>;
   insertedProcedures: Array<{ id: string; code: string; name: string }>;
   allProceduresWithDBIds: Array<{ id: string; code: string; name: string }>;
 }> {
   // Get procedure codes to check in database
-  const procedureCodesToCheckIfExistsInDB = notCompleteDataObj.procedures.map(
-    (procedure) => procedure.code
-  );
+  const procedureCodesToCheckIfExistsInDB =
+    snapshotInsertPayload.procedures.map((procedure) => procedure.code);
 
   // Find existing procedures
   const existingProcedures = await trx.query.procedures.findMany({
@@ -164,7 +163,7 @@ async function insertProceduresTransaction(
   });
 
   // Find procedures that need to be inserted
-  const newProcedures = notCompleteDataObj.procedures.filter(
+  const newProcedures = snapshotInsertPayload.procedures.filter(
     (procedure) =>
       !existingProcedures.some(
         (existingProcedure) => existingProcedure.code === procedure.code
@@ -202,19 +201,19 @@ async function insertProceduresTransaction(
 /**
  * Retrieves existing institutions and inserts new ones.
  * @param trx Database transaction
- * @param notCompleteDataObj Data containing institutions to process
+ * @param snapshotInsertPayload Data containing institutions to process
  * @returns Object with existing and inserted institutions
  */
 async function insertInstitutionsTransaction(
   trx: Trx,
-  notCompleteDataObj: NotCompleteDataByTable
+  snapshotInsertPayload: SnapshotInsertPayload
 ): Promise<{
   existingInstitutions: Array<{ id: string; name: string }>;
   insertedInstitutions: Array<{ id: string; name: string }>;
 }> {
   // Get institution names to check in database
   const institutionsNamesToCheckIfExistsInDB = Array.from(
-    notCompleteDataObj.institutions.keys()
+    snapshotInsertPayload.institutions.keys()
   );
 
   // Find existing institutions
@@ -232,7 +231,7 @@ async function insertInstitutionsTransaction(
 
   // Find institutions that need to be inserted
   const newInstitutions = Array.from(
-    notCompleteDataObj.institutions.values()
+    snapshotInsertPayload.institutions.values()
   ).filter(
     (inst) =>
       !existingInstitutions.some(
@@ -266,14 +265,14 @@ async function insertInstitutionsTransaction(
 /**
  * Inserts max allowed days for procedures.
  * @param trx Database transaction
- * @param notCompleteDataObj Data containing max allowed days to process
+ * @param snapshotInsertPayload Data containing max allowed days to process
  * @param allProceduresWithDBIds Array of all procedures with their DB IDs
  * @param jobId Job ID to associate with the inserted data
  * @returns Array of inserted max allowed days with job and procedure IDs
  */
 async function insertMaxAllowedDays(
   trx: Trx,
-  notCompleteDataObj: NotCompleteDataByTable,
+  snapshotInsertPayload: SnapshotInsertPayload,
   allProceduresWithDBIds: Array<{ id: string; code: string; name: string }>,
   jobId: string
 ): Promise<
@@ -284,7 +283,7 @@ async function insertMaxAllowedDays(
 > {
   const insertedMaxAllowedDays: { jobId: string; procedureId: string }[] =
     await insertInChunks(
-      notCompleteDataObj.maxAllowedDays,
+      snapshotInsertPayload.maxAllowedDays,
       MAX_CHUNK_SIZE,
       async (chunk) => {
         const chunkWithJobIdAndProcedureId = chunk.map((maxAllowedDay) => {
@@ -327,7 +326,7 @@ async function insertMaxAllowedDays(
 /**
  * Inserts waiting periods for procedures and institutions.
  * @param trx Database transaction
- * @param notCompleteDataObj Data containing waiting periods to process
+ * @param snapshotInsertPayload Data containing waiting periods to process
  * @param allInstitutionsWithDBId Array of all institutions with their DB IDs
  * @param allProceduresWithDBIds Array of all procedures with their DB IDs
  * @param jobId Job ID to associate with the inserted data
@@ -335,7 +334,7 @@ async function insertMaxAllowedDays(
  */
 async function insertWaitingPeriodsTransaction(
   trx: Trx,
-  notCompleteDataObj: NotCompleteDataByTable,
+  snapshotInsertPayload: SnapshotInsertPayload,
   allInstitutionsWithDBId: Array<{ id: string; name: string }>,
   allProceduresWithDBIds: Array<{ id: string; code: string; name: string }>,
   jobId: string
@@ -349,7 +348,7 @@ async function insertWaitingPeriodsTransaction(
     jobId: string;
     institutionId: string;
   }[] = await insertInChunks(
-    Array.from(notCompleteDataObj.waitingPeriods.values()),
+    Array.from(snapshotInsertPayload.waitingPeriods.values()),
     MAX_CHUNK_SIZE,
     async (chunk) => {
       const chunkWithJobIdAndInstitutionId = chunk.map((waitingPeriod) => {

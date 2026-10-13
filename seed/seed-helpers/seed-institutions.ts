@@ -2,12 +2,15 @@ import { db } from '@/db';
 import { institutions as institutionsTable } from '@/db/schema/institution';
 import type { AllData } from '@/lib/zod-schemas/data-schemas';
 import { trimmedStringSchema } from '@/lib/zod-schemas/helpers-schema';
-import type { DataMap } from './types';
+import type { DataMap, SeedDbExecutor } from './types';
 
-export async function insertInstitutions(input: DataMap) {
+export async function insertInstitutions(
+  input: DataMap,
+  database: SeedDbExecutor = db
+) {
   const institutions = getInstitutionsToInsert(Array.from(input.values()));
   for (const institution of Array.from(institutions.values())) {
-    const result = await db
+    const result = await database
       .insert(institutionsTable)
       .values(institution)
       .onConflictDoNothing()

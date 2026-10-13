@@ -1,3 +1,4 @@
+import { tmpdir } from 'node:os';
 import { createClient } from '@libsql/client';
 import { createId } from '@paralleldrive/cuid2';
 import { sql } from 'drizzle-orm';
@@ -11,7 +12,7 @@ import * as schema from '../schema';
 export function getTestDb() {
   // Create an in-memory SQLite database for testing
   const client = createClient({
-    url: ':memory:',
+    url: `file:${tmpdir()}/${createId()}.db`,
   });
 
   // Create a drizzle instance with our schema

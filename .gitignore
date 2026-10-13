@@ -47,3 +47,6 @@ turso-cakalne-dobe.rtf
 
 //
 /mock-data
+
+// mcp context-mode
+.github/context-mode/content/*
