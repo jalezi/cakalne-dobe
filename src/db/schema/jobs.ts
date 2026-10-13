@@ -1,9 +1,6 @@
 import { createId } from '@paralleldrive/cuid2';
-import { relations } from 'drizzle-orm';
 import { sqliteTable, text, unique } from 'drizzle-orm/sqlite-core';
 import { timestamps } from '../schema-common-fields';
-import { maxAllowedDays } from './max-allowed-days';
-import { waitingPeriods } from './waiting-periods';
 
 export const jobs = sqliteTable(
   'jobs',
@@ -24,15 +21,6 @@ export const jobs = sqliteTable(
     };
   }
 );
-
-export const jobRelations = relations(jobs, ({ many }) => ({
-  maxAllowedDays: many(maxAllowedDays, {
-    relationName: 'jobMAD',
-  }),
-  waitingPeriods: many(waitingPeriods, {
-    relationName: 'jobWP',
-  }),
-}));
 
 export type SelectJob = typeof jobs.$inferSelect;
 export type InsertJob = typeof jobs.$inferInsert;

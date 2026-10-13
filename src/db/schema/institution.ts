@@ -1,8 +1,6 @@
 import { createId } from '@paralleldrive/cuid2';
-import { relations } from 'drizzle-orm';
 import { sqliteTable, text, unique } from 'drizzle-orm/sqlite-core';
 import { timestamps } from '../schema-common-fields';
-import { waitingPeriods } from './waiting-periods';
 
 export const institutions = sqliteTable(
   'institutions',
@@ -19,12 +17,6 @@ export const institutions = sqliteTable(
     };
   }
 );
-
-export const institutionsRelations = relations(institutions, ({ many }) => ({
-  waitingPeriodSchema: many(waitingPeriods, {
-    relationName: 'institutionWP',
-  }),
-}));
 
 export type SelectInstitution = typeof institutions.$inferSelect;
 export type InsertInstitution = typeof institutions.$inferInsert;

@@ -16,11 +16,11 @@ vi.mock('@/db/queries/waiting-periods', () => ({
   getProcedureWtForInstOnDay: queryMocks.getProcedureWtForInstOnDay,
 }));
 
-import { getProcedureAvgWtForJob } from '../src/actions/get-procedure-avg-wt-for-job';
-import { getProcedureAvgWtPerJobChart } from '../src/actions/get-procedure-avg-wt-per-job-chart';
-import { getProcedureWtForInstOnDay } from '../src/actions/get-procedure-wt-for-inst-on-day';
+import { getProcedureAvgWtForJobAction } from '../src/actions/get-procedure-avg-wt-for-job';
+import { getProcedureAvgWtPerJobChartAction } from '../src/actions/get-procedure-avg-wt-per-job-chart';
+import { getProcedureWtForInstOnDayAction } from '../src/actions/get-procedure-wt-for-inst-on-day';
 
-describe('Action seam: getProcedureAvgWtForJob', () => {
+describe('Action seam: getProcedureAvgWtForJobAction', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -36,7 +36,7 @@ describe('Action seam: getProcedureAvgWtForJob', () => {
       },
     ]);
 
-    const result = await getProcedureAvgWtForJob({ jobId: 'job-1' });
+    const result = await getProcedureAvgWtForJobAction({ jobId: 'job-1' });
 
     expect(result).toEqual({
       success: true,
@@ -53,7 +53,7 @@ describe('Action seam: getProcedureAvgWtForJob', () => {
   });
 
   it('returns a typed invalid-input error when params are malformed', async () => {
-    const result = await getProcedureAvgWtForJob({ jobId: '' });
+    const result = await getProcedureAvgWtForJobAction({ jobId: '' });
 
     expect(result.success).toBe(false);
 
@@ -72,7 +72,7 @@ describe('Action seam: getProcedureAvgWtForJob', () => {
       new Error('db down')
     );
 
-    const result = await getProcedureAvgWtForJob({ jobId: 'job-1' });
+    const result = await getProcedureAvgWtForJobAction({ jobId: 'job-1' });
 
     expect(result).toEqual({
       success: false,
@@ -85,7 +85,7 @@ describe('Action seam: getProcedureAvgWtForJob', () => {
   });
 });
 
-describe('Action seam: getProcedureAvgWtPerJobChart', () => {
+describe('Action seam: getProcedureAvgWtPerJobChartAction', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -95,7 +95,7 @@ describe('Action seam: getProcedureAvgWtPerJobChart', () => {
       { x: '2025-01-10', y: { regular: 10, fast: 4, veryFast: 1 } },
     ]);
 
-    const result = await getProcedureAvgWtPerJobChart({
+    const result = await getProcedureAvgWtPerJobChartAction({
       procedureCode: 'ABC-123',
       fromDate: '2025-01-01',
       toDate: '2025-01-31',
@@ -112,7 +112,7 @@ describe('Action seam: getProcedureAvgWtPerJobChart', () => {
     vi.setSystemTime(new Date('2026-04-28T10:15:00.000Z'));
     queryMocks.getProcedureAvgWtPerJobChart.mockResolvedValueOnce([]);
 
-    await getProcedureAvgWtPerJobChart({
+    await getProcedureAvgWtPerJobChartAction({
       procedureCode: 'ABC-123',
     });
 
@@ -129,7 +129,7 @@ describe('Action seam: getProcedureAvgWtPerJobChart', () => {
   });
 
   it('returns a typed invalid-input error when date range is invalid', async () => {
-    const result = await getProcedureAvgWtPerJobChart({
+    const result = await getProcedureAvgWtPerJobChartAction({
       procedureCode: 'ABC-123',
       fromDate: '2026-05-01',
       toDate: '2026-04-01',
@@ -149,7 +149,7 @@ describe('Action seam: getProcedureAvgWtPerJobChart', () => {
       new Error('db down')
     );
 
-    const result = await getProcedureAvgWtPerJobChart({
+    const result = await getProcedureAvgWtPerJobChartAction({
       procedureCode: 'ABC-123',
       fromDate: '2026-03-01',
       toDate: '2026-04-01',
@@ -165,7 +165,7 @@ describe('Action seam: getProcedureAvgWtPerJobChart', () => {
   });
 });
 
-describe('Action seam: getProcedureWtForInstOnDay', () => {
+describe('Action seam: getProcedureWtForInstOnDayAction', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -178,7 +178,7 @@ describe('Action seam: getProcedureWtForInstOnDay', () => {
       },
     ]);
 
-    const result = await getProcedureWtForInstOnDay({
+    const result = await getProcedureWtForInstOnDayAction({
       procedureCode: 'ABC-123',
       date: '2026-04-28',
     });
@@ -195,7 +195,7 @@ describe('Action seam: getProcedureWtForInstOnDay', () => {
   });
 
   it('returns a typed invalid-input error when params are malformed', async () => {
-    const result = await getProcedureWtForInstOnDay({
+    const result = await getProcedureWtForInstOnDayAction({
       procedureCode: 'ABC-123',
       date: 'not-a-date',
     });
@@ -217,7 +217,7 @@ describe('Action seam: getProcedureWtForInstOnDay', () => {
       new Error('db down')
     );
 
-    const result = await getProcedureWtForInstOnDay({
+    const result = await getProcedureWtForInstOnDayAction({
       procedureCode: 'ABC-123',
       date: '2026-04-28',
     });

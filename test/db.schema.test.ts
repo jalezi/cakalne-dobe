@@ -142,4 +142,51 @@ describe('Database Schema', () => {
       .where(eq(schema.maxAllowedDays.procedureId, fixtures.procedure.id));
     expect(procedureMaxAllowedDays).toHaveLength(1);
   });
+
+  it('should load related rows through the relational query API', async () => {
+    const job = await db.query.jobs.findFirst({
+      where: eq(schema.jobs.id, fixtures.job.id),
+      with: { maxAllowedDays: true, waitingPeriods: true },
+    });
+    expect(job?.maxAllowedDays.map((row) => row.procedureId)).toEqual([
+      fixtures.procedure.id,
+    ]);
+    expect(job?.waitingPeriods.map((row) => row.institutionId)).toEqual([
+      fixtures.institution.id,
+    ]);
+
+    const procedure = await db.query.procedures.findFirst({
+      where: eq(schema.procedures.id, fixtures.procedure.id),
+      with: { maxAllowedDays: true, waitingPeriods: true },
+    });
+    expect(procedure?.maxAllowedDays.map((row) => row.jobId)).toEqual([
+      fixtures.job.id,
+    ]);
+    expect(procedure?.waitingPeriods.map((row) => row.institutionId)).toEqual([
+      fixtures.institution.id,
+    ]);
+
+    const institution = await db.query.institutions.findFirst({
+      where: eq(schema.institutions.id, fixtures.institution.id),
+      with: { waitingPeriodSchema: true },
+    });
+    expect(institution?.waitingPeriodSchema.map((row) => row.jobId)).toEqual([
+      fixtures.job.id,
+    ]);
+
+    const maxAllowedDays = await db.query.maxAllowedDays.findFirst({
+      where: eq(schema.maxAllowedDays.jobId, fixtures.job.id),
+      with: { job: true, procedure: true },
+    });
+    expect(maxAllowedDays?.job.id).toBe(fixtures.job.id);
+    expect(maxAllowedDays?.procedure.id).toBe(fixtures.procedure.id);
+
+    const waitingPeriod = await db.query.waitingPeriods.findFirst({
+      where: eq(schema.waitingPeriods.jobId, fixtures.job.id),
+      with: { job: true, institution: true, procedure: true },
+    });
+    expect(waitingPeriod?.job.id).toBe(fixtures.job.id);
+    expect(waitingPeriod?.institution.id).toBe(fixtures.institution.id);
+    expect(waitingPeriod?.procedure.id).toBe(fixtures.procedure.id);
+  });
 });

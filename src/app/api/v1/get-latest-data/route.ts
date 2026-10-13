@@ -6,18 +6,6 @@ const BASE_URL = new URL('https://wayback-automachine.gitlab.io');
 const BASE_JOBS_URL = new URL('-/cakalne-dobe/-/jobs', BASE_URL);
 const JSON_OUT_PATH = '/artifacts/out.json';
 
-export type GetLatestData =
-  | {
-      success: true;
-      data: AllData & { gitLabJobId: string };
-      meta?: Record<string, unknown>;
-    }
-  | {
-      success: false;
-      error: string;
-      meta?: Record<string, unknown>;
-    };
-
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
