@@ -51,10 +51,16 @@ const average = (col) => sql<number>`cast(${avg(col)} as FLOAT)`;
 
 ```typescript
 'use server';
-// All data fetching uses server actions for complex queries
-export async function getProcedureAvgWtForJob(params: Params) {
-  return await db.select({...}).from(waitingPeriodsTable)...
-}
+// Queries live in src/db/queries and take db as a parameter; actions validate
+// input with zod and wrap the query via createAction (returns ActionResult).
+// Action names carry an Action suffix so they don't shadow the query name.
+import { getProcedureAvgWtForJob as query } from '@/db/queries/waiting-periods';
+
+export const getProcedureAvgWtForJobAction = createAction(
+  z.object({ jobId: z.string().trim().min(1) }),
+  (params) => query(db, params),
+  { messages: { invalidInput: 'Invalid input for getProcedureAvgWtForJobAction.' } }
+);
 ```
 
 ## Essential Development Commands

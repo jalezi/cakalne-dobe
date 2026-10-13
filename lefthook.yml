@@ -35,3 +35,10 @@ pre-push:
       skip:
         - merge
         - rebase
+
+    # Dead code, duplicate exports, and import cycles
+    dead-code:
+      run: pnpm fallow
+      skip:
+        - merge
+        - rebase
