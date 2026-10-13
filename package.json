@@ -29,8 +29,8 @@
     "turso:dev": "turso dev",
     "turso:dev:file": "turso dev --db-file dev.db",
     "turso:prod:file": "turso dev --db-file prod.db",
-    "knip": "knip",
-    "knip:fix": "knip --fix --allow-remove-files"
+    "fallow": "fallow dead-code",
+    "fallow:fix": "fallow fix"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
@@ -71,8 +71,8 @@
     "@vitejs/plugin-react": "^6.0.1",
     "drizzle-kit": "^0.31.10",
     "esbuild-register": "^3.6.0",
+    "fallow": "^3.33.1",
     "jsdom": "^29.1.0",
-    "knip": "^6.7.0",
     "lefthook": "^2.1.6",
     "parse5": "8.0.1",
     "postcss": "^8.5.12",
