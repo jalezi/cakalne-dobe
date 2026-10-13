@@ -9,6 +9,10 @@
 # testing
 /coverage
 
+# stryker
+/reports
+/.stryker-tmp
+
 # next.js
 /.next/
 /out/

@@ -238,5 +238,33 @@ describe('makeFacilityRows', () => {
         },
       ]);
     });
+
+    test('urgency with no waiting periods (null) stays null', () => {
+      const procedures: ProcedureWithWaitingPeriod[] = [
+        {
+          ...PROCEDURES.P1,
+          maxAllowedDays: MAX_ALLOWED_DAYS.A,
+          waitingPeriods: {
+            regular: [{ facility: FACILITY.A, days: 5 }],
+            fast: null,
+            veryFast: [{ facility: FACILITY.A, days: 1 }],
+          },
+        },
+      ];
+
+      const result = makeFacilityRows(procedures);
+
+      expect(result).toEqual([
+        {
+          facility: FACILITY.A,
+          procedure: PROCEDURES.P1,
+          waitingPeriods: {
+            regular: 5,
+            fast: null,
+            veryFast: 1,
+          },
+        },
+      ]);
+    });
   });
 });

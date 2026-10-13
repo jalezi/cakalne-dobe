@@ -89,6 +89,27 @@ describe('getWaitingPeriodCompliance', () => {
     });
   });
 
+  it('returns unknown for urgency levels where waiting days are null', () => {
+    const result = getWaitingPeriodCompliance(
+      {
+        regular: null,
+        fast: 3,
+        veryFast: 1,
+      },
+      {
+        regular: 10,
+        fast: 4,
+        veryFast: 2,
+      }
+    );
+
+    expect(result).toEqual({
+      regular: 'unknown',
+      fast: 'compliant',
+      veryFast: 'compliant',
+    });
+  });
+
   it('reports if any urgency level is exceeded', () => {
     const exceeded = isAnyExceeded({
       regular: 'compliant',

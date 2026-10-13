@@ -15,6 +15,7 @@
     "check": "biome check --write",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:mutation": "stryker run",
     "prepare": "lefthook install",
     "drizzle:local:push": "drizzle-kit push --config=./drizzle/config/local.ts",
     "drizzle:prod:push": "drizzle-kit push --config=./drizzle/config/prod.ts",
@@ -60,6 +61,8 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.13",
+    "@stryker-mutator/core": "10.0.0",
+    "@stryker-mutator/vitest-runner": "10.0.0",
     "@tailwindcss/postcss": "^4.2.4",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
