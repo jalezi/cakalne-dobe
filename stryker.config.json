@@ -1,0 +1,24 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "testRunner": "vitest",
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "vitest": {
+    "configFile": "vitest.config.mts"
+  },
+  "mutate": [
+    "src/services/**/*.ts",
+    "src/db/transforms/**/*.ts",
+    "!**/*.test.ts"
+  ],
+  "ignorePatterns": [
+    "/dev.db*",
+    "/prod.db*",
+    "/prod.sql",
+    "/mock-data",
+    "/db_dump",
+    "/coverage",
+    "/.next",
+    "/.temp"
+  ],
+  "reporters": ["clear-text", "progress", "html"]
+}
