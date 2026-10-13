@@ -1,5 +1,11 @@
 # PRD: Consolidate GitLab Client Module
 
+## Implementation order:
+- 1
+- 5
+- 2
+- 3
+
 ## Candidate
 #1 — Fragmented GitLab Client (pass-through utils)
 
