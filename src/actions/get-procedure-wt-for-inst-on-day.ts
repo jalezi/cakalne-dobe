@@ -22,7 +22,7 @@ export const getProcedureWtForInstOnDayAction = createAction(
   (params) => query(db, params),
   {
     messages: {
-      invalidInput: 'Invalid input for getProcedureWtForInstOnDay.',
+      invalidInput: 'Invalid input for getProcedureWtForInstOnDayAction.',
       queryFailed:
         'Failed to fetch institution waiting periods for the selected date.',
     },

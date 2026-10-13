@@ -43,7 +43,7 @@ export const getProcedureAvgWtPerJobChartAction = createAction(
   (params) => query(db, params),
   {
     messages: {
-      invalidInput: 'Invalid input for getProcedureAvgWtPerJobChart.',
+      invalidInput: 'Invalid input for getProcedureAvgWtPerJobChartAction.',
       queryFailed: 'Failed to fetch chart data for the selected procedure.',
     },
   }

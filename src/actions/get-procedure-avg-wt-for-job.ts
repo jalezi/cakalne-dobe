@@ -14,7 +14,7 @@ export const getProcedureAvgWtForJobAction = createAction(
   (params) => query(db, params),
   {
     messages: {
-      invalidInput: 'Invalid input for getProcedureAvgWtForJob.',
+      invalidInput: 'Invalid input for getProcedureAvgWtForJobAction.',
       queryFailed:
         'Failed to fetch waiting-period averages for the selected job.',
     },
