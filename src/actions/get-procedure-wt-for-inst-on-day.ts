@@ -2,11 +2,7 @@
 
 import { z } from 'zod';
 import { db } from '@/db';
-import {
-  type InstitutionWaitingPeriod,
-  getProcedureWtForInstOnDay as query,
-} from '@/db/queries/waiting-periods';
-import type { ActionResult } from './action-result';
+import { getProcedureWtForInstOnDay as query } from '@/db/queries/waiting-periods';
 import { createAction } from './create-action';
 
 const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
@@ -21,16 +17,12 @@ const paramsSchema = z.object({
     }),
 });
 
-export type GetProcedureWtForInstOnDayResult = ActionResult<
-  InstitutionWaitingPeriod[]
->;
-
-export const getProcedureWtForInstOnDay = createAction(
+export const getProcedureWtForInstOnDayAction = createAction(
   paramsSchema,
   (params) => query(db, params),
   {
     messages: {
-      invalidInput: 'Invalid input for getProcedureWtForInstOnDay.',
+      invalidInput: 'Invalid input for getProcedureWtForInstOnDayAction.',
       queryFailed:
         'Failed to fetch institution waiting periods for the selected date.',
     },

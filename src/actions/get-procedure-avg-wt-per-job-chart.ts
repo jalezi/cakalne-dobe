@@ -2,12 +2,8 @@
 
 import { z } from 'zod';
 import { db } from '@/db';
-import {
-  type ChartDataPoint,
-  getProcedureAvgWtPerJobChart as query,
-} from '@/db/queries/waiting-periods';
+import { getProcedureAvgWtPerJobChart as query } from '@/db/queries/waiting-periods';
 import { addDays, formatDate, parseDate } from '@/lib/date-utils';
-import type { ActionResult } from './action-result';
 import { createAction } from './create-action';
 
 const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
@@ -42,14 +38,12 @@ const paramsSchema = z
     path: ['fromDate'],
   });
 
-export type GetProcedureAvgWtPerJobChartResult = ActionResult<ChartDataPoint[]>;
-
-export const getProcedureAvgWtPerJobChart = createAction(
+export const getProcedureAvgWtPerJobChartAction = createAction(
   paramsSchema,
   (params) => query(db, params),
   {
     messages: {
-      invalidInput: 'Invalid input for getProcedureAvgWtPerJobChart.',
+      invalidInput: 'Invalid input for getProcedureAvgWtPerJobChartAction.',
       queryFailed: 'Failed to fetch chart data for the selected procedure.',
     },
   }

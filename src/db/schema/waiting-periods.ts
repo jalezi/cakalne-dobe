@@ -1,4 +1,3 @@
-import { relations } from 'drizzle-orm';
 import {
   index,
   integer,
@@ -46,24 +45,6 @@ export const waitingPeriods = sqliteTable(
     };
   }
 );
-
-export const waitingPeriodsRelations = relations(waitingPeriods, ({ one }) => ({
-  job: one(jobs, {
-    fields: [waitingPeriods.jobId],
-    references: [jobs.id],
-    relationName: 'jobWP',
-  }),
-  institution: one(institutions, {
-    fields: [waitingPeriods.institutionId],
-    references: [institutions.id],
-    relationName: 'institutionWP',
-  }),
-  procedure: one(procedures, {
-    fields: [waitingPeriods.procedureId],
-    references: [procedures.id],
-    relationName: 'procedureWP',
-  }),
-}));
 
 export type SelectWaitingPeriods = typeof waitingPeriods.$inferSelect;
 export type InsertWaitingPeriods = typeof waitingPeriods.$inferInsert;

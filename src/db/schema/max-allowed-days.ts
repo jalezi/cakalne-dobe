@@ -1,4 +1,3 @@
-import { relations } from 'drizzle-orm';
 import {
   integer,
   primaryKey,
@@ -31,19 +30,6 @@ export const maxAllowedDays = sqliteTable(
     };
   }
 );
-
-export const maxAllowedDaysRelations = relations(maxAllowedDays, ({ one }) => ({
-  job: one(jobs, {
-    fields: [maxAllowedDays.jobId],
-    references: [jobs.id],
-    relationName: 'jobMAD',
-  }),
-  procedure: one(procedures, {
-    fields: [maxAllowedDays.procedureId],
-    references: [procedures.id],
-    relationName: 'procedureMAD',
-  }),
-}));
 
 export type SelectMaxAllowedDays = typeof maxAllowedDays.$inferSelect;
 export type InsertMaxAllowedDays = typeof maxAllowedDays.$inferInsert;

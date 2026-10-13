@@ -188,28 +188,6 @@ export function reportValidationStatus(isValid: boolean, gaps: string[]): void {
 }
 
 /**
- * Reports seeding progress
- */
-export function reportSeedingProgress(
-  filesProcessed: number,
-  totalFiles: number,
-  currentFile: string
-): void {
-  const percentage = Math.round((filesProcessed / totalFiles) * 100);
-  const bar = '█'.repeat(Math.floor(percentage / 2));
-  const empty = '░'.repeat(50 - Math.floor(percentage / 2));
-
-  process.stdout.write(
-    `\r${colorize(`Seeding: [${bar}${empty}] ${percentage}%`, 'cyan')} - ${colorize(currentFile, 'dim')}`
-  );
-
-  // Add newline when complete
-  if (filesProcessed === totalFiles) {
-    console.log('');
-  }
-}
-
-/**
  * Generates a summary report combining all sections
  */
 export interface SummaryReportData {
