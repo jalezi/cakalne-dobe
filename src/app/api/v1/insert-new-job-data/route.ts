@@ -6,7 +6,9 @@ export async function POST(request: Request) {
 
   if (!result.success) {
     console.error(result.error);
-    return new Response(`Webhook error: ${result.error}`, { status: 202 });
+    return new Response(`Webhook error: ${result.error.message}`, {
+      status: 202,
+    });
   }
 
   return Response.json({ success: true, data: result.data });
