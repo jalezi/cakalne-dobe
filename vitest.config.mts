@@ -1,5 +1,5 @@
 import react from '@vitejs/plugin-react';
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 
 export default defineConfig({
   resolve: {
@@ -10,6 +10,8 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./test/setup.ts'],
     globals: true,
+    // A crashed Stryker run can leave a sandbox copy of the tests behind
+    exclude: [...configDefaults.exclude, '.stryker-tmp/**'],
     coverage: {
       provider: 'v8',
       // Include untested files so they report 0% instead of being omitted
