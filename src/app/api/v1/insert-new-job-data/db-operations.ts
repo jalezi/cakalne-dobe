@@ -21,104 +21,99 @@ export async function processJobData(
   snapshotInsertPayload: SnapshotInsertPayload
 ) {
   return db.transaction(async (trx) => {
-    try {
-      // JOB
-      const insertedJobs = await insertJobTransaction(trx, jobData);
+    // JOB
+    const insertedJobs = await insertJobTransaction(trx, jobData);
 
-      // PROCEDURES
-      const { existingProcedures, allProceduresWithDBIds, insertedProcedures } =
-        await insertProceduresTransaction(trx, snapshotInsertPayload);
+    // PROCEDURES
+    const { existingProcedures, allProceduresWithDBIds, insertedProcedures } =
+      await insertProceduresTransaction(trx, snapshotInsertPayload);
 
-      // INSTITUTIONS
-      const { existingInstitutions, insertedInstitutions } =
-        await insertInstitutionsTransaction(trx, snapshotInsertPayload);
+    // INSTITUTIONS
+    const { existingInstitutions, insertedInstitutions } =
+      await insertInstitutionsTransaction(trx, snapshotInsertPayload);
 
-      const newInstitutions = Array.from(
-        snapshotInsertPayload.institutions.values()
-      ).filter(
-        (inst) =>
-          !existingInstitutions.some(
-            (existingInstitution) => existingInstitution.name === inst.name
-          )
-      );
+    const newInstitutions = Array.from(
+      snapshotInsertPayload.institutions.values()
+    ).filter(
+      (inst) =>
+        !existingInstitutions.some(
+          (existingInstitution) => existingInstitution.name === inst.name
+        )
+    );
 
-      const allInstitutionsWithDBId =
-        existingInstitutions.concat(insertedInstitutions);
+    const allInstitutionsWithDBId =
+      existingInstitutions.concat(insertedInstitutions);
 
-      // MAX ALLOWED DAYS
-      const insertedMaxAllowedDays = await insertMaxAllowedDays(
-        trx,
-        snapshotInsertPayload,
-        allProceduresWithDBIds,
-        insertedJobs[0].id
-      );
+    // MAX ALLOWED DAYS
+    const insertedMaxAllowedDays = await insertMaxAllowedDays(
+      trx,
+      snapshotInsertPayload,
+      allProceduresWithDBIds,
+      insertedJobs[0].id
+    );
 
-      // WAITING PERIODS
-      const insertedWaitingPeriods: {
-        jobId: string;
-        institutionId: string;
-      }[] = await insertWaitingPeriodsTransaction(
-        trx,
-        snapshotInsertPayload,
-        allInstitutionsWithDBId,
-        allProceduresWithDBIds,
-        insertedJobs[0].id
-      );
+    // WAITING PERIODS
+    const insertedWaitingPeriods: {
+      jobId: string;
+      institutionId: string;
+    }[] = await insertWaitingPeriodsTransaction(
+      trx,
+      snapshotInsertPayload,
+      allInstitutionsWithDBId,
+      allProceduresWithDBIds,
+      insertedJobs[0].id
+    );
 
-      const totalRows =
-        EXPECTED_NUMBER_OF_JOBS +
-        snapshotInsertPayload.procedures.length +
-        snapshotInsertPayload.institutions.size +
-        snapshotInsertPayload.maxAllowedDays.length +
-        snapshotInsertPayload.waitingPeriods.size;
+    const totalRows =
+      EXPECTED_NUMBER_OF_JOBS +
+      snapshotInsertPayload.procedures.length +
+      snapshotInsertPayload.institutions.size +
+      snapshotInsertPayload.maxAllowedDays.length +
+      snapshotInsertPayload.waitingPeriods.size;
 
-      const totalRowsInserted =
-        insertedJobs.length +
-        insertedProcedures.length +
-        newInstitutions.length +
-        insertedMaxAllowedDays.length +
-        insertedWaitingPeriods.length;
+    const totalRowsInserted =
+      insertedJobs.length +
+      insertedProcedures.length +
+      newInstitutions.length +
+      insertedMaxAllowedDays.length +
+      insertedWaitingPeriods.length;
 
-      return {
-        success: true,
-        data: {
-          job: insertedJobs[0],
-        },
-        meta: {
-          length: {
-            total: {
-              total: totalRows,
-              inserted: totalRowsInserted,
-            },
-            job: {
-              total: EXPECTED_NUMBER_OF_JOBS,
-              inserted: insertedJobs.length,
-            },
-            procedures: {
-              total: snapshotInsertPayload.procedures.length,
-              inserted: insertedProcedures.length,
-              existing: existingProcedures.length,
-            },
-            institutions: {
-              total: snapshotInsertPayload.institutions.size,
-              inserted: newInstitutions.length,
-              existing: existingInstitutions.length,
-            },
-            maxAllowedDays: {
-              total: snapshotInsertPayload.maxAllowedDays.length,
-              inserted: insertedMaxAllowedDays.length,
-            },
-            waitingPeriods: {
-              total: snapshotInsertPayload.waitingPeriods.size,
-              inserted: insertedWaitingPeriods.length,
-            },
+    return {
+      success: true,
+      data: {
+        job: insertedJobs[0],
+      },
+      meta: {
+        length: {
+          total: {
+            total: totalRows,
+            inserted: totalRowsInserted,
+          },
+          job: {
+            total: EXPECTED_NUMBER_OF_JOBS,
+            inserted: insertedJobs.length,
+          },
+          procedures: {
+            total: snapshotInsertPayload.procedures.length,
+            inserted: insertedProcedures.length,
+            existing: existingProcedures.length,
+          },
+          institutions: {
+            total: snapshotInsertPayload.institutions.size,
+            inserted: newInstitutions.length,
+            existing: existingInstitutions.length,
+          },
+          maxAllowedDays: {
+            total: snapshotInsertPayload.maxAllowedDays.length,
+            inserted: insertedMaxAllowedDays.length,
+          },
+          waitingPeriods: {
+            total: snapshotInsertPayload.waitingPeriods.size,
+            inserted: insertedWaitingPeriods.length,
           },
         },
-      };
-    } catch (error) {
-      trx.rollback();
-      throw error;
-    }
+      },
+    };
   });
 }
 
