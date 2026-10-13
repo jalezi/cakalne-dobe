@@ -49,6 +49,14 @@ export type InstitutionWaitingPeriod = {
 
 const sqlJobStartDate = sql<string>`strftime('%Y-%m-%d',${schema.jobs.startDate})`;
 
+// ─── Shared Aggregation ──────────────────────────────────────────────────────
+
+const avgByUrgency = () => ({
+  regular: avg(schema.waitingPeriods.regular).mapWith(Number),
+  fast: avg(schema.waitingPeriods.fast).mapWith(Number),
+  veryFast: avg(schema.waitingPeriods.veryFast).mapWith(Number),
+});
+
 // ─── Query Functions ─────────────────────────────────────────────────────────
 
 export async function getProcedureAvgWtForJob(
@@ -57,11 +65,7 @@ export async function getProcedureAvgWtForJob(
 ): Promise<ProcedureAvgWt[]> {
   return db
     .select({
-      avg: {
-        regular: avg(schema.waitingPeriods.regular).mapWith(Number),
-        fast: avg(schema.waitingPeriods.fast).mapWith(Number),
-        veryFast: avg(schema.waitingPeriods.veryFast).mapWith(Number),
-      },
+      avg: avgByUrgency(),
       total: {
         regular: sum(schema.waitingPeriods.regular).mapWith(Number),
         fast: sum(schema.waitingPeriods.fast).mapWith(Number),
@@ -101,11 +105,7 @@ export async function getProcedureAvgWtPerJobChart(
   return db
     .select({
       x: sqlJobStartDate,
-      y: {
-        regular: avg(schema.waitingPeriods.regular).mapWith(Number),
-        fast: avg(schema.waitingPeriods.fast).mapWith(Number),
-        veryFast: avg(schema.waitingPeriods.veryFast).mapWith(Number),
-      },
+      y: avgByUrgency(),
     })
     .from(schema.waitingPeriods)
     .where(
