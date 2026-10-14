@@ -77,3 +77,7 @@ Default five-role vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `
 ### Domain docs
 
 Single-context: `GLOSSARY.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+
+## Worktrees
+
+Before changing any file for an issue, follow `# Worktrees` in `AGENTS.md`.
