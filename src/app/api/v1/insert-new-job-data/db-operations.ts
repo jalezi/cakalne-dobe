@@ -23,6 +23,12 @@ export async function processJobData(
   return db.transaction(async (trx) => {
     // JOB
     const insertedJobs = await insertJobTransaction(trx, jobData);
+    // The insert skips a conflicting Job instead of failing
+    if (insertedJobs.length === 0) {
+      throw new Error(
+        `Job with GitLab job ID ${jobData.gitLabJobId} already exists in the database`
+      );
+    }
 
     // PROCEDURES
     const { existingProcedures, allProceduresWithDBIds, insertedProcedures } =

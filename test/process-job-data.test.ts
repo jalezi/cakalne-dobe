@@ -162,7 +162,9 @@ describe('processJobData', () => {
       { code: '1005', name: 'Procedure 5', institutions: ['Institution E'] },
     ]);
 
-    await expect(processJobData(jobData, payload)).rejects.toThrow();
+    await expect(processJobData(jobData, payload)).rejects.toThrow(
+      'Job with GitLab job ID gitlab-job-1 already exists in the database'
+    );
 
     await expect(countAllRows()).resolves.toEqual(rowsBefore);
   });
