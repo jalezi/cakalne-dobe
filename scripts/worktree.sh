@@ -34,10 +34,11 @@ case $action in
       git -C "$main" worktree add --quiet --no-track -b "$branch" "$path" origin/main
     fi
     pnpm --dir "$path" install --frozen-lockfile
-    # Only holds the local `turso dev` URL; needed by `pnpm dev` and the db:local scripts.
-    # .env.production.local stays in the main checkout.
+    # The local `turso dev` URL, needed by `pnpm dev` and the db:local scripts.
+    # Active lines only: commented-out lines may hold old database tokens
+    # (grep exits 1 when there are none). .env.production.local stays in the main checkout.
     if [ -f "$main/.env.development.local" ]; then
-      cp "$main/.env.development.local" "$path/"
+      grep -vE '^[[:space:]]*(#|$)' "$main/.env.development.local" > "$path/.env.development.local" || true
     fi
     # Job artifacts for the seed scripts (about 1 GB), shared rather than copied
     if [ -d "$main/mock-data" ]; then
