@@ -219,6 +219,26 @@ pnpm drizzle:prod:studio
 - Older data beyond 3 months is preserved unless manually deleted
 - Use `db:local:seed` with "delete tables" option for a clean slate
 
+## Code health
+
+CI runs `fallow health` with measured test coverage. It fails when a function crosses a complexity threshold (by default cyclomatic > 20, cognitive > 15 or CRAP ≥ 30) and isn't in the committed baseline, `fallow-health-baseline.json`. The baseline is saved in identity mode: each entry is a file path plus a function name, with its severity.
+
+Run the gate locally:
+
+```bash
+pnpm test:coverage
+pnpm exec fallow health --coverage coverage/coverage-final.json --baseline fallow-health-baseline.json --baseline-mode identity
+```
+
+Re-save the baseline with `pnpm fallow:health:baseline`, which runs the tests with coverage, saves the baseline and formats it with Biome. Re-save it:
+
+- after fixing a baselined function, to drop its stale entry
+- after renaming or moving a baselined function, which otherwise counts as a new finding
+- after deliberately making a baselined function worse, since a higher severity fails the gate
+- after a fallow version bump
+
+Unnamed functions in one file share one baseline identity. fallow names an arrow function after the `const` it's assigned to, so this only affects inline callbacks, such as the one baselined in `scripts/cleanup-vercel-prod.ts`. If you fix a baselined unnamed function and then add a new unnamed one over a threshold in the same file before re-saving, the new one takes the old one's slot and the gate passes. Re-saving the baseline right after the fix closes that gap.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
