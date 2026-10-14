@@ -3,37 +3,62 @@
 # Inside Herdr (HERDR_ENV=1) each worktree also gets its own Herdr workspace.
 #
 #   pnpm worktree:new <branch>      e.g. pnpm worktree:new fix/29-import-db-reason
+#   pnpm worktree:agent <branch> <prompt-file>
+#                                   new, then a Claude agent in Herdr gets the prompt
 #   pnpm worktree:remove <branch>   once the branch's PR is merged
 #
 # Worktrees live beside the repo, in <repo>.worktrees/. Inside the repo,
 # tsc and vitest would pick up their copies of the code and tests.
 set -euo pipefail
 
-if [ $# -ne 2 ]; then
-  echo "usage: $0 new|remove <branch>" >&2
-  exit 2
-fi
+case ${1:-}:$# in
+  new:2 | remove:2 | agent:3) ;;
+  *)
+    echo "usage: $0 new|remove <branch>" >&2
+    echo "       $0 agent <branch> <prompt-file>" >&2
+    exit 2
+    ;;
+esac
 action=$1
 branch=$2
 git check-ref-format --branch "$branch" >/dev/null
+
+# Checked before anything is created: worktree:remove won't clean up a
+# worktree whose branch has no merged PR
+if [ "$action" = agent ]; then
+  if [ "${HERDR_ENV:-}" != 1 ]; then
+    echo "agent needs Herdr (HERDR_ENV=1)" >&2
+    exit 1
+  fi
+  if ! [[ $branch =~ ^[a-z]+/([0-9]+)- ]]; then
+    echo "agent needs a <type>/<n>-<slug> branch, to name the agent issue<n>" >&2
+    exit 2
+  fi
+  name=issue${BASH_REMATCH[1]}
+  prompt=$(cat "$3")
+fi
 
 # The main checkout, also when run from inside a worktree
 main=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
 path="$main.worktrees/${branch//\//-}"
 
 case $action in
-  new)
+  new | agent)
     git -C "$main" fetch --quiet origin main
+    ready="Worktree ready: $path"
     if [ "${HERDR_ENV:-}" = 1 ]; then
-      herdr worktree create --cwd "$main" --branch "$branch" --base origin/main \
-        --path "$path" --label "$branch" --no-focus |
-        jq -r '.result | "Herdr workspace: \(.workspace.workspace_id), root pane: \(.root_pane.pane_id)"'
+      created=$(herdr worktree create --cwd "$main" --branch "$branch" --base origin/main \
+        --path "$path" --label "$branch" --no-focus)
+      workspace=$(jq -r .result.workspace.workspace_id <<<"$created")
+      pane=$(jq -r .result.root_pane.pane_id <<<"$created")
+      # On the last line, so `| tail` keeps them
+      ready+=" (Herdr workspace: $workspace, root pane: $pane)"
       # Herdr tracks the base; the branch gets its own upstream on the first push
       git -C "$path" branch --quiet --unset-upstream
     else
       git -C "$main" worktree add --quiet --no-track -b "$branch" "$path" origin/main
     fi
-    pnpm --dir "$path" install --frozen-lockfile
+    pnpm --dir "$path" install --frozen-lockfile --loglevel error
     # Its own database, so schema pushes and reseeds stay in this worktree. The
     # app and scripts open the file: a `turso dev` here would clash with the
     # main checkout's on port 8080. No env file comes from the main checkout.
@@ -67,7 +92,14 @@ case $action in
     if [ -d "$main/mock-data" ]; then
       ln -s "$main/mock-data" "$path/mock-data"
     fi
-    echo "Worktree ready: $path"
+    echo "$ready"
+    if [ "$action" = agent ]; then
+      session=$(herdr agent start "$name" --kind claude --pane "$pane" -- --permission-mode auto |
+        jq -er '.result.agent.agent_session.value')
+      # Returns once the agent is working on it, or stuck at a dialog
+      herdr agent prompt "$name" "$prompt" --wait --until working --until blocked >/dev/null
+      echo "Agent $name in pane $pane, session log: $HOME/.claude/projects/${path//[^a-zA-Z0-9]/-}/$session.jsonl"
+    fi
     ;;
   remove)
     if ! git -C "$main" worktree list --porcelain | grep -qxF "worktree $path"; then
@@ -106,9 +138,5 @@ case $action in
     fi
     git -C "$main" branch -D "$branch"
     echo "Removed $path"
-    ;;
-  *)
-    echo "usage: $0 new|remove <branch>" >&2
-    exit 2
     ;;
 esac
