@@ -33,6 +33,7 @@
     "turso:prod:file": "turso dev --db-file prod.db",
     "fallow": "fallow dead-code",
     "fallow:fix": "fallow fix",
+    "fallow:health:baseline": "pnpm test:coverage && fallow health --coverage coverage/coverage-final.json --save-baseline fallow-health-baseline.json --baseline-mode identity --report-only && biome check --write fallow-health-baseline.json",
     "issue:history": "bash scripts/issue-history.sh",
     "worktree:new": "bash scripts/worktree.sh new",
     "worktree:agent": "bash scripts/worktree.sh agent",
