@@ -18,7 +18,7 @@ import { prepareJobData } from '../insert-new-job-data/job-processing';
 
 const dateSchema = z
   .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format: YYYY-MM-DD')
+  .regex(/^\d{4}-\d{2}-\d{2}(T.*)?$/, 'Invalid date format: YYYY-MM-DD')
   .describe('YYYY-MM-DD');
 
 const webhookSuccessOkSchema = z.object({
