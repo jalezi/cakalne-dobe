@@ -34,11 +34,34 @@ case $action in
       git -C "$main" worktree add --quiet --no-track -b "$branch" "$path" origin/main
     fi
     pnpm --dir "$path" install --frozen-lockfile
-    # The local `turso dev` URL, needed by `pnpm dev` and the db:local scripts.
-    # Active lines only: commented-out lines may hold old database tokens
-    # (grep exits 1 when there are none). .env.production.local stays in the main checkout.
-    if [ -f "$main/.env.development.local" ]; then
-      grep -vE '^[[:space:]]*(#|$)' "$main/.env.development.local" > "$path/.env.development.local" || true
+    # Its own database, so schema pushes and reseeds stay in this worktree. The
+    # app and scripts open the file: a `turso dev` here would clash with the
+    # main checkout's on port 8080. No env file comes from the main checkout.
+    echo 'DATABASE_URL=file:dev.db' > "$path/.env.development.local"
+    if [ -f "$main/dev.db" ]; then
+      # Under the main checkout's write lock, its `turso dev` can't add to or
+      # reset the WAL. A checkpoint may still copy WAL pages into dev.db, so
+      # dev.db alone can be torn, but dev.db and the WAL together can't.
+      node -e '
+        const { execFileSync } = require("node:child_process");
+        const { existsSync } = require("node:fs");
+        const { DatabaseSync } = require("node:sqlite");
+        const [from, to] = process.argv.slice(1);
+        // Instant clones on APFS, Btrfs or XFS, sharing disk space until one
+        // copy changes; both flags fall back to a plain copy
+        const cloneFlag = process.platform === "darwin" ? "-c" : "--reflink=auto";
+        const db = new DatabaseSync(from, { timeout: 10000 });
+        db.exec("BEGIN IMMEDIATE");
+        for (const suffix of ["", "-wal"]) {
+          if (existsSync(from + suffix)) {
+            execFileSync("cp", [cloneFlag, from + suffix, to + suffix]);
+          }
+        }
+        db.exec("ROLLBACK");
+      ' "$main/dev.db" "$path/dev.db"
+    else
+      # Nothing to clone: start empty, with the schema
+      pnpm --dir "$path" drizzle:local:push
     fi
     # Job artifacts for the seed scripts (about 1 GB), shared rather than copied
     if [ -d "$main/mock-data" ]; then
