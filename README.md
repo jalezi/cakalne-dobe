@@ -221,13 +221,23 @@ pnpm drizzle:prod:studio
 
 ## Code health
 
-CI runs `fallow health` with measured test coverage. It fails when a function crosses a complexity threshold (by default cyclomatic > 20, cognitive > 15 or CRAP ≥ 30) and isn't in the committed baseline, `fallow-health-baseline.json`. The baseline is saved in identity mode: each entry is a file path plus a function name, with its severity.
+CI runs `fallow health` with measured test coverage. It fails when a function crosses a complexity threshold (by default cyclomatic > 20, cognitive > 15 or CRAP ≥ 30) and isn't in the committed baseline, `fallow-health-baseline.json`. The baseline is saved in identity mode: each entry is a file path plus a function name, with its severity. It holds complexity findings only, not refactoring targets.
+
+The baseline is shrink-only. CI also fails when the PR's baseline has a key that the base branch's baseline doesn't have. A key is one function identity in one severity category, such as `crap_high`. These count as growth:
+
+- a new function over a threshold
+- a baselined function whose severity changes, up or down
+- a renamed or moved baselined function
+- a second finding in the same category for an existing identity, such as another unnamed function in the same file
+
+Removing an entry is never growth.
 
 Run the gate locally:
 
 ```bash
 pnpm test:coverage
-pnpm exec fallow health --coverage coverage/coverage-final.json --baseline fallow-health-baseline.json --baseline-mode identity
+git fetch origin main
+pnpm exec fallow health --coverage coverage/coverage-final.json --baseline fallow-health-baseline.json --baseline-mode identity --fail-on-baseline-growth --baseline-base origin/main
 ```
 
 Re-save the baseline with `pnpm fallow:health:baseline`, which runs the tests with coverage, saves the baseline and formats it with Biome. Re-save it:
@@ -236,6 +246,8 @@ Re-save the baseline with `pnpm fallow:health:baseline`, which runs the tests wi
 - after renaming or moving a baselined function, which otherwise counts as a new finding
 - after deliberately making a baselined function worse, since a higher severity fails the gate
 - after a fallow version bump
+
+Only the first is a pure removal. The others can add keys, and a PR that grows the baseline needs the `baseline-growth-ok` label. Only the maintainer adds the label; agents never do. Adding or removing it re-runs `verify`. While the PR has it, CI skips the growth check on every push, but a finding missing from the baseline still fails. A partly improved function, say from `crap_high` to `crap_moderate`, still passes against its old entry. Re-saving it records the lower severity as a new key, which needs the label too. Never re-save the baseline just to turn a red check green.
 
 Unnamed functions in one file share one baseline identity. fallow names an arrow function after the `const` it's assigned to, so this only affects inline callbacks, such as the one baselined in `scripts/cleanup-vercel-prod.ts`. If you fix a baselined unnamed function and then add a new unnamed one over a threshold in the same file before re-saving, the new one takes the old one's slot and the gate passes. Re-saving the baseline right after the fix closes that gap.
 

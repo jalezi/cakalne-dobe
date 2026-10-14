@@ -17,6 +17,7 @@ One session in the main checkout drives one Herdr agent per issue, each in its o
 5. **Review.** Review the diff yourself (`gh pr diff <pr>`). The PR is ready when:
    - `gh pr view <pr> --json closingIssuesReferences --jq '[.closingIssuesReferences[].number]'` lists the issue. Read `.number` only: title and state aren't filled in.
    - `gh pr checks <pr>` is green.
+   - `fallow-health-baseline.json` gains no key, or the user has OK'd each new one. Only the user adds the `baseline-growth-ok` label. Before merging a PR that has it, ask the user to confirm they added it themselves, and check the agent's session log for any command that added it.
    - `gh api "repos/{owner}/{repo}/pulls/<pr>/commits" --jq '.[].commit.verification.verified'` is `true` for every commit.
 6. **Merge.** Count the PR's commits: `gh api "repos/{owner}/{repo}/pulls/<pr>/commits" --jq length`. The repo's squash default pastes every commit message into the body.
    - One commit: give the user `! gh pr merge <pr> --squash` to run.
@@ -42,7 +43,7 @@ Read the issue first: `gh issue view <n>`. It is the spec. <What already shipped
 
 <What to build, with notes the issue leaves out: the style to match, the code to reuse.>
 
-Constraints: surgical changes only, no unrelated edits. Follow AGENTS.md / CLAUDE.md.
+Constraints: surgical changes only, no unrelated edits. Never re-save the fallow health baseline to make CI pass, and never add the `baseline-growth-ok` label: fix the function, or stop and ask the orchestrator. Follow AGENTS.md / CLAUDE.md.
 
 ## Verify
 
