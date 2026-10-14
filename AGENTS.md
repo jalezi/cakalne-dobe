@@ -21,9 +21,8 @@ Apply these rules for all coding tasks:
 
 Work on each issue in its own worktree, so several issues can be in progress at once.
 
-Before changing any file for an issue, run `git rev-parse --path-format=absolute --git-dir --git-common-dir`. Two different paths mean you are already in a worktree: carry on. The same path means you are in the main checkout: run `pnpm worktree:new <branch>` (e.g. `fix/29-import-db-reason`), then continue from what it prints:
+Before changing any file for an issue, run `git rev-parse --path-format=absolute --git-dir --git-common-dir`. Two different paths mean you are already in a worktree: carry on. The same path means you are in the main checkout. First run `pnpm issue:history <n>`: when a merged PR or a commit on main already mentions the issue, read what shipped and agree the remaining scope with the user. Then create the worktree. In **Herdr** (`HERDR_ENV=1`), follow `docs/agents/orchestrator.md`: the prompt template, `pnpm worktree:agent <branch> <prompt-file>` (which also starts the agent), and the run through to cleanup. Elsewhere, run `pnpm worktree:new <branch>` (e.g. `fix/29-import-db-reason`) and continue from what it prints:
 
-- **Herdr** (`HERDR_ENV=1`): start an agent of your own kind in the printed root pane (`herdr agent start`), give it the same task (`herdr agent prompt`), and tell the user which workspace it is in.
 - **Claude Code**: switch into the printed path with `EnterWorktree`.
 - **Anywhere else**: work in the printed path.
 

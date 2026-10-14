@@ -33,7 +33,9 @@
     "turso:prod:file": "turso dev --db-file prod.db",
     "fallow": "fallow dead-code",
     "fallow:fix": "fallow fix",
+    "issue:history": "bash scripts/issue-history.sh",
     "worktree:new": "bash scripts/worktree.sh new",
+    "worktree:agent": "bash scripts/worktree.sh agent",
     "worktree:remove": "bash scripts/worktree.sh remove"
   },
   "dependencies": {
