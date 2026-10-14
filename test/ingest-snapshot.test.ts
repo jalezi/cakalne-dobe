@@ -34,12 +34,24 @@ const snapshotData = {
 
 describe('ingestSnapshot', () => {
   let ingestSnapshot: typeof import('../seed/ingest-snapshot').ingestSnapshot;
+  let jobsHelpers: typeof import('../seed/seed-helpers/seed-jobs');
+  let proceduresHelpers: typeof import('../seed/seed-helpers/seed-procedures');
   let maxAllowedDaysHelpers: typeof import('../seed/seed-helpers/seed-max-allowed-days');
+  let institutionsHelpers: typeof import('../seed/seed-helpers/seed-institutions');
+  let waitingTimesHelpers: typeof import('../seed/seed-helpers/seed-waiting-times');
 
   beforeAll(async () => {
     ({ ingestSnapshot } = await import('../seed/ingest-snapshot'));
+    jobsHelpers = await import('../seed/seed-helpers/seed-jobs');
+    proceduresHelpers = await import('../seed/seed-helpers/seed-procedures');
     maxAllowedDaysHelpers = await import(
       '../seed/seed-helpers/seed-max-allowed-days'
+    );
+    institutionsHelpers = await import(
+      '../seed/seed-helpers/seed-institutions'
+    );
+    waitingTimesHelpers = await import(
+      '../seed/seed-helpers/seed-waiting-times'
     );
   });
 
@@ -62,15 +74,62 @@ describe('ingestSnapshot', () => {
     await expect(countRows(db, schema.waitingPeriods)).resolves.toBe(1);
   });
 
-  it('rolls back all writes when step 3 fails', async () => {
-    vi.spyOn(
-      maxAllowedDaysHelpers,
-      'insertMaxAllowedDays'
-    ).mockRejectedValueOnce(new Error('step 3 failure'));
+  // Steps 1–2 catch DB errors and return them; the pipeline rethrows the first.
+  // Steps 3–5 throw directly.
+  it.each([
+    {
+      step: 1,
+      helper: 'insertJobs',
+      fail: () =>
+        vi.spyOn(jobsHelpers, 'insertJobs').mockResolvedValueOnce({
+          errors: [{ error: new Error('step 1 failure') }],
+          existing: [],
+          unique: [],
+        }),
+    },
+    {
+      step: 2,
+      helper: 'insertProcedures',
+      fail: () =>
+        vi.spyOn(proceduresHelpers, 'insertProcedures').mockResolvedValueOnce({
+          errors: [{ error: new Error('step 2 failure') }],
+          existing: [],
+          unique: [],
+        }),
+    },
+    {
+      step: 3,
+      helper: 'insertMaxAllowedDays',
+      fail: () =>
+        vi
+          .spyOn(maxAllowedDaysHelpers, 'insertMaxAllowedDays')
+          .mockRejectedValueOnce(new Error('step 3 failure')),
+    },
+    {
+      step: 4,
+      helper: 'insertInstitutions',
+      fail: () =>
+        vi
+          .spyOn(institutionsHelpers, 'insertInstitutions')
+          .mockRejectedValueOnce(new Error('step 4 failure')),
+    },
+    {
+      step: 5,
+      helper: 'insertWaitingTimes',
+      fail: () =>
+        vi
+          .spyOn(waitingTimesHelpers, 'insertWaitingTimes')
+          .mockRejectedValueOnce(new Error('step 5 failure')),
+    },
+  ])('rolls back all writes when step $step ($helper) fails', async ({
+    step,
+    fail,
+  }) => {
+    fail();
 
     await expect(
       ingestSnapshot(snapshotData, 'gitlab-job-1', { db })
-    ).rejects.toThrow('step 3 failure');
+    ).rejects.toThrow(`step ${step} failure`);
 
     await expect(countRows(db, schema.jobs)).resolves.toBe(0);
     await expect(countRows(db, schema.procedures)).resolves.toBe(0);
