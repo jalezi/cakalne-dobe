@@ -2,6 +2,8 @@ name: ci
 
 on:
   pull_request:
+    # labeled/unlabeled re-run verify when baseline-growth-ok changes. Listing types replaces the defaults.
+    types: [opened, synchronize, reopened, labeled, unlabeled]
 
 permissions:
   contents: read
@@ -31,5 +33,18 @@ jobs:
       - run: pnpm test:coverage
       - run: pnpm fallow
 
-      # Fails on a finding missing from the baseline (re-save: pnpm fallow:health:baseline).
-      - run: pnpm exec fallow health --coverage coverage/coverage-final.json --baseline fallow-health-baseline.json --baseline-mode identity
+      # The growth gate reads the baseline at the base branch, which the shallow checkout doesn't have
+      - run: git fetch --depth 1 origin "+refs/heads/$BASE_REF:refs/remotes/origin/$BASE_REF"
+        env:
+          BASE_REF: ${{ github.base_ref }}
+
+      # Fails on a finding missing from the baseline (re-save: pnpm fallow:health:baseline),
+      # or on a baseline key that the base branch doesn't have.
+      - if: ${{ !contains(github.event.pull_request.labels.*.name, 'baseline-growth-ok') }}
+        run: pnpm exec fallow health --coverage coverage/coverage-final.json --baseline fallow-health-baseline.json --baseline-mode identity --fail-on-baseline-growth --baseline-base "origin/$BASE_REF"
+        env:
+          BASE_REF: ${{ github.base_ref }}
+
+      # With the maintainer's baseline-growth-ok label the baseline may grow; a finding missing from it still fails.
+      - if: ${{ contains(github.event.pull_request.labels.*.name, 'baseline-growth-ok') }}
+        run: pnpm exec fallow health --coverage coverage/coverage-final.json --baseline fallow-health-baseline.json --baseline-mode identity

@@ -197,8 +197,5 @@
     }
   },
   "runtime_coverage_findings": [],
-  "target_keys": [
-    "src/utils/handle-error.ts:high impact",
-    "src/lib/utils.ts:high impact"
-  ]
+  "target_keys": []
 }
