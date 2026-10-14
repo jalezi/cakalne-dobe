@@ -32,7 +32,9 @@
     "turso:dev:file": "turso dev --db-file dev.db",
     "turso:prod:file": "turso dev --db-file prod.db",
     "fallow": "fallow dead-code",
-    "fallow:fix": "fallow fix"
+    "fallow:fix": "fallow fix",
+    "worktree:new": "bash scripts/worktree.sh new",
+    "worktree:remove": "bash scripts/worktree.sh remove"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
