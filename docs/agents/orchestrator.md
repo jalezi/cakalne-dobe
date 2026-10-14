@@ -21,7 +21,9 @@ One session in the main checkout drives one Herdr agent per issue, each in its o
 6. **Merge.** Count the PR's commits: `gh api "repos/{owner}/{repo}/pulls/<pr>/commits" --jq length`. The repo's squash default pastes every commit message into the body.
    - One commit: give the user `! gh pr merge <pr> --squash` to run.
    - Two or more: prepare the message. The subject is the PR title plus ` (#<pr>)`. The body describes only the final diff, with no commit list and no `Closes #<n>` (the PR body's keyword closes the issue), and ends with the `Co-Authored-By` trailer. Show the user both, write the body to a file outside the repo, and give `! gh pr merge <pr> --squash --subject "<subject>" --body-file <absolute path>` to run.
-7. **Clean up.** After the user says it's merged, poll `gh issue view <n> --json state` until the issue is closed. That can take up to a minute; close it by hand only after that. Then run `pnpm worktree:remove <branch>` from the main checkout. It also closes the agent's Herdr workspace and pane, and the user saying it's merged is consent for that.
+7. **Clean up.** After the user says it's merged, poll `gh issue view <n> --json state` until the issue is closed. That can take up to a minute; close it by hand only after that.
+   - Tick the issue's boxes. Check each `- [ ]` under its acceptance criteria or "Done when", in the body and in the agent brief comment, against `origin/main` and the PR's Evidence. Tick only the boxes you verified. Leave an unmet, N/A or unverifiable box unticked, and give the reason in a comment on the issue. Edit the body with `gh issue edit <n> --body-file <file>`. Edit the brief with `gh api -X PATCH repos/{owner}/{repo}/issues/comments/<id> -F body=@<file>`, using the REST id from `gh api repos/{owner}/{repo}/issues/<n>/comments`; the id from `gh issue view --json comments` won't work.
+   - Then run `pnpm worktree:remove <branch>` from the main checkout. It also closes the agent's Herdr workspace and pane, and the user saying it's merged is consent for that.
 
 When the user wants a reflection on the run, keep a hiccup log as you go: each failure, retry or wrong assumption, and what got past it. The user runs `/retro` on it in a fresh session.
 
@@ -50,7 +52,7 @@ Constraints: surgical changes only, no unrelated edits. Follow AGENTS.md / CLAUD
 ## Ship
 
 - One conventional commit, e.g. `<type>(<scope>): <summary>`. main requires signed commits. End the message with your `Co-Authored-By` trailer.
-- Push and open a PR against main. Model the body on recent PRs (`gh pr view <recent pr>`): `## Summary`, `## Evidence` (the verify output above), `## Merge Danger`. Include `Closes #<n>` and end the body with:
+- Push and open a PR against main. Model the body on recent PRs (`gh pr view <recent pr>`): `## Summary`, `## Evidence` (the verify output above, plus one line per acceptance criterion naming its proof), `## Merge Danger`. Include `Closes #<n>` and end the body with:
   `🤖 Generated with [Claude Code](https://claude.com/claude-code)`
 - Run `gh pr view --json closingIssuesReferences --jq '[.closingIssuesReferences[].number]'` and confirm it lists <n>.
 - Watch CI (`gh pr checks --watch`) until `verify` and Socket finish. Don't merge.

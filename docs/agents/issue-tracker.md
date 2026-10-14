@@ -10,7 +10,7 @@ Issues and specs for this repo live as GitHub issues. Use the `gh` CLI for all o
 - **Make an issue a sub-issue of a parent**: `gh issue create --parent <parent> ...`, or `gh issue edit <parent> --add-sub-issue <child>` afterwards (`gh` 2.94+). Older `gh`: `gh api --method POST repos/<owner>/<repo>/issues/<parent>/sub_issues -F sub_issue_id=<child-db-id>` (database id, as in **Blocking** below). Without sub-issues, put `Part of #<parent>` at the top of the child body.
 - **Comment on an issue**: `gh issue comment <number> --body "..."`
 - **Apply / remove labels**: `gh issue edit <number> --add-label "..."` / `--remove-label "..."`
-- **Close**: `gh issue close <number> --comment "..."`
+- **Close**: first tick each acceptance-criteria box you verified against the code. Leave unmet or N/A boxes unticked, with the reason in the closing comment. Then `gh issue close <number> --comment "..."`.
 - **Leave an issue open on purpose**: a PR that says `Refs #<number>` instead of a closing keyword also comments on the issue with what shipped and what's left.
 
 Infer the repo from `git remote -v`; `gh` does this automatically when run inside a clone.
