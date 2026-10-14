@@ -32,5 +32,4 @@ jobs:
       - run: pnpm fallow
 
       # Fails on a finding missing from the baseline (re-save: pnpm fallow:health:baseline).
-      # JSON puts coverage matches and severity counts in the log.
-      - run: pnpm exec fallow health --coverage coverage/coverage-final.json --baseline fallow-health-baseline.json --baseline-mode identity --format json
+      - run: pnpm exec fallow health --coverage coverage/coverage-final.json --baseline fallow-health-baseline.json --baseline-mode identity
