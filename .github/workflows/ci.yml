@@ -4,12 +4,16 @@ on:
   pull_request:
     # labeled/unlabeled re-run verify when baseline-growth-ok changes. Listing types replaces the defaults.
     types: [opened, synchronize, reopened, labeled, unlabeled]
+  push:
+    branches: [main]
 
 permissions:
   contents: read
 
+# A new PR run cancels that PR's previous one. Push runs group by SHA, so every commit on main keeps
+# its own run: in a shared group, a newer run replaces a pending one even without cancel-in-progress.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
   cancel-in-progress: true
 
 jobs:
@@ -34,17 +38,19 @@ jobs:
       - run: pnpm fallow
 
       # The growth gate reads the baseline at the base branch, which the shallow checkout doesn't have
-      - run: git fetch --depth 1 origin "+refs/heads/$BASE_REF:refs/remotes/origin/$BASE_REF"
+      - if: ${{ github.event_name == 'pull_request' }}
+        run: git fetch --depth 1 origin "+refs/heads/$BASE_REF:refs/remotes/origin/$BASE_REF"
         env:
           BASE_REF: ${{ github.base_ref }}
 
       # Fails on a finding missing from the baseline (re-save: pnpm fallow:health:baseline),
       # or on a baseline key that the base branch doesn't have.
-      - if: ${{ !contains(github.event.pull_request.labels.*.name, 'baseline-growth-ok') }}
+      - if: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'baseline-growth-ok') }}
         run: pnpm exec fallow health --coverage coverage/coverage-final.json --baseline fallow-health-baseline.json --baseline-mode identity --fail-on-baseline-growth --baseline-base "origin/$BASE_REF"
         env:
           BASE_REF: ${{ github.base_ref }}
 
-      # With the maintainer's baseline-growth-ok label the baseline may grow; a finding missing from it still fails.
-      - if: ${{ contains(github.event.pull_request.labels.*.name, 'baseline-growth-ok') }}
+      # A push has no base branch to compare against. With the maintainer's baseline-growth-ok label the baseline
+      # may grow. Either way, a finding missing from the baseline still fails.
+      - if: ${{ github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'baseline-growth-ok') }}
         run: pnpm exec fallow health --coverage coverage/coverage-final.json --baseline fallow-health-baseline.json --baseline-mode identity
