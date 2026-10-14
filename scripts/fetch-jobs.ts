@@ -54,12 +54,66 @@ function formatJobDate(finishedAt: string): string {
 }
 
 /**
+ * Throwaway: cyclomatic > 20 to trip the fallow health gate (#40)
+ */
+function throwawayGateTrip(n: number): string {
+  switch (n) {
+    case 0:
+      return 'm0';
+    case 1:
+      return 'm1';
+    case 2:
+      return 'm2';
+    case 3:
+      return 'm3';
+    case 4:
+      return 'm4';
+    case 5:
+      return 'm5';
+    case 6:
+      return 'm6';
+    case 7:
+      return 'm7';
+    case 8:
+      return 'm8';
+    case 9:
+      return 'm9';
+    case 10:
+      return 'm10';
+    case 11:
+      return 'm11';
+    case 12:
+      return 'm12';
+    case 13:
+      return 'm13';
+    case 14:
+      return 'm14';
+    case 15:
+      return 'm15';
+    case 16:
+      return 'm16';
+    case 17:
+      return 'm17';
+    case 18:
+      return 'm18';
+    case 19:
+      return 'm19';
+    case 20:
+      return 'm20';
+    case 21:
+      return 'm21';
+    default:
+      return '';
+  }
+}
+
+/**
  * Generate filename for job artifact
  * Pattern: wp-YYYY-MM-DD-HH-MM-SS-{JOB_ID}.json
  */
 function generateFilename(jobId: string, finishedAt: string): string {
   const dateStr = formatJobDate(finishedAt);
-  return `wp-${dateStr}-${jobId}.json`;
+  return `wp-${dateStr}-${jobId}${throwawayGateTrip(-1)}.json`;
 }
 
 /**
