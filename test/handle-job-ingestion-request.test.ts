@@ -1,3 +1,4 @@
+import { DrizzleQueryError } from 'drizzle-orm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -154,6 +155,47 @@ describe('handleJobIngestionRequest', () => {
     expect(result).toEqual({
       success: false,
       error: { code: 'TRANSACTION_FAILED', message: 'Transaction rolled back' },
+    });
+  });
+
+  it('includes the database reason when a DB write fails', async () => {
+    mocks.validateWebhookPayload.mockReturnValueOnce({
+      success: true,
+      data: { success: true },
+    });
+    mocks.shouldInsertLatestJob.mockResolvedValueOnce({
+      success: true,
+      data: 'ok',
+    });
+    mocks.getLastJobId.mockResolvedValueOnce({
+      success: true,
+      data: { gitLabJobId: 'gl-42' },
+    });
+    mocks.prepareJobData.mockResolvedValueOnce({
+      success: true,
+      data: { jobData: { gitLabJobId: 'gl-42' }, snapshotInsertPayload: {} },
+    });
+    mocks.processJobData.mockRejectedValueOnce(
+      new DrizzleQueryError(
+        'insert into "procedures" ("id", "code", "name") values (?, ?, ?)',
+        ['proc-1', '1001', 'Procedure 1'],
+        new Error(
+          'SQLITE_CONSTRAINT: UNIQUE constraint failed: procedures.name'
+        )
+      )
+    );
+
+    const result = await handleJobIngestionRequest({ success: true });
+
+    expect(result).toEqual({
+      success: false,
+      error: {
+        code: 'TRANSACTION_FAILED',
+        message:
+          'Failed query: insert into "procedures" ("id", "code", "name") values (?, ?, ?)\n' +
+          'params: proc-1,1001,Procedure 1\n' +
+          'cause: SQLITE_CONSTRAINT: UNIQUE constraint failed: procedures.name',
+      },
     });
   });
 

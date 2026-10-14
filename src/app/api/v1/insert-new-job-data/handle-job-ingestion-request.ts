@@ -49,8 +49,11 @@ export async function handleJobIngestionRequest(
     );
     return { success: true, data: transactionResponse };
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Transaction failed';
+    let message = error instanceof Error ? error.message : 'Transaction failed';
+    // A failed query's message names the step; the database's reason is its cause
+    if (error instanceof Error && error.cause instanceof Error) {
+      message += `\ncause: ${error.cause.message}`;
+    }
     return {
       success: false,
       error: { code: INGESTION_ERRORS.TRANSACTION_FAILED, message },
