@@ -34,28 +34,27 @@ case $action in
       git -C "$main" worktree add --quiet --no-track -b "$branch" "$path" origin/main
     fi
     pnpm --dir "$path" install --frozen-lockfile
-    # Its own database for `pnpm dev` and the drizzle:local and db:local scripts,
-    # so schema pushes and reseeds stay in this worktree. They open the file
-    # directly: a `turso dev` here would clash with the main checkout's on port
-    # 8080. .env.production.local stays in the main checkout.
+    # Its own database, so schema pushes and reseeds stay in this worktree. The
+    # app and scripts open the file: a `turso dev` here would clash with the
+    # main checkout's on port 8080. No env file comes from the main checkout.
     echo 'DATABASE_URL=file:dev.db' > "$path/.env.development.local"
     if [ -f "$main/dev.db" ]; then
       # Under the main checkout's write lock, its `turso dev` can't add to or
       # reset the WAL. A checkpoint may still copy WAL pages into dev.db, so
       # dev.db alone can be torn, but dev.db and the WAL together can't.
-      # cp -c clones on APFS, --reflink=auto on Btrfs or XFS: instant, sharing
-      # disk space until one copy changes. Both fall back to a plain copy.
       node -e '
         const { execFileSync } = require("node:child_process");
         const { existsSync } = require("node:fs");
         const { DatabaseSync } = require("node:sqlite");
         const [from, to] = process.argv.slice(1);
+        // Instant clones on APFS, Btrfs or XFS, sharing disk space until one
+        // copy changes; both flags fall back to a plain copy
+        const cloneFlag = process.platform === "darwin" ? "-c" : "--reflink=auto";
         const db = new DatabaseSync(from, { timeout: 10000 });
         db.exec("BEGIN IMMEDIATE");
         for (const suffix of ["", "-wal"]) {
           if (existsSync(from + suffix)) {
-            const clone = process.platform === "darwin" ? "-c" : "--reflink=auto";
-            execFileSync("cp", [clone, from + suffix, to + suffix]);
+            execFileSync("cp", [cloneFlag, from + suffix, to + suffix]);
           }
         }
         db.exec("ROLLBACK");
