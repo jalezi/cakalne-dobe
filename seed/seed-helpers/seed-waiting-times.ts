@@ -1,8 +1,7 @@
 /** biome-ignore-all lint/suspicious/noConsole: We need for debug */
 import { db } from '@/db';
 import { waitingPeriods } from '@/db/schema';
-import { makeFacilityRows } from '@/db/transforms/make-facility-row';
-import { normalizeFPWTSchema } from '@/lib/zod-schemas/helpers-schema';
+import { makeFacilityRows, normalizeFPWTSchema } from '@/db/transforms';
 import type { DataMap, SeedDbExecutor } from './types';
 
 export async function insertWaitingTimes(
