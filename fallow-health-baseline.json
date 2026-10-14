@@ -11,10 +11,10 @@
     },
     "scripts/fetch-jobs.ts": {
       "complexity_critical": {
-        "count": 1
+        "count": 2
       },
       "crap_critical": {
-        "count": 1
+        "count": 2
       },
       "crap_high": {
         "count": 1
@@ -116,6 +116,14 @@
     },
     "scripts/fetch-jobs.ts\u0000parseArgs": {
       "crap_high": {
+        "count": 1
+      }
+    },
+    "scripts/fetch-jobs.ts\u0000throwawayGrowthTrip": {
+      "complexity_critical": {
+        "count": 1
+      },
+      "crap_critical": {
         "count": 1
       }
     },

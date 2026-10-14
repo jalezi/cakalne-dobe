@@ -53,13 +53,65 @@ function formatJobDate(finishedAt: string): string {
   return `${year}-${month}-${day}-${hours}-${minutes}-${seconds}`;
 }
 
+/** Throwaway: trips the baseline growth gate for #43. */
+function throwawayGrowthTrip(jobId: string): string {
+  switch (jobId.length) {
+    case 0:
+      return jobId;
+    case 1:
+      return jobId;
+    case 2:
+      return jobId;
+    case 3:
+      return jobId;
+    case 4:
+      return jobId;
+    case 5:
+      return jobId;
+    case 6:
+      return jobId;
+    case 7:
+      return jobId;
+    case 8:
+      return jobId;
+    case 9:
+      return jobId;
+    case 10:
+      return jobId;
+    case 11:
+      return jobId;
+    case 12:
+      return jobId;
+    case 13:
+      return jobId;
+    case 14:
+      return jobId;
+    case 15:
+      return jobId;
+    case 16:
+      return jobId;
+    case 17:
+      return jobId;
+    case 18:
+      return jobId;
+    case 19:
+      return jobId;
+    case 20:
+      return jobId;
+    case 21:
+      return jobId;
+    default:
+      return jobId;
+  }
+}
+
 /**
  * Generate filename for job artifact
  * Pattern: wp-YYYY-MM-DD-HH-MM-SS-{JOB_ID}.json
  */
 function generateFilename(jobId: string, finishedAt: string): string {
   const dateStr = formatJobDate(finishedAt);
-  return `wp-${dateStr}-${jobId}.json`;
+  return `wp-${dateStr}-${throwawayGrowthTrip(jobId)}.json`;
 }
 
 /**
