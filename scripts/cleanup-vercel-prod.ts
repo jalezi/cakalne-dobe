@@ -32,6 +32,13 @@ interface GetDeploymentsOptions {
   status?: string;
 }
 
+interface Deletion {
+  deployment: VercelDeployment;
+  label: string;
+}
+
+type CommandRunner = (args: string[]) => string;
+
 function parseArgs(args: string[]): CleanupOptions {
   return {
     dryRun: args.includes('--dry-run'),
@@ -46,10 +53,10 @@ function runVercelCommand(args: string[]): string {
   });
 }
 
-function getDeployments({
-  environment,
-  status,
-}: GetDeploymentsOptions): VercelDeployment[] {
+export function getDeployments(
+  { environment, status }: GetDeploymentsOptions,
+  run: CommandRunner
+): VercelDeployment[] {
   const deployments: VercelDeployment[] = [];
   let next: number | undefined;
 
@@ -64,7 +71,7 @@ function getDeployments({
       args.push('--next', String(next));
     }
 
-    const output = runVercelCommand(args);
+    const output = run(args);
     const parsed = JSON.parse(output) as VercelListResponse;
 
     deployments.push(
@@ -81,14 +88,18 @@ function getDeployments({
   });
 }
 
-function removeDeployment(url: string, safe: boolean): void {
+function removeDeployment(
+  url: string,
+  safe: boolean,
+  run: CommandRunner
+): void {
   const args = ['remove', url, '--yes'];
 
   if (safe) {
     args.push('--safe');
   }
 
-  runVercelCommand(args);
+  run(args);
 }
 
 function formatTimestamp(deployment: VercelDeployment): string {
@@ -101,19 +112,43 @@ function formatTimestamp(deployment: VercelDeployment): string {
   return new Date(timestamp).toISOString();
 }
 
-function main(): void {
-  const options = parseArgs(process.argv.slice(2));
-  const productionDeployments = getDeployments({
-    environment: 'production',
-    status: 'READY',
-  });
-  const previewDeployments = getDeployments({ environment: 'preview' });
+export function selectDeletions(
+  production: VercelDeployment[],
+  preview: VercelDeployment[]
+): { keep: VercelDeployment | undefined; deletions: Deletion[] } {
+  const [keep, ...oldProductionDeployments] = production;
+
+  return {
+    keep,
+    deletions: [
+      ...oldProductionDeployments.map((deployment) => ({
+        deployment,
+        label: 'older READY production deployment',
+      })),
+      ...preview.map((deployment) => ({
+        deployment,
+        label: `preview deployment (${deployment.state ?? 'UNKNOWN'})`,
+      })),
+    ],
+  };
+}
+
+export function main(args: string[], run: CommandRunner): void {
+  const options = parseArgs(args);
+  const productionDeployments = getDeployments(
+    { environment: 'production', status: 'READY' },
+    run
+  );
+  const previewDeployments = getDeployments({ environment: 'preview' }, run);
 
   if (productionDeployments.length === 0) {
     console.log('No READY production deployments found.');
   }
 
-  const [latestDeployment, ...oldProductionDeployments] = productionDeployments;
+  const { keep: latestDeployment, deletions } = selectDeletions(
+    productionDeployments,
+    previewDeployments
+  );
 
   if (latestDeployment) {
     console.log(
@@ -121,17 +156,6 @@ function main(): void {
     );
     console.log(`Ready at: ${formatTimestamp(latestDeployment)}`);
   }
-
-  const deletions = [
-    ...oldProductionDeployments.map((deployment) => ({
-      deployment,
-      label: 'older READY production deployment',
-    })),
-    ...previewDeployments.map((deployment) => ({
-      deployment,
-      label: `preview deployment (${deployment.state ?? 'UNKNOWN'})`,
-    })),
-  ];
 
   if (deletions.length === 0) {
     console.log('Nothing to delete.');
@@ -149,7 +173,7 @@ function main(): void {
     );
 
     if (!options.dryRun) {
-      removeDeployment(deployment.url, options.safe);
+      removeDeployment(deployment.url, options.safe, run);
     }
   }
 
@@ -159,13 +183,15 @@ function main(): void {
   }
 }
 
-try {
-  main();
-} catch (error) {
-  console.error(
-    error instanceof Error
-      ? `Cleanup failed: ${error.message}`
-      : 'Cleanup failed.'
-  );
-  process.exit(1);
+if (require.main === module) {
+  try {
+    main(process.argv.slice(2), runVercelCommand);
+  } catch (error) {
+    console.error(
+      error instanceof Error
+        ? `Cleanup failed: ${error.message}`
+        : 'Cleanup failed.'
+    );
+    process.exit(1);
+  }
 }
