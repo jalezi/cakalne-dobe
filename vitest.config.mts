@@ -13,7 +13,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       // Include untested files so they report 0% instead of being omitted
-      include: ['src/**/*.{ts,tsx}'],
+      include: ['src/**/*.{ts,tsx}', 'seed/**/*.ts', 'scripts/**/*.ts'],
       // json writes coverage/coverage-final.json, read by `fallow health`
       reporter: ['text-summary', 'json'],
     },
