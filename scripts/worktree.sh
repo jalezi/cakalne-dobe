@@ -115,9 +115,13 @@ case $action in
       exit 1
     fi
     # Squash merges leave the branch unmerged in git's eyes, so GitHub decides.
-    # The tip must be the merged PR's head, or commits made after it would be lost.
-    pr=$(gh pr view "$branch" --json state,headRefOid --jq '"\(.state) \(.headRefOid)"' || true)
-    if [ "$pr" != "MERGED $(git -C "$main" rev-parse "refs/heads/$branch")" ]; then
+    # The merged PR's head must contain the tip, or local commits would be lost.
+    # GitHub's Update branch adds a merge to the head that the tip doesn't have.
+    pr=$(gh pr view "$branch" --json state,number,headRefOid --jq '"\(.state) \(.number) \(.headRefOid)"' || true)
+    read -r state number head <<<"$pr"
+    if [ "$state" != MERGED ] ||
+      ! git -C "$main" fetch --quiet origin "refs/pull/$number/head" ||
+      ! git -C "$main" merge-base --is-ancestor "refs/heads/$branch" "$head"; then
       echo "$branch is not the head of a merged PR; remove the worktree by hand if you mean to drop it" >&2
       exit 1
     fi
