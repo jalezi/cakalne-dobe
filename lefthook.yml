@@ -5,7 +5,6 @@ pre-commit:
   parallel: true
   commands:
     lint:
-      glob: '*.{js,jsx,ts,tsx,json,jsonc}'
       run: pnpm biome check --write --no-errors-on-unmatched --files-ignore-unknown=true --staged {staged_files}
       stage_fixed: true
     
