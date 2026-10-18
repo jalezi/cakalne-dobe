@@ -232,6 +232,8 @@ The baseline is shrink-only. CI also fails when the PR's baseline has a key that
 
 Removing an entry is never growth.
 
+CI also runs `verify` on every push to `main`. A push has no base branch to compare against, so the growth check is skipped, but a finding missing from the committed baseline still fails.
+
 Run the gate locally:
 
 ```bash
@@ -247,7 +249,7 @@ Re-save the baseline with `pnpm fallow:health:baseline`, which runs the tests wi
 - after deliberately making a baselined function worse, since a higher severity fails the gate
 - after a fallow version bump
 
-Only the first is a pure removal. The others can add keys, and a PR that grows the baseline needs the `baseline-growth-ok` label. Only the maintainer adds the label; agents never do. Adding or removing it re-runs `verify`. While the PR has it, CI skips the growth check on every push, but a finding missing from the baseline still fails. A partly improved function, say from `crap_high` to `crap_moderate`, still passes against its old entry. Re-saving it records the lower severity as a new key, which needs the label too. Never re-save the baseline just to turn a red check green.
+Only the first is a pure removal. The others can add keys, and a PR that grows the baseline needs the `baseline-growth-ok` label. Only the maintainer adds the label; agents never do. Adding or removing it re-runs `verify`. While the PR has it, CI skips the growth check on that PR's runs, but a finding missing from the baseline still fails. A partly improved function, say from `crap_high` to `crap_moderate`, still passes against its old entry. Re-saving it records the lower severity as a new key, which needs the label too. Never re-save the baseline just to turn a red check green.
 
 Unnamed functions in one file share one baseline identity. fallow names an arrow function after the `const` it's assigned to, so this only affects inline callbacks, such as the one baselined in `scripts/cleanup-vercel-prod.ts`. If you fix a baselined unnamed function and then add a new unnamed one over a threshold in the same file before re-saving, the new one takes the old one's slot and the gate passes. Re-saving the baseline right after the fix closes that gap.
 
