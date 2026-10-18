@@ -9,17 +9,6 @@
         "count": 2
       }
     },
-    "scripts/fetch-jobs.ts": {
-      "complexity_critical": {
-        "count": 1
-      },
-      "crap_critical": {
-        "count": 1
-      },
-      "crap_high": {
-        "count": 1
-      }
-    },
     "seed/ensure-fresh-data.ts": {
       "complexity_critical": {
         "count": 1
@@ -92,19 +81,6 @@
       }
     },
     "scripts/cleanup-vercel-prod.ts\u0000main": {
-      "crap_high": {
-        "count": 1
-      }
-    },
-    "scripts/fetch-jobs.ts\u0000fetchJobs": {
-      "complexity_critical": {
-        "count": 1
-      },
-      "crap_critical": {
-        "count": 1
-      }
-    },
-    "scripts/fetch-jobs.ts\u0000parseArgs": {
       "crap_high": {
         "count": 1
       }
