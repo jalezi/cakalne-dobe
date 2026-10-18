@@ -38,15 +38,6 @@ export async function processJobData(
     const { existingInstitutions, insertedInstitutions } =
       await insertInstitutionsTransaction(trx, snapshotInsertPayload);
 
-    const newInstitutions = Array.from(
-      snapshotInsertPayload.institutions.values()
-    ).filter(
-      (inst) =>
-        !existingInstitutions.some(
-          (existingInstitution) => existingInstitution.name === inst.name
-        )
-    );
-
     const allInstitutionsWithDBId =
       existingInstitutions.concat(insertedInstitutions);
 
@@ -80,7 +71,7 @@ export async function processJobData(
     const totalRowsInserted =
       insertedJobs.length +
       insertedProcedures.length +
-      newInstitutions.length +
+      insertedInstitutions.length +
       insertedMaxAllowedDays.length +
       insertedWaitingPeriods.length;
 
@@ -106,7 +97,7 @@ export async function processJobData(
           },
           institutions: {
             total: snapshotInsertPayload.institutions.size,
-            inserted: newInstitutions.length,
+            inserted: insertedInstitutions.length,
             existing: existingInstitutions.length,
           },
           maxAllowedDays: {
