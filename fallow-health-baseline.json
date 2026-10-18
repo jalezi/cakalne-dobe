@@ -1,14 +1,6 @@
 {
   "kind": "health",
   "finding_counts": {
-    "scripts/cleanup-vercel-prod.ts": {
-      "crap_high": {
-        "count": 1
-      },
-      "crap_moderate": {
-        "count": 2
-      }
-    },
     "seed/ensure-fresh-data.ts": {
       "complexity_critical": {
         "count": 1
@@ -70,21 +62,6 @@
     }
   },
   "identity_finding_counts": {
-    "scripts/cleanup-vercel-prod.ts\u0000<arrow>": {
-      "crap_moderate": {
-        "count": 1
-      }
-    },
-    "scripts/cleanup-vercel-prod.ts\u0000getDeployments": {
-      "crap_moderate": {
-        "count": 1
-      }
-    },
-    "scripts/cleanup-vercel-prod.ts\u0000main": {
-      "crap_high": {
-        "count": 1
-      }
-    },
     "seed/ensure-fresh-data.ts\u0000ensureFreshData": {
       "complexity_critical": {
         "count": 1
