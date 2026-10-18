@@ -15,6 +15,7 @@
 import { constants } from 'node:fs';
 import { access, mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { parseArgs as parseCliArgs } from 'node:util';
 import { JOB_NAME } from '@/lib/gql';
 import type { AllData } from '@/lib/zod-schemas/data-schemas';
 import { fetchSnapshot } from '@/snapshot';
@@ -99,22 +100,9 @@ async function saveJobArtifact(
 }
 
 /**
- * Fetch jobs from GitLab and save artifacts to local files
+ * Fetch the job list from the GitLab GraphQL API, page by page
  */
-async function fetchJobs(options: FetchJobsOptions = {}): Promise<void> {
-  const { count = 10, fromDate, outputDir = './mock-data/jobs' } = options;
-
-  console.log('\n🚀 Fetching jobs from GitLab...\n');
-  console.log('  Repository: wayback-automachine/cakalne-dobe');
-  if (fromDate) {
-    console.log(`  From Date: ${fromDate.toISOString()}`);
-  }
-  console.log(`  Count: ${count}`);
-  console.log(`  Output: ${outputDir}\n`);
-
-  // Fetch job list from GitLab GraphQL API with pagination
-  console.log('📋 Fetching job list from GitLab GraphQL API...');
-
+async function fetchJobList(count: number) {
   const allJobs = [];
   let hasNextPage = true;
   let after: string | undefined = undefined;
@@ -126,10 +114,7 @@ async function fetchJobs(options: FetchJobsOptions = {}): Promise<void> {
     const jobsResponse = await getJobs({ first: batchSize, after });
 
     if (!jobsResponse.success) {
-      const errorMessage = !jobsResponse.success
-        ? jobsResponse.error
-        : 'Unknown error';
-      throw new Error(`Failed to fetch jobs: ${errorMessage}`);
+      throw new Error(`Failed to fetch jobs: ${jobsResponse.error}`);
     }
 
     const jobs = jobsResponse.data.jobs.nodes;
@@ -149,6 +134,28 @@ async function fetchJobs(options: FetchJobsOptions = {}): Promise<void> {
       break;
     }
   }
+
+  return allJobs;
+}
+
+/**
+ * Fetch jobs from GitLab and save artifacts to local files
+ */
+async function fetchJobs(options: FetchJobsOptions = {}): Promise<void> {
+  const { count = 10, fromDate, outputDir = './mock-data/jobs' } = options;
+
+  console.log('\n🚀 Fetching jobs from GitLab...\n');
+  console.log('  Repository: wayback-automachine/cakalne-dobe');
+  if (fromDate) {
+    console.log(`  From Date: ${fromDate.toISOString()}`);
+  }
+  console.log(`  Count: ${count}`);
+  console.log(`  Output: ${outputDir}\n`);
+
+  // Fetch job list from GitLab GraphQL API with pagination
+  console.log('📋 Fetching job list from GitLab GraphQL API...');
+
+  const allJobs = await fetchJobList(count);
 
   // Filter jobs: only "run" jobs have artifacts
   const runJobs = allJobs.filter((job) => job.name === JOB_NAME);
@@ -205,25 +212,25 @@ async function fetchJobs(options: FetchJobsOptions = {}): Promise<void> {
  * Parse command line arguments
  */
 function parseArgs(): FetchJobsOptions {
-  const args = process.argv.slice(2);
-  const options: FetchJobsOptions = {};
+  const { values } = parseCliArgs({
+    options: {
+      count: { type: 'string' },
+      'from-date': { type: 'string' },
+      output: { type: 'string' },
+    },
+  });
 
-  for (let i = 0; i < args.length; i++) {
-    const arg = args[i];
-
-    if (arg === '--count' && i + 1 < args.length) {
-      options.count = Number.parseInt(args[i + 1], 10);
-      i++;
-    } else if (arg === '--from-date' && i + 1 < args.length) {
-      options.fromDate = new Date(args[i + 1]);
-      i++;
-    } else if (arg === '--output' && i + 1 < args.length) {
-      options.outputDir = args[i + 1];
-      i++;
-    }
-  }
-
-  return options;
+  return {
+    count:
+      values.count === undefined
+        ? undefined
+        : Number.parseInt(values.count, 10),
+    fromDate:
+      values['from-date'] === undefined
+        ? undefined
+        : new Date(values['from-date']),
+    outputDir: values.output,
+  };
 }
 
 // Main execution
