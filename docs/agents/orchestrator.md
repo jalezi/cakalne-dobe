@@ -50,7 +50,7 @@ Constraints: surgical changes only, no unrelated edits. Never re-save the fallow
 ## Verify
 
 - <Checks for this issue: the commands to run and what they should print.>
-- Run only the tests you touch. lefthook runs biome and tsc on commit, and the tests and fallow on push. CI runs them all again.
+- Run only the tests you touch. lefthook's `pre-commit` runs Biome on the staged files it handles, and `tsc --noEmit` when a `.ts` or `.tsx` file is staged. tsc doesn't check `.mts` files. `pre-push` runs `vitest run` and `fallow dead-code`. CI's `verify` runs them all again, with the tests as `test:coverage`, plus `fallow health` against the baseline. Only CI runs `fallow health`.
 
 ## Ship
 
