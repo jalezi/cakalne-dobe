@@ -7,8 +7,6 @@ export default defineConfig({
   },
   plugins: [react()],
   test: {
-    environment: 'jsdom',
-    setupFiles: ['./test/setup.ts'],
     globals: true,
     // A crashed Stryker run can leave a sandbox copy of the tests behind
     exclude: [...configDefaults.exclude, '.stryker-tmp/**'],
@@ -19,5 +17,25 @@ export default defineConfig({
       // json writes coverage/coverage-final.json, read by `fallow health`
       reporter: ['text-summary', 'json'],
     },
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: 'node',
+          environment: 'node',
+          exclude: ['**/*.test.tsx'],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'dom',
+          // A component test must be named *.test.tsx to run here
+          include: ['**/*.test.tsx'],
+          environment: 'jsdom',
+          setupFiles: ['./test/setup.ts'],
+        },
+      },
+    ],
   },
 });
