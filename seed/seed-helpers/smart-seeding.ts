@@ -1,16 +1,12 @@
 /** biome-ignore-all lint/suspicious/noConsole: This module is for seeding scripts */
 
 import { join } from 'node:path';
+import { ingestSnapshot } from '../ingest-snapshot';
 import {
   extractDateFromJobFilename,
   isWithinRange,
 } from './date-range-calculator';
 import { getDataFromFiles } from './get-data-from-file';
-import { insertInstitutions } from './seed-institutions';
-import { insertJobs } from './seed-jobs';
-import { insertMaxAllowedDays } from './seed-max-allowed-days';
-import { getProceduresToInsert, insertProcedures } from './seed-procedures';
-import { insertWaitingTimes } from './seed-waiting-times';
 import type { CustomError } from './types';
 import { checkJobExists } from './validate-data-coverage';
 
@@ -51,10 +47,12 @@ export function getJobsToSeed(
  * Seeds only missing jobs from the provided job files
  * Checks for existing jobs and skips them to avoid duplicates
  * @param jobFiles - Array of job filenames to process
+ * @param jobsDir - Directory holding the job files (default: mock-data/jobs)
  * @returns Object containing seeding statistics (seeded, skipped, errors)
  */
 export async function seedMissingJobsOnly(
-  jobFiles: string[]
+  jobFiles: string[],
+  jobsDir = join(process.cwd(), 'mock-data', 'jobs')
 ): Promise<SeedingResult> {
   const result: SeedingResult = {
     seeded: 0,
@@ -65,8 +63,6 @@ export async function seedMissingJobsOnly(
   if (jobFiles.length === 0) {
     return result;
   }
-
-  const jobsDir = join(process.cwd(), 'mock-data', 'jobs');
 
   // Load data from files
   const { data: dataMap, errors: loadErrors } = await getDataFromFiles(
@@ -90,32 +86,9 @@ export async function seedMissingJobsOnly(
         continue;
       }
 
-      // Seed new job with all related data
+      // Seed new job with all related data in one transaction
       console.log(`  ✨ Seeding new job: ${jobId}`);
-
-      // Create a single-job map for this operation
-      const singleJobMap = new Map([[jobId, jobData]]);
-      const singleJobData = [jobData];
-
-      // Insert job
-      const jobResult = await insertJobs([[jobId, jobData]]);
-      if (jobResult.errors) {
-        result.errors.push(...jobResult.errors);
-        continue;
-      }
-
-      // Insert institutions
-      await insertInstitutions(singleJobMap);
-
-      // Insert procedures
-      const proceduresToInsert = getProceduresToInsert(singleJobData);
-      await insertProcedures(Array.from(proceduresToInsert.values()));
-
-      // Insert max allowed days
-      await insertMaxAllowedDays(singleJobMap);
-
-      // Insert waiting times
-      await insertWaitingTimes(singleJobMap);
+      await ingestSnapshot(jobData, jobId);
 
       result.seeded++;
     } catch (error) {

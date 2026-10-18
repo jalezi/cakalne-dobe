@@ -49,18 +49,8 @@
         "count": 1
       }
     },
-    "seed/seed-helpers/get-data-from-file.ts": {
-      "crap_moderate": {
-        "count": 1
-      }
-    },
     "seed/seed-helpers/seed-institutions.ts": {
       "complexity_moderate": {
-        "count": 1
-      }
-    },
-    "seed/seed-helpers/smart-seeding.ts": {
-      "crap_high": {
         "count": 1
       }
     },
@@ -150,18 +140,8 @@
         "count": 1
       }
     },
-    "seed/seed-helpers/get-data-from-file.ts\u0000getDataFromFiles": {
-      "crap_moderate": {
-        "count": 1
-      }
-    },
     "seed/seed-helpers/seed-institutions.ts\u0000getInstitutionsToInsert": {
       "complexity_moderate": {
-        "count": 1
-      }
-    },
-    "seed/seed-helpers/smart-seeding.ts\u0000seedMissingJobsOnly": {
-      "crap_high": {
         "count": 1
       }
     },
