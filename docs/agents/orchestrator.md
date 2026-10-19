@@ -2,11 +2,43 @@
 
 One session in the main checkout drives one Herdr agent per issue, each in its own worktree. The orchestrator scopes, prompts, waits and reviews. The user merges.
 
+The run requires Herdr and Claude Code. Without them, work on one issue at a time as AGENTS.md [`# Worktrees`](../../AGENTS.md#worktrees) describes, with `pnpm worktree:new`.
+
+## Setup
+
+### Any worktree
+
+For `pnpm worktree:new` as well as the run:
+
+- Node 22.13 or later on the 22 line, or 24. `worktree.sh` copies `dev.db` with `node:sqlite`, which needs `--experimental-sqlite` before 22.13 and prints an ExperimentalWarning before 24.15. Leave out 23: it's end-of-life, and 23.0–23.3 still need the flag.
+- pnpm, and git 2.31 or later: `worktree.sh` finds the main checkout with `git rev-parse --path-format=absolute`.
+- `gh`, signed in.
+- Commit signing, because main's ruleset rejects unsigned commits.
+- zsh users: add `[[ -n $CLAUDECODE ]] && setopt no_nomatch no_equals` to `~/.zshrc`. Claude Code runs commands in your login shell, and without that line zsh stops an agent's command at an unquoted glob or a leading `=`. `grep --include=*.ts` failed with "no matches found" on #64 and #67.
+- `mock-data/`: issues that touch seeding need it. Create it once in the main checkout with `pnpm fetch:jobs --count 500 --from-date <date 3 months and a week ago>`; each worktree then gets a copy. `fetch:jobs` needs no token. `--from-date` alone isn't enough:
+  - `--count` (default 10) caps the GitLab job list before `--from-date` filters it, and that list includes jobs other than `run`.
+  - `ensure-fresh-data` wants the oldest Job to be at least 3 months older than the newest, and reports a gap otherwise. The pipeline makes about one `run` Job a day, so a date exactly 3 months ago leaves the oldest Job a day or so short.
+  - With 500, listing the jobs takes five requests of 100. Only the Jobs after the date are downloaded.
+- Platforms:
+  - Written and tested on macOS on APFS, where `worktree.sh` clones `dev.db` and `mock-data` without using extra disk space.
+  - On Linux it clones with `cp --reflink=auto` where the filesystem supports it (untested).
+  - Where the filesystem can't clone, each worktree gets a full copy of `dev.db` and `mock-data`. A Job file is about 4 MB, so 3 months of them take about 0.4 GB.
+  - Older macOS versions on volumes that aren't APFS may stop at the copy (untested).
+  - On Windows, use WSL (untested).
+
+### The run
+
+- Herdr: `worktree:agent` stops without `HERDR_ENV=1`.
+- Claude Code with the `auto` permission mode: `worktree:agent` starts each agent in it.
+- `jq`: `worktree.sh` reads Herdr's output with it, and the steps below read session logs with it.
+- git 2.38 or later, for `git merge-tree --write-tree` in step 6.
+
 ## Run
 
 1. **History.** Run `pnpm issue:history <n>`. When a merged PR or a commit on main already mentions the issue, read what shipped. Then check each acceptance criterion against the current code: `none` means no PR or commit names the issue, not that nothing changed. Done when every criterion is marked met, open or moot, and the user has agreed the remaining scope.
 2. **Prompt.** Fill in the [prompt template](#prompt-template) and write it to a file outside the repo. Pass its absolute path in the next step, because pnpm runs scripts from the package root.
 3. **Start.** From the main checkout, run `pnpm worktree:agent <branch> <prompt-file>`. It does what `worktree:new` does, then starts Claude in the new workspace's root pane in `auto` permission mode, sends the whole file as one prompt, and returns once the agent is working. Its last line names the agent (`issue<n>`), its pane and its session log.
+   - Keep a table of the open workspaces and agents, with what each one needs (an answer, a review, a merge), and add the new one to it.
    - When the user wants the agent to run a slash command or a skill, keep the command out of the prompt file. `herdr agent prompt` pastes a long file, so a leading slash command is never parsed. Write a second file outside the repo with one line, `/<command> <args> Read <absolute path of the prompt file>: it is the full task.`, and pass its absolute path to `worktree:agent` instead. Once it returns, run this on the session log it printed. It prints the command, e.g. `/implement`, and nothing if the command didn't run:
      `jq -r 'select(.type=="user") | .message.content | strings | capture("^<command-message>[^<]*</command-message>\\s*<command-name>(?<c>[^<]*)</command-name>")?.c' <log>`
 4. **Wait.** Run `herdr agent wait <name>`. It can return between turns while the agent is still working, e.g. after a queued message: check `herdr agent get <name>` before you read the last message, and if it still shows `working`, wait again.
@@ -24,12 +56,16 @@ One session in the main checkout drives one Herdr agent per issue, each in its o
 
    In the 2026-10-18 batch, these reviews caught two bugs that the agents' own checks missed (#83, #84). For a diff of a few lines, review it yourself and spend the effort on whatever the agent couldn't run: for #90's six-line `worktree.sh` change, the full `worktree:new`/remove cycle under Herdr.
 
+   Check the agent's own claims about risk against the code before you pass them to the user. On 2026-10-18 the orchestrator relayed a wrong claim from the agent on #68: that a `config.matcher` change could block the Job webhook.
+
    The PR is ready when:
    - `gh pr view <pr> --json closingIssuesReferences --jq '[.closingIssuesReferences[].number]'` lists the issue. Read `.number` only: title and state aren't filled in. It can return `[]` for about a minute after the PR opens, so read it again before changing anything.
    - `gh pr checks <pr>` is green.
    - `fallow-health-baseline.json` gains no key, or the user has OK'd each new one. Only the user adds the `baseline-growth-ok` label. Before merging a PR that has it, ask the user to confirm they added it themselves, and check the agent's session log for any command that added it.
    - `gh api "repos/{owner}/{repo}/pulls/<pr>/commits" --jq '.[].commit.verification.verified'` is `true` for every commit.
-6. **Merge.** Count the PR's commits: `gh api "repos/{owner}/{repo}/pulls/<pr>/commits" --jq length`. The repo's squash default pastes every commit message into the body.
+6. **Merge.** Before merging two open PRs whose files overlap, run `git fetch` and `git merge-tree --write-tree origin/<a> origin/<b>`. It exits 1 when they conflict. Merge one, then have the other agent rebase on main.
+
+   Count the PR's commits: `gh api "repos/{owner}/{repo}/pulls/<pr>/commits" --jq length`. The repo's squash default pastes every commit message into the body.
    - One commit: give the user `! gh pr merge <pr> --squash` to run.
    - Two or more: prepare the message. The subject is the PR title plus ` (#<pr>)`. The body describes only the final diff, with no commit list and no `Closes #<n>` (the PR body's keyword closes the issue), and ends with the `Co-Authored-By` trailer. Show the user both, write the body to a file outside the repo, and give `! gh pr merge <pr> --squash --subject "<subject>" --body-file <absolute path>` to run.
 7. **Clean up.** After the user says it's merged, poll `gh issue view <n> --json state` until the issue is closed. That can take up to a minute; close it by hand only after that.
@@ -61,7 +97,7 @@ Constraints: surgical changes only, no unrelated edits. Never re-save the fallow
 
 - <Checks for this issue: the commands to run and what they should print.>
 - Run each check as its own command, with no pipe (`| tail`, `| head`, `| grep`), so the exit code you report is the check's.
-- The shell is zsh: pass argument lists as arrays (`"${args[@]}"`), because zsh doesn't split `$args`, and write `${var}:` before a colon, because `$T:head` reads `:h` as a modifier.
+- If the shell is zsh: pass argument lists as arrays (`"${args[@]}"`), because zsh doesn't split `$args`, and write `${var}:` before a colon, because `$T:head` reads `:h` as a modifier.
 - To build, run `DATABASE_URL=file:dev.db pnpm build`. `worktree.sh` writes only `.env.development.local`, which a production build doesn't load, so a plain `pnpm build` stops at "Collecting page data".
 - To compare a check against main, run `git add -N` on new files, save `git diff origin/main` as a patch outside the repo, run `git apply -R <patch>` to get main's files, run the check, then `git apply <patch>`. Not `git stash`: worktrees share one stash stack, and it was refused in #91.
 - Run only the tests you touch. lefthook's `pre-commit` runs Biome on the staged files it handles, and `tsc --noEmit` when a `.ts`, `.tsx` or `.mts` file is staged. `pre-push` runs `vitest run` and `fallow dead-code`. CI's `verify` runs them all again, with the tests as `test:coverage`, plus `fallow health` against the baseline. No hook runs `fallow health`; CI does.
