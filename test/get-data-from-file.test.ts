@@ -50,29 +50,33 @@ describe('getDataFromFiles', () => {
       fileName: 'wp-2026-04-01-00-00-00-1001.json',
       content: '{"broken":',
       error: expect.any(SyntaxError),
+      meta: { fileName: 'wp-2026-04-01-00-00-00-1001.json', jobId: '1001' },
     },
     {
       case: 'data that fails allDataSchema',
       fileName: 'wp-2026-04-01-00-00-00-1001.json',
       content: JSON.stringify({ start: '2026-04-01T00:00:00Z' }),
       error: expect.any(ZodError),
+      meta: { fileName: 'wp-2026-04-01-00-00-00-1001.json', jobId: '1001' },
     },
     {
       case: 'a file name with no job ID',
       fileName: 'wp-.json',
       content: JSON.stringify(VALID_DATA),
       error: new Error('Job ID not found in file name'),
+      meta: { fileName: 'wp-.json' },
     },
-  ])('records an error with the file name for $case', async ({
+  ])('records an error with the file name and any job ID for $case', async ({
     fileName,
     content,
     error,
+    meta,
   }) => {
     await writeFile(join(dir, fileName), content);
 
     const result = await getDataFromFiles([fileName], dir);
 
     expect(result.data.size).toBe(0);
-    expect(result.errors).toEqual([{ error, meta: { fileName } }]);
+    expect(result.errors).toEqual([{ error, meta }]);
   });
 });
