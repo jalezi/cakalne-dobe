@@ -1,17 +1,6 @@
 {
   "kind": "health",
   "finding_counts": {
-    "seed/ensure-fresh-data.ts": {
-      "complexity_critical": {
-        "count": 1
-      },
-      "crap_critical": {
-        "count": 1
-      },
-      "crap_moderate": {
-        "count": 1
-      }
-    },
     "seed/seed-db-from-jobs.ts": {
       "crap_high": {
         "count": 1
@@ -25,19 +14,9 @@
         "count": 1
       }
     },
-    "seed/seed-helpers/console-reporter.ts": {
-      "crap_moderate": {
-        "count": 1
-      }
-    },
     "seed/seed-helpers/seed-institutions.ts": {
       "complexity_moderate": {
         "count": 1
-      }
-    },
-    "seed/seed-helpers/validate-data-coverage.ts": {
-      "crap_moderate": {
-        "count": 2
       }
     },
     "src/app/api/v1/find-job-by-date/route.ts": {
@@ -62,19 +41,6 @@
     }
   },
   "identity_finding_counts": {
-    "seed/ensure-fresh-data.ts\u0000ensureFreshData": {
-      "complexity_critical": {
-        "count": 1
-      },
-      "crap_critical": {
-        "count": 1
-      }
-    },
-    "seed/ensure-fresh-data.ts\u0000getDatabaseEnvironment": {
-      "crap_moderate": {
-        "count": 1
-      }
-    },
     "seed/seed-db-from-jobs.ts\u0000seedDBFromJobs": {
       "crap_high": {
         "count": 1
@@ -88,23 +54,8 @@
         "count": 1
       }
     },
-    "seed/seed-helpers/console-reporter.ts\u0000reportAvailableFiles": {
-      "crap_moderate": {
-        "count": 1
-      }
-    },
     "seed/seed-helpers/seed-institutions.ts\u0000getInstitutionsToInsert": {
       "complexity_moderate": {
-        "count": 1
-      }
-    },
-    "seed/seed-helpers/validate-data-coverage.ts\u0000getAvailableJobsDateRange": {
-      "crap_moderate": {
-        "count": 1
-      }
-    },
-    "seed/seed-helpers/validate-data-coverage.ts\u0000getDatabaseDateRange": {
-      "crap_moderate": {
         "count": 1
       }
     },

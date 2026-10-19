@@ -37,13 +37,14 @@ export interface ValidationResult {
 }
 
 /**
- * Scans the mock-data/jobs/ directory for available job files
+ * Scans the jobs directory for available job files
  * Filters out archived files and non-JSON files
+ * @param jobsDir - Directory holding the job files (default: mock-data/jobs)
  * @returns Object containing earliest/latest dates and list of valid files
  */
-export async function getAvailableJobsDateRange(): Promise<AvailableJobsDateRange> {
-  const jobsDir = join(process.cwd(), 'mock-data', 'jobs');
-
+export async function getAvailableJobsDateRange(
+  jobsDir = join(process.cwd(), 'mock-data', 'jobs')
+): Promise<AvailableJobsDateRange> {
   try {
     // Read directory contents
     const allFiles = await readdir(jobsDir);

@@ -50,6 +50,18 @@ function sectionHeader(title: string): string {
 }
 
 /**
+ * Reports the earliest and latest dates of a range
+ */
+function reportDateRange(earliest: Date, latest: Date): void {
+  console.log(
+    `  ${colorize('Earliest:', 'dim')} ${formatDateForDisplay(earliest)}`
+  );
+  console.log(
+    `  ${colorize('Latest:', 'dim')} ${formatDateForDisplay(latest)}`
+  );
+}
+
+/**
  * Reports database coverage information
  */
 export function reportDatabaseCoverage(
@@ -72,12 +84,7 @@ export function reportDatabaseCoverage(
   );
 
   if (earliest && latest) {
-    console.log(
-      `  ${colorize('Earliest:', 'dim')} ${formatDateForDisplay(earliest)}`
-    );
-    console.log(
-      `  ${colorize('Latest:', 'dim')} ${formatDateForDisplay(latest)}`
-    );
+    reportDateRange(earliest, latest);
 
     const daysCovered = Math.ceil(
       (latest.getTime() - earliest.getTime()) / (1000 * 60 * 60 * 24)
@@ -133,12 +140,7 @@ export function reportAvailableFiles(
   );
 
   if (earliest && latest) {
-    console.log(
-      `  ${colorize('Earliest:', 'dim')} ${formatDateForDisplay(earliest)}`
-    );
-    console.log(
-      `  ${colorize('Latest:', 'dim')} ${formatDateForDisplay(latest)}`
-    );
+    reportDateRange(earliest, latest);
   }
 
   // Show first few and last few files if there are many
