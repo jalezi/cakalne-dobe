@@ -96,11 +96,64 @@ case $action in
     fi
     echo "$ready"
     if [ "$action" = agent ]; then
-      session=$(herdr agent start "$name" --kind claude --pane "$pane" -- --permission-mode auto |
-        jq -er '.result.agent.agent_session.value')
-      # Returns once the agent is working on it, or stuck at a dialog
-      herdr agent prompt "$name" "$prompt" --wait --until working --until blocked >/dev/null
-      echo "Agent $name in pane $pane, session log: $HOME/.claude/projects/${path//[^a-zA-Z0-9]/-}/$session.jsonl"
+      send="herdr agent prompt $name \"\$(cat $(printf %q "$3"))\" --wait --until working --until blocked"
+      if ! out=$(herdr agent start "$name" --kind claude --pane "$pane" -- --permission-mode auto 2>&1); then
+        echo "herdr agent start failed: $out" >&2
+        echo "Once the agent is up, send the prompt by hand:" >&2
+        echo "  $send" >&2
+        exit 1
+      fi
+      # Claude's SessionStart hook reports the session, which under load can
+      # come after start returns. A failed get counts as no session yet.
+      for _ in $(seq 60); do
+        session=$(herdr agent get "$name" | jq -r '.result.agent.agent_session.value // empty' || true)
+        [ -n "$session" ] && break
+        sleep 1
+      done
+      logs=$HOME/.claude/projects/${path//[^a-zA-Z0-9]/-}
+      if [ -z "$session" ]; then
+        echo "Herdr has no session for $name after 60s. Send the prompt by hand; its session log will be in $logs:" >&2
+        echo "  $send" >&2
+        exit 1
+      fi
+      log=$logs/$session.jsonl
+      # herdr can fail after the prompt arrived, so the log decides. The file
+      # appears with the first prompt. A slash command shows as its
+      # <command-name>, a pasted prompt as text containing its first line.
+      first=${prompt%%$'\n'*}
+      copies=0
+      for _ in 1 2; do
+        # Returns once the agent is working on it, or stuck at a dialog
+        if ! out=$(herdr agent prompt "$name" "$prompt" --wait --until working --until blocked 2>&1); then
+          echo "herdr agent prompt failed: $out" >&2
+        fi
+        for _ in $(seq 10); do
+          if [ -f "$log" ]; then
+            # fromjson? skips a line Claude is still writing
+            copies=$(jq -nR --arg first "$first" '
+              [inputs | fromjson? | select(.type == "user") | .message.content | strings
+                | select(if ($first | startswith("/"))
+                  then capture("^<command-message>[^<]*</command-message>\\s*<command-name>(?<c>[^<]*)</command-name>").c
+                    == ($first | split(" ")[0])
+                  else contains($first) end)]
+              | length' "$log")
+          fi
+          [ "$copies" -gt 0 ] && break 2
+          sleep 1
+        done
+        # Resend only to an agent waiting for input: a working one may still
+        # log the first copy
+        [[ $(herdr agent get "$name" | jq -r .result.agent.agent_status) =~ ^(idle|done)$ ]] || break
+      done
+      if [ "$copies" = 0 ]; then
+        echo "The prompt didn't reach $name. Send it by hand:" >&2
+        echo "  $send" >&2
+        exit 1
+      elif [ "$copies" != 1 ]; then
+        echo "$log holds the prompt $copies times" >&2
+        exit 1
+      fi
+      echo "Agent $name in pane $pane, session log: $log"
     fi
     ;;
   remove)
