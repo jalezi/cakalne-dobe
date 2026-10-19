@@ -85,13 +85,12 @@ Real seam emerges: in-memory adapter for tests (GitLab API never called in CI).
 2. Implement `createGitLabClient()` using existing GraphQL setup + auth
 3. Implement `createInMemoryGitLabClient()` for tests
 4. Replace imports in:
-   - `src/app/api/v1/get-latest-gitlab-job-id/route.ts`
    - `src/app/api/v1/insert-new-job-data/job-processing.ts`
 5. Delete or deprecate old utils
 6. Update tests to use in-memory adapter
 
 ## Estimated Effort
-Medium — consolidation of three files, refactoring two call sites, test coverage.
+Medium — consolidation of three files, refactoring one call site, test coverage.
 
 ## Related Documents
 - Architectural Review: #4 Error Types (completed)

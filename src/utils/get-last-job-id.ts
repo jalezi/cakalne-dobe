@@ -1,5 +1,39 @@
-import type { GetLatestGitLabJobId } from '@/app/api/v1/get-latest-gitlab-job-id/route';
 import { getJobs } from './get-jobs';
+
+export type GetLatestGitLabJobId =
+  | {
+      success: true;
+      data: {
+        gitLabJobId: string;
+        jobFinishedAt: string;
+      };
+      meta?: {
+        params?: {
+          first: number;
+          after: string | undefined;
+        };
+        nodes?: number;
+        pageInfo?: {
+          endCursor: string;
+          hasNextPage: boolean;
+        };
+      };
+    }
+  | {
+      success: false;
+      error: string;
+      meta?: {
+        params?: {
+          first: number;
+          after: string | undefined;
+        };
+        nodes?: number;
+        pageInfo?: {
+          endCursor: string;
+          hasNextPage: boolean;
+        };
+      };
+    };
 
 export async function getLastJobId(
   first: number,
