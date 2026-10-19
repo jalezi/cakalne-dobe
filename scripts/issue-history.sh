@@ -14,6 +14,27 @@ n=$1
 gh issue view "$n" --json number,title,state,stateReason \
   --jq '"#\(.number) \(.state)\(if .state == "CLOSED" then " (\(.stateReason))" else "" end): \(.title)"'
 
+# `gh issue view --json` has no lastEditedAt. A PR number resolves to {} here.
+# Only an open issue is checked: closing ticks boxes in the body, often after
+# the brief.
+gh api graphql -F owner='{owner}' -F repo='{repo}' -F n="$n" -f query='
+  query($owner: String!, $repo: String!, $n: Int!) {
+    repository(owner: $owner, name: $repo) {
+      issueOrPullRequest(number: $n) {
+        ... on Issue {
+          state
+          lastEditedAt
+          comments(first: 100) { nodes { body createdAt lastEditedAt } }
+        }
+      }
+    }
+  }' --jq '
+  def utc: fromdateiso8601 | strftime("%Y-%m-%d %H:%M UTC");
+  .data.repository.issueOrPullRequest | select(.state == "OPEN")
+  | ([.comments.nodes[] | select(.body | test("(^|\n)## Agent Brief")) | .lastEditedAt // .createdAt] | max) as $brief
+  | select($brief != null and .lastEditedAt != null and .lastEditedAt > $brief)
+  | "Body edited \(.lastEditedAt | utc), after the Agent Brief (\($brief | utc)): compare them before trusting the brief."'
+
 echo
 echo "PRs that mention #$n:"
 prs=$(gh api --paginate "repos/{owner}/{repo}/issues/$n/timeline" \
