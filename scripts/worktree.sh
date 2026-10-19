@@ -6,15 +6,18 @@
 #   pnpm worktree:agent <branch> <prompt-file>
 #                                   new, then a Claude agent in Herdr gets the prompt
 #   pnpm worktree:remove <branch>   once the branch's PR is merged
+#   pnpm worktree:remove <branch> --discard
+#                                   throwaway: no PR, no commits beyond origin/main
 #
 # Worktrees live beside the repo, in <repo>.worktrees/. Inside the repo,
 # tsc and vitest would pick up their copies of the code and tests.
 set -euo pipefail
 
-case ${1:-}:$# in
-  new:2 | remove:2 | agent:3) ;;
+case ${1:-}:$#:${3:-} in
+  new:2: | remove:2: | remove:3:--discard | agent:3:*) ;;
   *)
     echo "usage: $0 new|remove <branch>" >&2
+    echo "       $0 remove <branch> --discard" >&2
     echo "       $0 agent <branch> <prompt-file>" >&2
     exit 2
     ;;
@@ -169,16 +172,36 @@ case $action in
       echo "$path has uncommitted changes; commit or discard them first" >&2
       exit 1
     fi
-    # Squash merges leave the branch unmerged in git's eyes, so GitHub decides.
-    # The merged PR's head must contain the tip, or local commits would be lost.
-    # GitHub's Update branch adds a merge to the head that the tip doesn't have.
-    pr=$(gh pr view "$branch" --json state,number,headRefOid --jq '"\(.state) \(.number) \(.headRefOid)"' || true)
-    read -r state number head <<<"$pr"
-    if [ "$state" != MERGED ] ||
-      ! git -C "$main" fetch --quiet origin "refs/pull/$number/head" ||
-      ! git -C "$main" merge-base --is-ancestor "refs/heads/$branch" "$head"; then
-      echo "$branch is not the head of a merged PR; remove the worktree by hand if you mean to drop it" >&2
-      exit 1
+    if [ "${3:-}" = --discard ]; then
+      # gh pr view fails both for no PR and when gh does; gh pr list prints
+      # nothing for no PR, so a gh failure can't pass for one
+      if ! prs=$(gh pr list --head "$branch" --state all --json number --jq 'map("#\(.number)") | join(", ")'); then
+        echo "gh failed, so --discard can't tell whether $branch has a PR" >&2
+        exit 1
+      fi
+      if [ -n "$prs" ]; then
+        echo "$branch has a PR ($prs); --discard is only for a branch without one" >&2
+        exit 1
+      fi
+      # worktree:new fetched origin/main before it made the branch, so the ref
+      # is no older than the branch's base
+      commits=$(git -C "$main" rev-list --count "origin/main..refs/heads/$branch")
+      if [ "$commits" != 0 ]; then
+        echo "$branch has $commits commit(s) beyond origin/main; --discard would lose them" >&2
+        exit 1
+      fi
+    else
+      # Squash merges leave the branch unmerged in git's eyes, so GitHub decides.
+      # The merged PR's head must contain the tip, or local commits would be lost.
+      # GitHub's Update branch adds a merge to the head that the tip doesn't have.
+      pr=$(gh pr view "$branch" --json state,number,headRefOid --jq '"\(.state) \(.number) \(.headRefOid)"' || true)
+      read -r state number head <<<"$pr"
+      if [ "$state" != MERGED ] ||
+        ! git -C "$main" fetch --quiet origin "refs/pull/$number/head" ||
+        ! git -C "$main" merge-base --is-ancestor "refs/heads/$branch" "$head"; then
+        echo "$branch is not the head of a merged PR; remove the worktree by hand if you mean to drop it" >&2
+        exit 1
+      fi
     fi
     workspace=""
     if [ "${HERDR_ENV:-}" = 1 ]; then
