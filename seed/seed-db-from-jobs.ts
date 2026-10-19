@@ -1,15 +1,24 @@
 /** biome-ignore-all lint/suspicious/noConsole: We need for debug */
-import fs from 'fs/promises';
-import { cwd } from 'process';
 
+import { join } from 'node:path';
+import fs from 'fs/promises';
+
+import { handleError } from '@/utils/handle-error';
 import { ingestSnapshot } from './ingest-snapshot';
 import { seedHelpers } from './seed-helpers';
+import type { CustomError } from './seed-helpers/types';
 
-const dirName = `${cwd()}/mock-data/jobs`;
-const getDataFileNames = async () => await fs.readdir('./mock-data/jobs');
+type SeedFromJobsResult = {
+  seeded: number;
+  errors: CustomError[];
+};
 
-export const seedDBFromJobs = async (input: boolean = false) => {
+export const seedDBFromJobs = async (
+  input: boolean = false,
+  jobsDir = join(process.cwd(), 'mock-data', 'jobs')
+): Promise<SeedFromJobsResult> => {
   console.info('--- Seeding database from jobs...');
+  const result: SeedFromJobsResult = { seeded: 0, errors: [] };
 
   if (input) {
     console.info('--- Deleting tables...');
@@ -17,39 +26,47 @@ export const seedDBFromJobs = async (input: boolean = false) => {
     if (!deletingResult.success) {
       console.warn('Error deleting tables: ', deletingResult.error.message);
       console.error(deletingResult.error);
-      process.exit(1);
+      result.errors.push({ error: deletingResult.error });
+      return result;
     }
   }
 
   // GET DATA FROM FILES
   console.info('--- Reading data from files...');
-  const fileNames = await getDataFileNames().then((files) =>
-    files.filter(
-      (file) => file.endsWith('.json') && !file.startsWith('archive')
-    )
-  );
+  const fileNames = await fs
+    .readdir(jobsDir)
+    .then((files) =>
+      files.filter(
+        (file) => file.endsWith('.json') && !file.startsWith('archive')
+      )
+    );
 
   const { data: dataMap, errors: readingFileErrors } =
-    await seedHelpers.getDataFromFiles(fileNames, dirName);
+    await seedHelpers.getDataFromFiles(fileNames, jobsDir);
   if (readingFileErrors && readingFileErrors.length > 0) {
     console.warn('Errors reading files:');
     for (const error of readingFileErrors) {
       console.error(error);
     }
-    process.exit(1);
+    result.errors.push(...readingFileErrors);
+    return result;
   }
 
   console.info('--- Ingesting snapshots...');
   for (const [gitLabJobId, jobData] of Array.from(dataMap.entries())) {
     try {
       await ingestSnapshot(jobData, gitLabJobId);
+      result.seeded++;
     } catch (error) {
       console.warn(`Errors ingesting snapshot ${gitLabJobId}:`);
       console.error(error);
-      process.exit(1);
+      result.errors.push({
+        error: handleError(error),
+        meta: { jobId: gitLabJobId },
+      });
+      return result;
     }
   }
 
-  console.info('--- Database seeded successfully!');
-  process.exit(0);
+  return result;
 };
