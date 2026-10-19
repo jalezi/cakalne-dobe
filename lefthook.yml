@@ -10,7 +10,7 @@ pre-commit:
     
     # Type check
     type-check:
-      glob: '*.{ts,tsx}'
+      glob: '*.{ts,tsx,mts}'
       run: pnpm tsc --noEmit
       skip:
         - merge
