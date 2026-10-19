@@ -37,7 +37,8 @@
     "issue:history": "bash scripts/issue-history.sh",
     "worktree:new": "bash scripts/worktree.sh new",
     "worktree:agent": "bash scripts/worktree.sh agent",
-    "worktree:remove": "bash scripts/worktree.sh remove"
+    "worktree:remove": "bash scripts/worktree.sh remove",
+    "worktree:wait": "bash scripts/worktree.sh wait"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",

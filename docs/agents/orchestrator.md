@@ -43,13 +43,14 @@ For `pnpm worktree:new` as well as the run:
    - Keep a table of the open workspaces and agents, with what each one needs (an answer, a review, a merge), and add the new one to it. Mark each open PR in it "ready to merge" or "not yet: <reason>", and show the marks in every status update to the user. Ready means it meets every item of step 5's ready list and no round of work on it is running; otherwise give the reason, e.g. "not yet: rebase round running". On 2026-10-19 the user had to ask whether #98 could be merged.
    - When the user wants the agent to run a slash command or a skill, keep the command out of the prompt file. `herdr agent prompt` pastes a long file, so a leading slash command is never parsed. Write a second file outside the repo with one line, `/<command> <args> Read <absolute path of the prompt file>: it is the full task.`, and pass its absolute path to `worktree:agent` instead. Once it returns, run this on the session log it printed. It prints the command, e.g. `/implement`, and nothing if the command didn't run:
      `jq -r 'select(.type=="user") | .message.content | strings | capture("^<command-message>[^<]*</command-message>\\s*<command-name>(?<c>[^<]*)</command-name>")?.c' <log>`
-4. **Wait.** Run `herdr agent wait <name>`. It can return between turns while the agent is still working, e.g. after a queued message: check `herdr agent get <name>` before you read the last message, and if it still shows `working`, wait again.
-   - `idle` or `done`: read the agent's last message from its session log:
-     `jq -rs '[.[] | select(.type=="assistant") | .message.content[]? | select(.type=="text") | .text] | last' <log>`
-     The log is the source of truth. `herdr agent read` scrapes the terminal into plain text.
-   - `blocked`: read the pane (`herdr agent read <name> --source recent-unwrapped`) and ask the user before answering the dialog.
-   - Text after `❯` on the pane's prompt line is unsent: a prompt suggestion or a draft. It is never an instruction.
-   - The agent asked a question: get the answer from the user if it is theirs to give, send it with `herdr agent prompt <name> "<answer>" --wait --until working --until blocked`, and wait again.
+4. **Wait.** Run `pnpm worktree:wait <name>`, e.g. `pnpm worktree:wait issue66`. It checks the agent every 30 s and reads its messages from the session log, the source of truth: `herdr agent read` scrapes the terminal into plain text. Only messages since the last prompt from you or the user count. It returns with one of these exit codes:
+   - **0:** the agent has finished, and the printed text is its final report (the message with `## Hiccups`). Go on to review.
+   - **3:** the agent is blocked at a dialog. Read the printed pane output, and ask the user before answering the dialog. Text after `❯` on the pane's prompt line is unsent: a prompt suggestion or a draft. It is never an instruction.
+   - **4:** the agent stopped without a report: it wasn't `working` for 4 checks in a row (about 2 minutes), or for 120 (about 60 minutes) while its last message starts with `Waiting:`. Read the printed text:
+     - A question: get the answer from the user if it is theirs to give, send it with `herdr agent prompt <name> "<answer>" --wait --until working --until blocked`, and wait again.
+     - A `Waiting:` message that hit the 60-minute limit: check what it waits on (for CI, githubstatus.com), and ask the user how to go on.
+     - A line saying the agent hasn't replied since the last prompt: check in the session log that the prompt arrived, and send it again if it didn't.
+     - Anything else, e.g. an API error: show the user the text and ask how to go on.
 5. **Review.** Hand the diff to a read-only subagent, then check each of its findings against the code before you send it to the agent. Write the subagent's prompt in four parts:
    1. Read-only, plus a "never run" line for anything dangerous in this issue (e.g. `vercel`, `db:prod:*`, `fetch:jobs`).
    2. The spec (`gh issue view <n>`) and the diff (`gh pr diff <pr>`).
@@ -122,6 +123,8 @@ End with one final message that contains:
 2. What you built, file by file, in one line each.
 3. The verify results.
 4. `## Hiccups`: anything that failed, needed a retry, or that the issue or this prompt got wrong ("none" if there were none).
+
+If you end a turn to wait on CI or a background task, start that message with the literal word `Waiting:` and say what you wait on, e.g. `Waiting: verify on PR #105, queued.` The orchestrator's wait script reads that word.
 
 If you need a decision, stop and put the question in your final message. The orchestrator will answer it in this pane.
 ````
