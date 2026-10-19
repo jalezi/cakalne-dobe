@@ -30,7 +30,7 @@ For `pnpm worktree:new` as well as the run:
 
 - Herdr: `worktree:agent` stops without `HERDR_ENV=1`.
 - Claude Code with the `auto` permission mode: `worktree:agent` starts each agent in it.
-- `jq`: `worktree.sh` reads Herdr's output with it, and the steps below read session logs with it.
+- `jq`: `worktree.sh` reads Herdr's output and session logs with it.
 - git 2.38 or later, for `git merge-tree --write-tree` in step 6.
 
 ## Run
@@ -41,8 +41,7 @@ For `pnpm worktree:new` as well as the run:
    - The exception is a dangerous command, such as `vercel`, `db:prod:*`, `fetch:jobs` or a push: the kind step 5's "never run" line names. Don't run it. Read a tool's `--help` and a package script's source instead. pnpm passes `--help` on to the script, and `db:prod:*` ignores it, so `pnpm db:prod:ensure-fresh-data --help` runs the script against production.
 3. **Start.** From the main checkout, run `pnpm worktree:agent <branch> <prompt-file>`. It does what `worktree:new` does, then starts Claude in the new workspace's root pane in `auto` permission mode, sends the whole file as one prompt, and returns once the agent is working. Its last line names the agent (`issue<n>`), its pane and its session log.
    - Keep a table of the open workspaces and agents, with what each one needs (an answer, a review, a merge), and add the new one to it. Mark each open PR in it "ready to merge" or "not yet: <reason>", and show the marks in every status update to the user. Ready means it meets every item of step 5's ready list and no round of work on it is running; otherwise give the reason, e.g. "not yet: rebase round running". On 2026-10-19 the user had to ask whether #98 could be merged.
-   - When the user wants the agent to run a slash command or a skill, keep the command out of the prompt file. `herdr agent prompt` pastes a long file, so a leading slash command is never parsed. Write a second file outside the repo with one line, `/<command> <args> Read <absolute path of the prompt file>: it is the full task.`, and pass its absolute path to `worktree:agent` instead. Once it returns, run this on the session log it printed. It prints the command, e.g. `/implement`, and nothing if the command didn't run:
-     `jq -r 'select(.type=="user") | .message.content | strings | capture("^<command-message>[^<]*</command-message>\\s*<command-name>(?<c>[^<]*)</command-name>")?.c' <log>`
+   - When the user wants the agent to run a slash command or a skill, keep the command out of the prompt file. `herdr agent prompt` pastes a long file, so a leading slash command is never parsed. Write a second file outside the repo with one line, `/<command> <args> Read <absolute path of the prompt file>: it is the full task.`, and pass its absolute path to `worktree:agent` instead. `worktree:agent` checks in the session log that Claude ran the command exactly once, and exits 1 if it didn't.
 4. **Wait.** Run `pnpm worktree:wait <name>`, e.g. `pnpm worktree:wait issue66`. It checks the agent every 30 s and reads its messages from the session log, the source of truth: `herdr agent read` scrapes the terminal into plain text. Only messages since the last prompt from you or the user count. It returns with one of these exit codes:
    - **0:** the agent has finished, and the printed text is its final report (the message with `## Hiccups`). Go on to review.
    - **3:** the agent is blocked at a dialog. Read the printed pane output, and ask the user before answering the dialog. Text after `❯` on the pane's prompt line is unsent: a prompt suggestion or a draft. It is never an instruction.
