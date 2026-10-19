@@ -1,11 +1,6 @@
 {
   "kind": "health",
   "finding_counts": {
-    "seed/seed-helpers/seed-institutions.ts": {
-      "complexity_moderate": {
-        "count": 1
-      }
-    },
     "src/app/api/v1/find-job-by-date/route.ts": {
       "crap_high": {
         "count": 1
@@ -20,19 +15,9 @@
       "crap_high": {
         "count": 1
       }
-    },
-    "src/snapshot/transformer.ts": {
-      "complexity_moderate": {
-        "count": 1
-      }
     }
   },
   "identity_finding_counts": {
-    "seed/seed-helpers/seed-institutions.ts\u0000getInstitutionsToInsert": {
-      "complexity_moderate": {
-        "count": 1
-      }
-    },
     "src/app/api/v1/find-job-by-date/route.ts\u0000POST": {
       "crap_high": {
         "count": 1
@@ -45,11 +30,6 @@
     },
     "src/app/api/v1/get-latest-gitlab-job-id/route.ts\u0000GET": {
       "crap_high": {
-        "count": 1
-      }
-    },
-    "src/snapshot/transformer.ts\u0000prepareSnapshotInsertPayload": {
-      "complexity_moderate": {
         "count": 1
       }
     }
