@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Stands in for sleep in test/worktree.test.ts: appends the call to
+# $STUB_DIR/calls and returns at once
+printf '%s\n' "sleep $*" >>"$STUB_DIR/calls"
