@@ -10,6 +10,8 @@ export default defineConfig({
     globals: true,
     // A crashed Stryker run can leave a sandbox copy of the tests behind
     exclude: [...configDefaults.exclude, '.stryker-tmp/**'],
+    // Runs once per project, and each run gets its own folder for getTestDb
+    globalSetup: ['./test/global-setup.ts'],
     coverage: {
       provider: 'v8',
       // Include untested files so they report 0% instead of being omitted
