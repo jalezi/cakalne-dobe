@@ -35,10 +35,12 @@ For `pnpm worktree:new` as well as the run:
 
 ## Run
 
-1. **History.** Run `pnpm issue:history <n>`. When a merged PR or a commit on main already mentions the issue, read what shipped. Then check each acceptance criterion against the current code: `none` means no PR or commit names the issue, not that nothing changed. Done when every criterion is marked met, open or moot, and the user has agreed the remaining scope.
+1. **History.** Run `pnpm issue:history <n>`. When a merged PR or a commit on main already mentions the issue, read what shipped. Then check each acceptance criterion against the current code: `none` means no PR or commit names the issue, not that nothing changed. Re-check the issue's other claims about code, data and other issues against main too. Text written before a related PR merged can be stale. Some is written from memory: #66 put collapsing repeated spaces out of scope as a behaviour change, but `trimmedStringSchema` already collapsed them. Done when every criterion is marked met, open or moot, and the user has agreed the remaining scope.
 2. **Prompt.** Fill in the [prompt template](#prompt-template) and write it to a file outside the repo. Pass its absolute path in the next step, because pnpm runs scripts from the package root.
+   - Check each claim the prompt makes about code, versions or data against main, and run each example command. The #61 prompt said fixture dates must be recent, but date ranges count back from the latest file's date. #93's brief listed git 2.31 but not the 2.38 that `git merge-tree --write-tree` needs.
+   - The exception is a dangerous command, such as `vercel`, `db:prod:*`, `fetch:jobs` or a push: the kind step 5's "never run" line names. Don't run it. Read a tool's `--help` and a package script's source instead. pnpm passes `--help` on to the script, and `db:prod:*` ignores it, so `pnpm db:prod:ensure-fresh-data --help` runs the script against production.
 3. **Start.** From the main checkout, run `pnpm worktree:agent <branch> <prompt-file>`. It does what `worktree:new` does, then starts Claude in the new workspace's root pane in `auto` permission mode, sends the whole file as one prompt, and returns once the agent is working. Its last line names the agent (`issue<n>`), its pane and its session log.
-   - Keep a table of the open workspaces and agents, with what each one needs (an answer, a review, a merge), and add the new one to it.
+   - Keep a table of the open workspaces and agents, with what each one needs (an answer, a review, a merge), and add the new one to it. Mark each open PR in it "ready to merge" or "not yet: <reason>", and show the marks in every status update to the user. Ready means it meets every item of step 5's ready list and no round of work on it is running; otherwise give the reason, e.g. "not yet: rebase round running". On 2026-10-19 the user had to ask whether #98 could be merged.
    - When the user wants the agent to run a slash command or a skill, keep the command out of the prompt file. `herdr agent prompt` pastes a long file, so a leading slash command is never parsed. Write a second file outside the repo with one line, `/<command> <args> Read <absolute path of the prompt file>: it is the full task.`, and pass its absolute path to `worktree:agent` instead. Once it returns, run this on the session log it printed. It prints the command, e.g. `/implement`, and nothing if the command didn't run:
      `jq -r 'select(.type=="user") | .message.content | strings | capture("^<command-message>[^<]*</command-message>\\s*<command-name>(?<c>[^<]*)</command-name>")?.c' <log>`
 4. **Wait.** Run `herdr agent wait <name>`. It can return between turns while the agent is still working, e.g. after a queued message: check `herdr agent get <name>` before you read the last message, and if it still shows `working`, wait again.
@@ -63,7 +65,9 @@ For `pnpm worktree:new` as well as the run:
    - `gh pr checks <pr>` is green.
    - `fallow-health-baseline.json` gains no key, or the user has OK'd each new one. Only the user adds the `baseline-growth-ok` label. Before merging a PR that has it, ask the user to confirm they added it themselves, and check the agent's session log for any command that added it.
    - `gh api "repos/{owner}/{repo}/pulls/<pr>/commits" --jq '.[].commit.verification.verified'` is `true` for every commit.
-6. **Merge.** Before merging two open PRs whose files overlap, run `git fetch` and `git merge-tree --write-tree origin/<a> origin/<b>`. It exits 1 when they conflict. Merge one, then have the other agent rebase on main.
+6. **Merge.** Give a merge command only for a PR that step 3's table marks "ready to merge": it meets every item of step 5's ready list, and no round of work on it is running. Mark any other open PR "not yet: <reason>" in the same message. On 2026-10-19 the user ran `gh pr merge 97` while its rebase round was still running, and GitHub refused it because of a conflict. The status update had said a round was left, but not "don't merge".
+
+   Before merging two open PRs whose files overlap, run `git fetch` and `git merge-tree --write-tree origin/<a> origin/<b>`. It exits 1 when they conflict. Merge one, then have the other agent rebase on main.
 
    Count the PR's commits: `gh api "repos/{owner}/{repo}/pulls/<pr>/commits" --jq length`. The repo's squash default pastes every commit message into the body.
    - One commit: give the user `! gh pr merge <pr> --squash` to run.
@@ -96,6 +100,7 @@ Constraints: surgical changes only, no unrelated edits. Never re-save the fallow
 ## Verify
 
 - <Checks for this issue: the commands to run and what they should print.>
+- For a test that pins an order or a choice, change the code to a plausible alternative (e.g. swap two loops), show that the test fails, then restore the code. In #66 the first tests still passed with the loops swapped; the review caught it, and the fix took a second round.
 - Run each check as its own command, with no pipe (`| tail`, `| head`, `| grep`), so the exit code you report is the check's.
 - If the shell is zsh: pass argument lists as arrays (`"${args[@]}"`), because zsh doesn't split `$args`, and write `${var}:` before a colon, because `$T:head` reads `:h` as a modifier.
 - To build, run `DATABASE_URL=file:dev.db pnpm build`. `worktree.sh` writes only `.env.development.local`, which a production build doesn't load, so a plain `pnpm build` stops at "Collecting page data".
