@@ -30,7 +30,7 @@ Cakalne Dobe is a Next.js 15 application tracking medical procedure waiting peri
 ### Data Flow Architecture
 
 1. **Raw data**: JSON job files in `mock-data/jobs/` (massive files ~150k lines)
-2. **Seeding**: `seed/seed-db.ts` prompts for source ('jobs' vs 'rows') and processes data
+2. **Seeding**: `seed/seed-db.ts` asks whether to delete the tables, then seeds from the job files
 3. **Queries**: Server actions in `src/actions/` use complex Drizzle joins with aggregations
 4. **Rendering**: Server components fetch data, client components handle interactions
 
@@ -78,7 +78,7 @@ pnpm drizzle:local:push
 pnpm drizzle:local:studio
 
 # Seed with interactive prompts
-pnpm db:local:seed  # Choose 'jobs' (default) or 'rows'
+pnpm db:local:seed  # Asks whether to delete the tables first
 ```
 
 ### Development & Testing

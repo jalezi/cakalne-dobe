@@ -65,7 +65,7 @@ The script:
 
 #### Full Seed (Interactive)
 
-Interactive seeding with options to delete tables and choose data source:
+Interactive seeding from `mock-data/jobs/`, with an option to delete tables first:
 
 ```bash
 # Local database
