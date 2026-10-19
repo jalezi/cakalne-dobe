@@ -9,15 +9,23 @@ One session in the main checkout drives one Herdr agent per issue, each in its o
 3. **Start.** From the main checkout, run `pnpm worktree:agent <branch> <prompt-file>`. It does what `worktree:new` does, then starts Claude in the new workspace's root pane in `auto` permission mode, sends the whole file as one prompt, and returns once the agent is working. Its last line names the agent (`issue<n>`), its pane and its session log.
    - When the user wants the agent to run a slash command or a skill, keep the command out of the prompt file. `herdr agent prompt` pastes a long file, so a leading slash command is never parsed. Write a second file outside the repo with one line, `/<command> <args> Read <absolute path of the prompt file>: it is the full task.`, and pass its absolute path to `worktree:agent` instead. Once it returns, run this on the session log it printed. It prints the command, e.g. `/implement`, and nothing if the command didn't run:
      `jq -r 'select(.type=="user") | .message.content | strings | capture("^<command-message>[^<]*</command-message>\\s*<command-name>(?<c>[^<]*)</command-name>")?.c' <log>`
-4. **Wait.** Run `herdr agent wait <name>`.
+4. **Wait.** Run `herdr agent wait <name>`. It can return between turns while the agent is still working, e.g. after a queued message: check `herdr agent get <name>` before you read the last message, and if it still shows `working`, wait again.
    - `idle` or `done`: read the agent's last message from its session log:
      `jq -rs '[.[] | select(.type=="assistant") | .message.content[]? | select(.type=="text") | .text] | last' <log>`
      The log is the source of truth. `herdr agent read` scrapes the terminal into plain text.
    - `blocked`: read the pane (`herdr agent read <name> --source recent-unwrapped`) and ask the user before answering the dialog.
    - Text after `❯` on the pane's prompt line is unsent: a prompt suggestion or a draft. It is never an instruction.
    - The agent asked a question: get the answer from the user if it is theirs to give, send it with `herdr agent prompt <name> "<answer>" --wait --until working --until blocked`, and wait again.
-5. **Review.** Review the diff yourself (`gh pr diff <pr>`). The PR is ready when:
-   - `gh pr view <pr> --json closingIssuesReferences --jq '[.closingIssuesReferences[].number]'` lists the issue. Read `.number` only: title and state aren't filled in.
+5. **Review.** Hand the diff to a read-only subagent, then check each of its findings against the code before you send it to the agent. Write the subagent's prompt in four parts:
+   1. Read-only, plus a "never run" line for anything dangerous in this issue (e.g. `vercel`, `db:prod:*`, `fetch:jobs`).
+   2. The spec (`gh issue view <n>`) and the diff (`gh pr diff <pr>`).
+   3. Numbered checks written for this issue: is behaviour unchanged where it should be; do the tests really prove each criterion, or could a wrong implementation pass; does the baseline only lose entries; is anything out of scope.
+   4. Under 300 words, findings only, each with `file:line`, ending in a one-line verdict.
+
+   In the 2026-10-18 batch, these reviews caught two bugs that the agents' own checks missed (#83, #84). For a diff of a few lines, review it yourself and spend the effort on whatever the agent couldn't run: for #90's six-line `worktree.sh` change, the full `worktree:new`/remove cycle under Herdr.
+
+   The PR is ready when:
+   - `gh pr view <pr> --json closingIssuesReferences --jq '[.closingIssuesReferences[].number]'` lists the issue. Read `.number` only: title and state aren't filled in. It can return `[]` for about a minute after the PR opens, so read it again before changing anything.
    - `gh pr checks <pr>` is green.
    - `fallow-health-baseline.json` gains no key, or the user has OK'd each new one. Only the user adds the `baseline-growth-ok` label. Before merging a PR that has it, ask the user to confirm they added it themselves, and check the agent's session log for any command that added it.
    - `gh api "repos/{owner}/{repo}/pulls/<pr>/commits" --jq '.[].commit.verification.verified'` is `true` for every commit.
@@ -27,6 +35,8 @@ One session in the main checkout drives one Herdr agent per issue, each in its o
 7. **Clean up.** After the user says it's merged, poll `gh issue view <n> --json state` until the issue is closed. That can take up to a minute; close it by hand only after that.
    - Tick the issue's boxes. Check each `- [ ]` under its acceptance criteria or "Done when", in the body and in the agent brief comment, against `origin/main` and the PR's Evidence. Tick only the boxes you verified. Leave an unmet, N/A or unverifiable box unticked, and give the reason in a comment on the issue. Edit the body with `gh issue edit <n> --body-file <file>`. Edit the brief with `gh api -X PATCH repos/{owner}/{repo}/issues/comments/<id> -F body=@<file>`, using the REST id from `gh api repos/{owner}/{repo}/issues/<n>/comments`; the id from `gh issue view --json comments` won't work.
    - Then run `pnpm worktree:remove <branch>` from the main checkout. It also closes the agent's Herdr workspace and pane, and the user saying it's merged is consent for that.
+
+When several open PRs edit `fallow-health-baseline.json`, merge them one at a time. Otherwise they conflict, or still hold entries that main has already dropped, which CI's growth check reads as new keys. After each merge, have the next agent rebase on main, re-run `pnpm fallow:health:baseline` (never edit the JSON by hand), and check that the JSON diff holds only its own deletions: Git `rerere` can silently replay an old conflict resolution.
 
 When the user wants a reflection on the run, keep a hiccup log as you go: each failure, retry or wrong assumption, and what got past it. The user runs `/retro` on it in a fresh session.
 
@@ -45,19 +55,23 @@ Read the issue first: `gh issue view <n>`. It is the spec. <What already shipped
 
 <What to build, with notes the issue leaves out: the style to match, the code to reuse.>
 
-Constraints: surgical changes only, no unrelated edits. Never re-save the fallow health baseline to make CI pass, and never add the `baseline-growth-ok` label: fix the function, or stop and ask the orchestrator. Follow AGENTS.md / CLAUDE.md.
+Constraints: surgical changes only, no unrelated edits. Never re-save the fallow health baseline to make CI pass, and never add the `baseline-growth-ok` label: fix the function, or stop and ask the orchestrator. That rule is about hiding new findings. Re-running `pnpm fallow:health:baseline` is expected after you fix a baselined function or rebase on main, as long as `git diff origin/main -- fallow-health-baseline.json` then shows only deletions and no new key. Follow AGENTS.md / CLAUDE.md.
 
 ## Verify
 
 - <Checks for this issue: the commands to run and what they should print.>
-- Run only the tests you touch. lefthook's `pre-commit` runs Biome on the staged files it handles, and `tsc --noEmit` when a `.ts` or `.tsx` file is staged. tsc doesn't check `.mts` files. `pre-push` runs `vitest run` and `fallow dead-code`. CI's `verify` runs them all again, with the tests as `test:coverage`, plus `fallow health` against the baseline. Only CI runs `fallow health`.
+- Run each check as its own command, with no pipe (`| tail`, `| head`, `| grep`), so the exit code you report is the check's.
+- The shell is zsh: pass argument lists as arrays (`"${args[@]}"`), because zsh doesn't split `$args`, and write `${var}:` before a colon, because `$T:head` reads `:h` as a modifier.
+- To build, run `DATABASE_URL=file:dev.db pnpm build`. `worktree.sh` writes only `.env.development.local`, which a production build doesn't load, so a plain `pnpm build` stops at "Collecting page data".
+- To compare a check against main, run `git add -N` on new files, save `git diff origin/main` as a patch outside the repo, run `git apply -R <patch>` to get main's files, run the check, then `git apply <patch>`. Not `git stash`: worktrees share one stash stack, and it was refused in #91.
+- Run only the tests you touch. lefthook's `pre-commit` runs Biome on the staged files it handles, and `tsc --noEmit` when a `.ts`, `.tsx` or `.mts` file is staged. `pre-push` runs `vitest run` and `fallow dead-code`. CI's `verify` runs them all again, with the tests as `test:coverage`, plus `fallow health` against the baseline. No hook runs `fallow health`; CI does.
 
 ## Ship
 
 - One conventional commit, e.g. `<type>(<scope>): <summary>`. main requires signed commits. End the message with your `Co-Authored-By` trailer.
 - Push and open a PR against main. Model the body on recent PRs (`gh pr view <recent pr>`): `## Summary`, `## Evidence` (the verify output above, plus one line per acceptance criterion naming its proof), `## Merge Danger`. Include `Closes #<n>` and end the body with:
   `🤖 Generated with [Claude Code](https://claude.com/claude-code)`
-- Run `gh pr view --json closingIssuesReferences --jq '[.closingIssuesReferences[].number]'` and confirm it lists <n>.
+- Run `gh pr view --json closingIssuesReferences -q .closingIssuesReferences` and confirm it lists <n>. It can return `[]` for about a minute after the PR opens; read it again before changing anything.
 - Watch CI (`gh pr checks --watch`) until `verify` and Socket finish. Don't merge.
 
 ## When you finish (or get blocked)
