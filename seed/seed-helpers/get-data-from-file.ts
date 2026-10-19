@@ -26,7 +26,11 @@ export async function getDataFromFiles(
       data.set(jobId, parsedData);
     } catch (error) {
       const newError = handleError(error);
-      errors.push({ error: newError, meta: { fileName } });
+      const jobId = getJobIdFromFileName(fileName);
+      errors.push({
+        error: newError,
+        meta: jobId ? { fileName, jobId } : { fileName },
+      });
       continue;
     }
   }

@@ -135,6 +135,7 @@ describe('seedMissingJobsOnly', () => {
     expect(result.errors).toHaveLength(1);
     expect(result.errors[0].meta).toEqual({
       fileName: 'wp-2026-04-03-00-00-00-1003.json',
+      jobId: '1003',
     });
   });
 });
