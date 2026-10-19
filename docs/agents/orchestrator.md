@@ -56,7 +56,7 @@ For `pnpm worktree:new` as well as the run:
    3. Numbered checks written for this issue: is behaviour unchanged where it should be; do the tests really prove each criterion, or could a wrong implementation pass; does the baseline only lose entries; is anything out of scope.
    4. Under 300 words, findings only, each with `file:line`, ending in a one-line verdict.
 
-   In the 2026-10-18 batch, these reviews caught two bugs that the agents' own checks missed (#83, #84). For a diff of a few lines, review it yourself and spend the effort on whatever the agent couldn't run: for #90's six-line `worktree.sh` change, the full `worktree:new`/remove cycle under Herdr.
+   In the 2026-10-18 batch, these reviews caught two bugs that the agents' own checks missed (#83, #84). For a diff of a few lines, review it yourself and spend the effort on whatever the agent couldn't run: for #90's six-line `worktree.sh` change, the full `worktree:new`/remove cycle under Herdr. Remove a throwaway worktree like that one with `pnpm worktree:remove <branch> --discard`: it refuses a branch with a PR or with commits beyond `origin/main`.
 
    Check the agent's own claims about risk against the code before you pass them to the user. On 2026-10-18 the orchestrator relayed a wrong claim from the agent on #68: that a `config.matcher` change could block the Job webhook.
 
