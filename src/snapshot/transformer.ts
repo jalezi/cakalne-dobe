@@ -2,10 +2,10 @@ import { ZodError } from 'zod';
 import {
   getSnapshotInstitutionNames,
   normalizeInstitutionName,
+  normalizeProcedureName,
   snapshotInsertPayloadKey,
 } from '@/db/transforms';
 import { type AllData } from '@/lib/zod-schemas/data-schemas';
-import { trimmedStringSchema } from '@/lib/zod-schemas/helpers-schema';
 import type { Result, SnapshotInsertPayload } from '@/types';
 
 export const SNAPSHOT_TRANSFORMER_ERRORS = {
@@ -25,7 +25,7 @@ export function prepareSnapshotInsertPayload(
     for (const procedure of input.procedures) {
       procedures.push({
         code: procedure.code,
-        name: trimmedStringSchema.parse(procedure.name),
+        name: normalizeProcedureName(procedure.name),
       });
 
       maxAllowedDays.push({

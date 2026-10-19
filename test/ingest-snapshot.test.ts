@@ -95,6 +95,7 @@ describe('ingestSnapshot', () => {
           errors: [{ error: new Error('step 2 failure') }],
           existing: [],
           unique: [],
+          renamed: [],
         }),
     },
     {

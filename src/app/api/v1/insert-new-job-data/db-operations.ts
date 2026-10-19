@@ -1,4 +1,5 @@
 import { db } from '@/db';
+import { renameProcedures } from '@/db/rename-procedures';
 import type * as schema from '@/db/schema';
 import {
   institutions as institutionsTable,
@@ -153,6 +154,13 @@ async function insertProceduresTransaction(
     where: (procedures, operators) =>
       operators.inArray(procedures.code, procedureCodesToCheckIfExistsInDB),
   });
+
+  // Rename first, so a name an existing procedure gives up is free for a new one
+  await renameProcedures(
+    trx,
+    snapshotInsertPayload.procedures,
+    new Map(existingProcedures.map(({ code, name }) => [code, name]))
+  );
 
   // Find procedures that need to be inserted
   const newProcedures = snapshotInsertPayload.procedures.filter(
