@@ -20,7 +20,11 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
+      # On a PR, HEAD is GitHub's merge commit. Depth 2 also fetches its first parent, HEAD^1: the base commit
+      # the merge was built on, whose baseline the growth gate compares with.
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
 
       # Version comes from the packageManager field in package.json
       - uses: pnpm/action-setup@v6
@@ -37,18 +41,16 @@ jobs:
       - run: pnpm test:coverage
       - run: pnpm fallow
 
-      # The growth gate reads the baseline at the base branch, which the shallow checkout doesn't have
+      # Logs the commit the growth gate compares with, next to the PR's base.sha, which matches it on a fresh PR
       - if: ${{ github.event_name == 'pull_request' }}
-        run: git fetch --depth 1 origin "+refs/heads/$BASE_REF:refs/remotes/origin/$BASE_REF"
+        run: echo "baseline base HEAD^1 $(git rev-parse HEAD^1), pull_request.base.sha $BASE_SHA"
         env:
-          BASE_REF: ${{ github.base_ref }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
 
       # Fails on a finding missing from the baseline (re-save: pnpm fallow:health:baseline),
-      # or on a baseline key that the base branch doesn't have.
+      # or on a baseline key that the PR's base commit doesn't have.
       - if: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'baseline-growth-ok') }}
-        run: pnpm exec fallow health --coverage coverage/coverage-final.json --baseline fallow-health-baseline.json --baseline-mode identity --fail-on-baseline-growth --baseline-base "origin/$BASE_REF"
-        env:
-          BASE_REF: ${{ github.base_ref }}
+        run: pnpm exec fallow health --coverage coverage/coverage-final.json --baseline fallow-health-baseline.json --baseline-mode identity --fail-on-baseline-growth --baseline-base HEAD^1
 
       # A push has no base branch to compare against. With the maintainer's baseline-growth-ok label the baseline
       # may grow. Either way, a finding missing from the baseline still fails.
