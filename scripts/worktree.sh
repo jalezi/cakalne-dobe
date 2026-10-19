@@ -8,20 +8,91 @@
 #   pnpm worktree:remove <branch>   once the branch's PR is merged
 #   pnpm worktree:remove <branch> --discard
 #                                   throwaway: no PR, no commits beyond origin/main
+#   pnpm worktree:wait <agent>      e.g. pnpm worktree:wait issue66; returns once the
+#                                   agent has finished (exit 0), is blocked (3) or
+#                                   has stopped without a report (4)
 #
 # Worktrees live beside the repo, in <repo>.worktrees/. Inside the repo,
 # tsc and vitest would pick up their copies of the code and tests.
 set -euo pipefail
 
 case ${1:-}:$#:${3:-} in
-  new:2: | remove:2: | remove:3:--discard | agent:3:*) ;;
+  new:2: | remove:2: | remove:3:--discard | agent:3:* | wait:2:) ;;
   *)
     echo "usage: $0 new|remove <branch>" >&2
     echo "       $0 remove <branch> --discard" >&2
     echo "       $0 agent <branch> <prompt-file>" >&2
+    echo "       $0 wait <agent>" >&2
     exit 2
     ;;
 esac
+
+# The folder where Claude Code keeps the session logs of an agent working in $1
+logs_for() {
+  echo "$HOME/.claude/projects/${1//[^a-zA-Z0-9]/-}"
+}
+
+# Takes an agent name, not a branch, so it skips the branch check and the
+# worktree path below
+if [ "$1" = wait ]; then
+  if [ "${HERDR_ENV:-}" != 1 ]; then
+    echo "wait needs Herdr (HERDR_ENV=1)" >&2
+    exit 1
+  fi
+  name=$2
+  idle=0
+  while :; do
+    # Read on every check: a /clear in the agent's pane starts a new session,
+    # with a new log
+    info=$(herdr agent get "$name") || exit 1
+    status=$(jq -r .result.agent.agent_status <<<"$info")
+    if [ "$status" = blocked ]; then
+      herdr agent read "$name" --source recent-unwrapped
+      exit 3
+    elif [ "$status" = working ]; then
+      idle=0
+    else
+      cwd=$(jq -r .result.agent.cwd <<<"$info")
+      session=$(jq -r '.result.agent.agent_session.value // empty' <<<"$info")
+      log=$(logs_for "$cwd")/$session.jsonl
+      # The assistant texts since the last prompt. Background-task
+      # notifications are user entries too, and only .origin.kind tells them
+      # apart. The file appears with the first prompt, and fromjson? skips a
+      # line Claude is still writing.
+      texts=[]
+      if [ -f "$log" ]; then
+        texts=$(jq -nR 'reduce (inputs | fromjson?) as $e ([];
+          if $e.type == "user" and $e.origin.kind == "human" then []
+          elif $e.type == "assistant" then . + [$e.message.content[]? | select(.type == "text") | .text]
+          else . end)' "$log")
+      fi
+      # The prompt template's final message ends with a ## Hiccups section
+      report=$(jq -r 'map(select(contains("## Hiccups"))) | last // empty' <<<"$texts")
+      if [ -n "$report" ]; then
+        echo "$report"
+        exit 0
+      fi
+      last=$(jq -r 'last // empty' <<<"$texts")
+      # About 2 minutes, or 60 while the agent says it waits on CI or a
+      # background task
+      limit=4
+      if [[ $last =~ ^[[:space:]]*Waiting: ]]; then
+        limit=120
+      fi
+      idle=$((idle + 1))
+      if [ "$idle" -ge "$limit" ]; then
+        if [ -n "$last" ]; then
+          echo "$last"
+        else
+          echo "$name hasn't replied since the last prompt"
+        fi
+        exit 4
+      fi
+    fi
+    sleep 30
+  done
+fi
+
 action=$1
 branch=$2
 git check-ref-format --branch "$branch" >/dev/null
@@ -113,7 +184,7 @@ case $action in
         [ -n "$session" ] && break
         sleep 1
       done
-      logs=$HOME/.claude/projects/${path//[^a-zA-Z0-9]/-}
+      logs=$(logs_for "$path")
       if [ -z "$session" ]; then
         echo "Herdr has no session for $name after 60s. Send the prompt by hand; its session log will be in $logs:" >&2
         echo "  $send" >&2
