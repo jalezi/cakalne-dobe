@@ -88,9 +88,11 @@ case $action in
       # Nothing to clone: start empty, with the schema
       pnpm --dir "$path" drizzle:local:push
     fi
-    # Job artifacts for the seed scripts (about 1 GB), shared rather than copied
+    # Job artifacts for the seed scripts (about 1 GB), cloned like dev.db, so
+    # writes in this worktree stay out of the main checkout's files
     if [ -d "$main/mock-data" ]; then
-      ln -s "$main/mock-data" "$path/mock-data"
+      if [ "$(uname)" = Darwin ]; then clone=-c; else clone=--reflink=auto; fi
+      cp -R "$clone" "$main/mock-data" "$path/mock-data"
     fi
     echo "$ready"
     if [ "$action" = agent ]; then
