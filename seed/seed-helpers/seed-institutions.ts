@@ -1,7 +1,7 @@
 import { db } from '@/db';
 import { institutions as institutionsTable } from '@/db/schema/institution';
+import { getSnapshotInstitutionNames } from '@/db/transforms';
 import type { AllData } from '@/lib/zod-schemas/data-schemas';
-import { trimmedStringSchema } from '@/lib/zod-schemas/helpers-schema';
 import type { DataMap, SeedDbExecutor } from './types';
 
 export async function insertInstitutions(
@@ -28,22 +28,9 @@ export function getInstitutionsToInsert(
 ): Map<string, { name: string }> {
   const institutions: Map<string, { name: string }> = new Map();
   for (const jobData of jobs) {
-    const procedures = jobData.procedures;
-    for (const procedure of procedures) {
-      const waitingPeriods = procedure.waitingPeriods;
-      for (const wpForAllInst of Object.values(waitingPeriods)) {
-        if (!wpForAllInst) {
-          continue;
-        }
-        for (const wpInst of wpForAllInst) {
-          const trimmedFacility = trimmedStringSchema.parse(wpInst.facility);
-          const hasInstitution = institutions.has(trimmedFacility);
-          if (!hasInstitution) {
-            institutions.set(trimmedFacility, {
-              name: trimmedFacility,
-            });
-          }
-        }
+    for (const name of getSnapshotInstitutionNames(jobData)) {
+      if (!institutions.has(name)) {
+        institutions.set(name, { name });
       }
     }
   }

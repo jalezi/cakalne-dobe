@@ -1,13 +1,11 @@
 import { facilityProcedureWaitingTimesSchema } from '@/lib/zod-schemas/data-schemas';
-import {
-  trimmedStringSchema,
-  trimStringWithDashes,
-} from '@/lib/zod-schemas/helpers-schema';
+import { trimStringWithDashes } from '@/lib/zod-schemas/helpers-schema';
+import { normalizeInstitutionName } from './institution-name';
 
 export const normalizeFPWTSchema =
   facilityProcedureWaitingTimesSchema.transform((val) => {
     return {
-      facility: trimmedStringSchema.parse(val.facility),
+      facility: normalizeInstitutionName(val.facility),
       procedure: {
         code: val.procedure.code,
         name: trimStringWithDashes.parse(val.procedure.name),
