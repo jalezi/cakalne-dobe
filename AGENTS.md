@@ -20,6 +20,7 @@ Apply these rules for all coding tasks:
 # Worktrees
 
 Work on each issue in its own worktree, so several issues can be in progress at once.
+The machine needs what [Any worktree](./docs/agents/orchestrator.md#any-worktree) in `docs/agents/orchestrator.md` lists.
 
 Before changing any file for an issue, run `git rev-parse --path-format=absolute --git-dir --git-common-dir`. Two different paths mean you are already in a worktree: carry on. The same path means you are in the main checkout. First run `pnpm issue:history <n>` and check each acceptance criterion against the current code, since work that never named the issue doesn't show up in it. When it finds a merged PR or a commit, read what shipped. Agree the remaining scope with the user. Then create the worktree. In **Herdr** (`HERDR_ENV=1`), follow `docs/agents/orchestrator.md`: the prompt template, `pnpm worktree:agent <branch> <prompt-file>` (which also starts the agent), and the run through to cleanup. A skill the user types in the main checkout under Herdr, such as `/implement <n>`, still goes to a spawned agent: pass the command on as the run's **Start** step describes. The agent implements the issue, and this session doesn't. Elsewhere, run `pnpm worktree:new <branch>` (e.g. `fix/29-import-db-reason`) and continue from what it prints:
 
