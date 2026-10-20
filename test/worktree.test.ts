@@ -49,9 +49,12 @@ function run(args: string[], { herdr = false } = {}) {
     `STUB_DIR=${dir}`,
     ...(herdr ? ['HERDR_ENV=1'] : []),
   ];
+  // spawnSync blocks the event loop, so a test's own timeout can't stop a
+  // script that never returns. The slowest case takes about 7 s.
   return spawnSync('env', ['-i', ...env, 'bash', SCRIPT, ...args], {
     cwd: dir,
     encoding: 'utf8',
+    timeout: 20_000,
   });
 }
 
@@ -113,6 +116,21 @@ function text(value: string) {
 const PROMPT = user('human', 'Implement #9103');
 const NOTIFICATION = user('task-notification', '<task-notification>CI done');
 const PEER = { ...user('peer', 'A message from w9:pG'), isMeta: true };
+// Real assistant entries also carry tool_use blocks, which have no text
+const TOOL_USE = {
+  type: 'assistant',
+  message: {
+    role: 'assistant',
+    content: [
+      {
+        type: 'tool_use',
+        id: 'toolu_1',
+        name: 'Bash',
+        input: { command: 'pnpm test' },
+      },
+    ],
+  },
+};
 
 function jsonl(...entries: object[]) {
   return entries.map((entry) => `${JSON.stringify(entry)}\n`).join('');
@@ -152,7 +170,7 @@ describe('wait', () => {
   });
 
   it('prints the report and exits 0 once the agent is done', () => {
-    writeLog('s1', jsonl(PROMPT, text(REPORT)));
+    writeLog('s1', jsonl(PROMPT, TOOL_USE, text(REPORT)));
     writeChecks('working s1', 'working s1', 'done s1');
 
     expect(wait()).toMatchObject({
@@ -181,9 +199,10 @@ describe('wait', () => {
     ]);
   });
 
+  // Only the last text sets the limit, so the Waiting: before it gets 4 checks
   it('prints the last text and exits 4 after 4 idle checks without a report', () => {
     const status = "I'm waiting on CI for PR #9104. This is a status update.";
-    writeLog('s1', jsonl(PROMPT, text(status)));
+    writeLog('s1', jsonl(PROMPT, text(WAITING), text(status)));
     writeChecks('idle s1');
 
     expect(wait()).toMatchObject({
