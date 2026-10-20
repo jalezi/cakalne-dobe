@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# Stands in for herdr in test/worktree.test.ts. Answers from the files the test
+# writes to $STUB_DIR, and appends each call to $STUB_DIR/calls. Builtins only
+# where it can: wait calls it up to 181 times in one case.
+set -euo pipefail
+printf '%s\n' "herdr $*" >>"$STUB_DIR/calls"
+
+case "${1:-} ${2:-}" in
+  'agent get')
+    if [ "$3" != issue9103 ]; then
+      echo "{\"error\":{\"code\":\"agent_not_found\",\"message\":\"agent target $3 not found\"},\"id\":\"cli:agent:get\"}" >&2
+      exit 1
+    fi
+    n=0
+    if [ -f "$STUB_DIR/gets" ]; then
+      read -r n <"$STUB_DIR/gets"
+    fi
+    n=$((n + 1))
+    echo "$n" >"$STUB_DIR/gets"
+    # Line n of checks is "<status> <session>"; past the end, the last line repeats
+    i=0
+    while read -r line; do
+      check=$line
+      i=$((i + 1))
+      [ "$i" -lt "$n" ] || break
+    done <"$STUB_DIR/checks"
+    status=${check% *}
+    session=${check#* }
+    # Before check n, append-<n> joins the session log, as the agent's next
+    # lines would. The folder is where Claude Code keeps the logs for this cwd.
+    if [ -f "$STUB_DIR/append-$n" ]; then
+      cat "$STUB_DIR/append-$n" >>"$HOME/.claude/projects/-stub-repo-worktrees-fix-9103-x/$session.jsonl"
+    fi
+    echo "{\"result\":{\"agent\":{\"agent_status\":\"$status\",\"cwd\":\"/stub/repo.worktrees/fix-9103-x\",\"agent_session\":{\"value\":\"$session\"}}}}"
+    ;;
+  'agent read')
+    cat "$STUB_DIR/pane"
+    ;;
+  *)
+    echo "herdr stub: no answer for: $*" >&2
+    exit 1
+    ;;
+esac
