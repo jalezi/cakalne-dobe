@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Stands in for gh in test/worktree.test.ts. Answers from the files the test
+# writes to $STUB_DIR, and appends each call to $STUB_DIR/calls.
+set -euo pipefail
+printf '%s\n' "gh $*" >>"$STUB_DIR/calls"
+
+# gh-offline fails every call, as gh does without a network
+if [ -f "$STUB_DIR/gh-offline" ]; then
+  echo 'error connecting to api.github.com' >&2
+  echo 'check your internet connection or https://githubstatus.com' >&2
+  exit 1
+fi
+
+case "${1:-} ${2:-}" in
+  'pr list' | 'pr view')
+    # gh-pr-list and gh-pr-view hold what --jq would print; no file prints nothing
+    if [ -f "$STUB_DIR/gh-$1-$2" ]; then
+      cat "$STUB_DIR/gh-$1-$2"
+    fi
+    ;;
+  *)
+    echo "gh stub: no answer for: $*" >&2
+    exit 1
+    ;;
+esac

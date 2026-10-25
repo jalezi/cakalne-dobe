@@ -1,9 +1,10 @@
-import { spawnSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import {
   existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  realpathSync,
   rmSync,
   writeFileSync,
 } from 'node:fs';
@@ -32,27 +33,39 @@ const WAITING = 'Waiting: verify on PR #9104, queued.';
 let dir: string;
 
 beforeEach(() => {
-  dir = mkdtempSync(join(tmpdir(), 'worktree-test-'));
+  // On macOS the temp folder is under /var, a symlink to /private/var, and git
+  // prints worktree paths with the real one
+  dir = realpathSync(mkdtempSync(join(tmpdir(), 'worktree-test-')));
 });
 
 afterEach(() => {
   rmSync(dir, { recursive: true, force: true });
 });
 
-// env -i starts from an empty environment, with the stubs first on PATH: run
-// from a Herdr pane, an inherited HERDR_ENV would reach every case. HOME keeps
-// the session logs in the temp folder.
-function run(args: string[], { herdr = false } = {}) {
-  const env = [
+// For env -i, which starts from an empty environment, with the stubs first on
+// PATH: run from a Herdr pane, an inherited HERDR_ENV would reach every case,
+// and from a git hook, an inherited GIT_DIR would point git at this repo. HOME
+// keeps the session logs, and git's user config, in the temp folder.
+function env(herdr = false) {
+  return [
     `PATH=${BIN}${delimiter}${process.env.PATH}`,
     `HOME=${dir}`,
     `STUB_DIR=${dir}`,
     ...(herdr ? ['HERDR_ENV=1'] : []),
+    // No commit signing from the system config, and CI has no git identity
+    'GIT_CONFIG_NOSYSTEM=1',
+    'GIT_AUTHOR_NAME=Test',
+    'GIT_AUTHOR_EMAIL=test@example.com',
+    'GIT_COMMITTER_NAME=Test',
+    'GIT_COMMITTER_EMAIL=test@example.com',
   ];
+}
+
+function run(args: string[], { herdr = false, cwd = dir } = {}) {
   // spawnSync blocks the event loop, so a test's own timeout can't stop a
   // script that never returns. The slowest case takes about 7 s.
-  return spawnSync('env', ['-i', ...env, 'bash', SCRIPT, ...args], {
-    cwd: dir,
+  return spawnSync('env', ['-i', ...env(herdr), 'bash', SCRIPT, ...args], {
+    cwd,
     encoding: 'utf8',
     timeout: 20_000,
   });
@@ -338,5 +351,140 @@ describe('wait', () => {
         '{"error":{"code":"agent_not_found","message":"agent target nosuchagent not found"},"id":"cli:agent:get"}\n',
     });
     expect(calls()).toEqual(['herdr agent get nosuchagent']);
+  });
+});
+
+describe('remove', () => {
+  const BRANCH = 'fix/9103-x';
+  const LIST = `gh pr list --head ${BRANCH} --state all --json number --jq map("#\\(.number)") | join(", ")`;
+  const VIEW = `gh pr view ${BRANCH} --json state,number,headRefOid --jq "\\(.state) \\(.number) \\(.headRefOid)"`;
+  let repo: string;
+  let worktree: string;
+
+  function git(cwd: string, ...args: string[]) {
+    return execFileSync('env', ['-i', ...env(), 'git', ...args], {
+      cwd,
+      encoding: 'utf8',
+    });
+  }
+
+  function expectKept() {
+    expect(git(repo, 'worktree', 'list', '--porcelain')).toContain(
+      `worktree ${worktree}\n`
+    );
+    expect(git(repo, 'branch', '--list', BRANCH)).toContain(BRANCH);
+  }
+
+  function remove(...flags: string[]) {
+    return run(['remove', BRANCH, ...flags], { cwd: repo });
+  }
+
+  // The worktree is at the path the script expects, beside the repo, as
+  // worktree:new makes it. The push also sets origin/main.
+  beforeEach(() => {
+    repo = join(dir, 'repo');
+    worktree = join(dir, 'repo.worktrees/fix-9103-x');
+    git(
+      dir,
+      'init',
+      '--quiet',
+      '--bare',
+      '--initial-branch=main',
+      'origin.git'
+    );
+    git(dir, 'init', '--quiet', '--initial-branch=main', 'repo');
+    git(repo, 'commit', '--quiet', '--allow-empty', '--message', 'init');
+    git(repo, 'remote', 'add', 'origin', join(dir, 'origin.git'));
+    git(repo, 'push', '--quiet', 'origin', 'main');
+    git(
+      repo,
+      'worktree',
+      'add',
+      '--quiet',
+      '--no-track',
+      '-b',
+      BRANCH,
+      worktree,
+      'origin/main'
+    );
+  });
+
+  it('--discard removes the worktree and the branch with no PR and no commits', () => {
+    const tip = git(repo, 'rev-parse', '--short', BRANCH).trim();
+
+    expect(remove('--discard')).toMatchObject({
+      status: 0,
+      stdout: `Deleted branch ${BRANCH} (was ${tip}).\nRemoved ${worktree}\n`,
+      stderr: '',
+    });
+    expect(git(repo, 'worktree', 'list', '--porcelain')).not.toContain(
+      worktree
+    );
+    expect(git(repo, 'branch', '--list', BRANCH)).toBe('');
+    expect(calls()).toEqual([LIST]);
+  });
+
+  it('--discard refuses a branch with a PR', () => {
+    writeFileSync(join(dir, 'gh-pr-list'), '#9104\n');
+
+    expect(remove('--discard')).toMatchObject({
+      status: 1,
+      stdout: '',
+      stderr: `${BRANCH} has a PR (#9104); --discard is only for a branch without one\n`,
+    });
+    expectKept();
+    expect(calls()).toEqual([LIST]);
+  });
+
+  // Read as "no PR", a gh failure would let the commit check remove the worktree
+  it('--discard refuses when gh fails', () => {
+    writeFileSync(join(dir, 'gh-offline'), '');
+
+    expect(remove('--discard')).toMatchObject({
+      status: 1,
+      stdout: '',
+      stderr: `error connecting to api.github.com\ncheck your internet connection or https://githubstatus.com\ngh failed, so --discard can't tell whether ${BRANCH} has a PR\n`,
+    });
+    expectKept();
+    expect(calls()).toEqual([LIST]);
+  });
+
+  it('--discard refuses a branch with a commit beyond origin/main', () => {
+    git(worktree, 'commit', '--quiet', '--allow-empty', '--message', 'wip');
+
+    expect(remove('--discard')).toMatchObject({
+      status: 1,
+      stdout: '',
+      stderr: `${BRANCH} has 1 commit(s) beyond origin/main; --discard would lose them\n`,
+    });
+    expectKept();
+    expect(calls()).toEqual([LIST]);
+  });
+
+  it('--discard refuses uncommitted changes, before it asks gh', () => {
+    writeFileSync(join(worktree, 'throwaway.txt'), '');
+
+    expect(remove('--discard')).toMatchObject({
+      status: 1,
+      stdout: '',
+      stderr: `${worktree} has uncommitted changes; commit or discard them first\n`,
+    });
+    expectKept();
+    expect(calls()).toEqual([]);
+  });
+
+  // The PR's head is on origin and holds the tip, so only the state refuses
+  it('refuses a branch whose PR is open, without --discard', () => {
+    const tip = git(repo, 'rev-parse', BRANCH).trim();
+    git(repo, 'push', '--quiet', 'origin', `${BRANCH}:refs/pull/9104/head`);
+    writeFileSync(join(dir, 'gh-pr-view'), `OPEN 9104 ${tip}\n`);
+
+    expect(remove()).toMatchObject({
+      status: 1,
+      stdout: '',
+      stderr: `${BRANCH} is not the head of a merged PR; remove the worktree by hand if you mean to drop it\n`,
+    });
+    expectKept();
+    expect(calls()).toEqual([VIEW]);
   });
 });
