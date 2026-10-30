@@ -9,7 +9,8 @@ export default defineConfig({
   test: {
     globals: true,
     // A crashed Stryker run can leave a sandbox copy of the tests behind
-    exclude: [...configDefaults.exclude, '.stryker-tmp/**'],
+    // Orchestrator sessions park draft tests in .temp/, a local scratch folder
+    exclude: [...configDefaults.exclude, '.stryker-tmp/**', '.temp/**'],
     // Runs once per project, and each run gets its own folder for getTestDb
     globalSetup: ['./test/global-setup.ts'],
     coverage: {
