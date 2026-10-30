@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Cakalne Dobe is a Next.js 15 application tracking medical procedure waiting periods in Slovenia. It visualizes time-series data across medical institutions and procedures using Recharts with interactive controls.
+Cakalne Dobe is a Next.js 16 application tracking medical procedure waiting periods in Slovenia. The public UI is withdrawn for now: `src/app/page.tsx` shows a static notice, while the API routes in `src/app/api/v1/` keep ingesting data.
 
 ## Architecture & Tech Stack
 
@@ -19,10 +19,9 @@ Cakalne Dobe is a Next.js 15 application tracking medical procedure waiting peri
 
 ### Framework Stack
 
-- **Next.js 15 App Router** with React Server Components
+- **Next.js 16 App Router** with React Server Components
 - **TurboPack** for development (`pnpm dev`)
 - **shadcn/ui + TailwindCSS 4** for UI components
-- **Recharts** for data visualization in `src/components/charts/`
 - **Vitest + Testing Library** with jsdom environment
 
 ## Critical Development Patterns
@@ -32,7 +31,6 @@ Cakalne Dobe is a Next.js 15 application tracking medical procedure waiting peri
 1. **Raw data**: JSON job files in `mock-data/jobs/` (massive files ~150k lines)
 2. **Seeding**: `seed/seed-db.ts` asks whether to delete the tables, then seeds from the job files
 3. **Queries**: Server actions in `src/actions/` use complex Drizzle joins with aggregations
-4. **Rendering**: Server components fetch data, client components handle interactions
 
 ### Database Patterns
 
@@ -85,8 +83,8 @@ pnpm db:local:seed  # Asks whether to delete the tables first
 
 ```bash
 pnpm dev           # Next.js with TurboPack
-pnpm test          # Vitest with mocked database
-pnpm lint          # ESLint (runs pre-build)
+pnpm test          # Vitest, with a real libSQL file database per test
+pnpm lint          # Biome (runs pre-build)
 ```
 
 ## Project-Specific Conventions
@@ -108,23 +106,16 @@ Three urgency types tracked throughout codebase:
 ### Testing Patterns
 
 - Mock env module in tests: `vi.mock('@/lib/env', () => ({...}))`
-- In-memory SQLite for test isolation
+- Each test gets its own libSQL file database from `getTestDb` in `src/db/test/`, in a temp folder that `test/global-setup.ts` creates
 - Test fixtures in `src/db/test/` with setup/cleanup utilities
-
-### Chart Components Architecture
-
-- Server components fetch data via server actions
-- Client components in `src/components/charts/wp/` handle interactivity
-- Recharts with custom tooltip components and brush controls
-- Time-series data with date range pickers and procedure filtering
 
 ## Key Files for Context
 
 - **Schema**: `src/db/schema/index.ts` (exports all entities)
-- **Main UI**: `src/app/page.tsx` (demonstrates server component data fetching)
+- **Main UI**: `src/app/page.tsx` (static notice while the public UI is withdrawn)
 - **Server Actions**: `src/actions/get-procedure-avg-wt-*.ts` (complex aggregation queries)
 - **Seed Logic**: `seed/seed-db-from-jobs.ts` (JSON parsing and batch inserts)
-- **Test Setup**: `test/setup.ts` and `src/db/test/` (database mocking patterns)
+- **Test Setup**: `test/setup.ts` and `src/db/test/` (test database helpers)
 
 ## Important
 
