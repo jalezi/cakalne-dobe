@@ -206,27 +206,27 @@ describe('processJobData', () => {
       },
       cause: 'UNIQUE constraint failed: waiting_periods.job_id',
     },
-  ])('writes nothing and reports the cause when the $step insert fails', async ({
-    breakSnapshot,
-    cause,
-  }) => {
-    const { jobData, payload } = firstSnapshot();
-    breakSnapshot(payload);
+  ])(
+    'writes nothing and reports the cause when the $step insert fails',
+    async ({ breakSnapshot, cause }) => {
+      const { jobData, payload } = firstSnapshot();
+      breakSnapshot(payload);
 
-    await expect(processJobData(jobData, payload)).rejects.toMatchObject({
-      cause: expect.objectContaining({
-        message: expect.stringContaining(cause),
-      }),
-    });
+      await expect(processJobData(jobData, payload)).rejects.toMatchObject({
+        cause: expect.objectContaining({
+          message: expect.stringContaining(cause),
+        }),
+      });
 
-    await expect(countAllRows()).resolves.toEqual({
-      jobs: 0,
-      procedures: 0,
-      institutions: 0,
-      maxAllowedDays: 0,
-      waitingPeriods: 0,
-    });
-  });
+      await expect(countAllRows()).resolves.toEqual({
+        jobs: 0,
+        procedures: 0,
+        institutions: 0,
+        maxAllowedDays: 0,
+        waitingPeriods: 0,
+      });
+    }
+  );
 });
 
 async function countAllRows() {

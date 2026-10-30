@@ -1,6 +1,7 @@
 # PRD: Collapse Ingestion Handler into Deep Module
 
 ## Candidate
+
 #3 — Ingestion Handler is an Orchestration Skeleton (no locality)
 
 ## Problem Statement
@@ -14,7 +15,7 @@ Job ingestion is decomposed into 5 files:
 
 Understanding the pipeline requires reading across 5 files. `handle-job-ingestion-request.ts` does almost nothing except call functions in order — **pure orchestration with no behaviour**.
 
-**Deletion test:** Remove the handler. Zero complexity concentrated there vanishes. Tests mock *every* import, testing "did it call X then Y" rather than "did it insert correctly".
+**Deletion test:** Remove the handler. Zero complexity concentrated there vanishes. Tests mock _every_ import, testing "did it call X then Y" rather than "did it insert correctly".
 
 ## Solution
 
@@ -40,9 +41,11 @@ Only `validation.ts` stays separate — it's a true **input seam** (the parsed p
 ## Benefits
 
 ### Locality
+
 Entire ingestion pipeline lives in one place. Want to change error handling? One file. Add a check? One file. Reorder steps? One file.
 
 ### Leverage
+
 Test through the single `ingestJob()` interface with injected `deps` instead of mocking 6 modules:
 
 ```typescript
@@ -57,7 +60,8 @@ expect(result.data.inserted).toBeGreaterThan(0);
 ```
 
 ### Simplicity
-Eliminates brittle "call order" tests. Tests verify *correctness*, not internal plumbing.
+
+Eliminates brittle "call order" tests. Tests verify _correctness_, not internal plumbing.
 
 ## Success Criteria
 
@@ -88,15 +92,18 @@ Eliminates brittle "call order" tests. Tests verify *correctness*, not internal 
 6. Delete or deprecate old files
 
 ## Estimated Effort
+
 Large — significant refactoring, careful dependency injection setup, comprehensive test rewrite.
 
 ## Related Documents
+
 - Architectural Review: #4 Error Types (completed) ✓
 - Depends on: #1 GitLab Client (produces clean interface)
 - Depends on: #2 Snapshot Pipeline Seam (injectable source)
 - Related: #5 Normalization
 
 ## Dependencies
+
 - #4 Error types (done) ✓
 - #1 GitLab Client (needs deep interface)
 - #2 Snapshot Pipeline Seam (needs injectable source)

@@ -3,9 +3,9 @@ name: ci
 on:
   pull_request:
     # labeled/unlabeled re-run verify when baseline-growth-ok changes. Listing types replaces the defaults.
-    types: [opened, synchronize, reopened, labeled, unlabeled]
+    types: [ opened, synchronize, reopened, labeled, unlabeled ]
   push:
-    branches: [main]
+    branches: [ main ]
 
 permissions:
   contents: read

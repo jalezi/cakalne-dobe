@@ -1,5 +1,5 @@
 ---
-applyTo: '**/.ts, **/.tsx, **/.js, **/.jsx'
+applyTo: "**/.ts, **/.tsx, **/.js, **/.jsx"
 ---
 
 # shadcn/ui LLM UI Development Instructions (2025)

@@ -2,29 +2,29 @@
 
 ## Core Entities
 
-| Term | Definition | Aliases to avoid |
-| --- | --- | --- |
-| **Institution** | A medical facility in Slovenia where procedures are performed | Facility, provider, center |
-| **Procedure** | A categorized medical service identified by a unique code and name | Treatment, service, operation |
-| **Waiting Period** | The number of days a patient must wait at a specific institution to receive a specific procedure, classified by urgency | Waiting time, wait time, delay |
-| **Max Allowed Days** | The regulatory ceiling on how many days a patient may wait for a procedure, per urgency level | Maximum wait, legal limit, threshold |
-| **Job** | A data-collection event tied to a GitLab CI/CD pipeline run, capturing a snapshot of all waiting periods at a point in time | Run, pipeline, crawl, import, snapshot |
+| Term                 | Definition                                                                                                                  | Aliases to avoid                       |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| **Institution**      | A medical facility in Slovenia where procedures are performed                                                               | Facility, provider, center             |
+| **Procedure**        | A categorized medical service identified by a unique code and name                                                          | Treatment, service, operation          |
+| **Waiting Period**   | The number of days a patient must wait at a specific institution to receive a specific procedure, classified by urgency     | Waiting time, wait time, delay         |
+| **Max Allowed Days** | The regulatory ceiling on how many days a patient may wait for a procedure, per urgency level                               | Maximum wait, legal limit, threshold   |
+| **Job**              | A data-collection event tied to a GitLab CI/CD pipeline run, capturing a snapshot of all waiting periods at a point in time | Run, pipeline, crawl, import, snapshot |
 
 ## Urgency Levels
 
-| Term | Definition | Aliases to avoid |
-| --- | --- | --- |
-| **regular** | Standard urgency — the default pathway for non-urgent cases | Normal, ordinary, standard |
-| **fast** | Expedited urgency — for cases requiring sooner attention | Urgent, priority, medium |
-| **veryFast** | Critical urgency — the fastest available pathway | Emergency, critical, immediate |
+| Term         | Definition                                                  | Aliases to avoid               |
+| ------------ | ----------------------------------------------------------- | ------------------------------ |
+| **regular**  | Standard urgency — the default pathway for non-urgent cases | Normal, ordinary, standard     |
+| **fast**     | Expedited urgency — for cases requiring sooner attention    | Urgent, priority, medium       |
+| **veryFast** | Critical urgency — the fastest available pathway            | Emergency, critical, immediate |
 
 ## Lifecycle & Operations
 
-| Term | Definition | Aliases to avoid |
-| --- | --- | --- |
-| **Snapshot** | The complete set of waiting periods recorded during a single **Job** | Dataset, batch, import |
-| **Seeding** | The process of loading historical **Job** artifacts into the database | Migration, import, backfill |
-| **Coverage** | The continuous date range represented by **Jobs** stored in the database | Date range, span, history |
+| Term                        | Definition                                                                                                                                                                                 | Aliases to avoid                 |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------- |
+| **Snapshot**                | The complete set of waiting periods recorded during a single **Job**                                                                                                                       | Dataset, batch, import           |
+| **Seeding**                 | The process of loading historical **Job** artifacts into the database                                                                                                                      | Migration, import, backfill      |
+| **Coverage**                | The continuous date range represented by **Jobs** stored in the database                                                                                                                   | Date range, span, history        |
 | **Snapshot Insert Payload** | The in-memory, DB-ready shape derived from a **Snapshot** — procedures, institutions, max allowed days, and waiting periods keyed for bulk insertion, before any database IDs are assigned | NotCompleteDataByTable, raw data |
 
 ## Relationships

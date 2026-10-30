@@ -87,7 +87,7 @@ When the user wants a reflection on the run, keep a hiccup log as you go: each f
 
 Replace each `<…>`. The agent can't see this conversation, so put in the prompt everything that step 1 settled.
 
-````markdown
+```markdown
 You are implementing GitHub issue #<n> (<owner>/<repo>) in this worktree (branch `<branch>`). An orchestrator session in the main checkout (Herdr pane <orchestrator pane>) drives you. It reviews your diff and answers your questions. The orchestrator merges PRs, with the user's approval; you never do.
 
 ## Context
@@ -129,4 +129,4 @@ End with one final message that contains:
 If you end a turn to wait on CI or a background task, start that message with the literal word `Waiting:` and say what you wait on, e.g. `Waiting: verify on PR #105, queued.` The orchestrator's wait script reads that word.
 
 If you need a decision, stop and put the question in your final message. The orchestrator will answer it in this pane.
-````
+```

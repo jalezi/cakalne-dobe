@@ -66,17 +66,15 @@ describe('getDataFromFiles', () => {
       error: new Error('Job ID not found in file name'),
       meta: { fileName: 'wp-.json' },
     },
-  ])('records an error with the file name and any job ID for $case', async ({
-    fileName,
-    content,
-    error,
-    meta,
-  }) => {
-    await writeFile(join(dir, fileName), content);
+  ])(
+    'records an error with the file name and any job ID for $case',
+    async ({ fileName, content, error, meta }) => {
+      await writeFile(join(dir, fileName), content);
 
-    const result = await getDataFromFiles([fileName], dir);
+      const result = await getDataFromFiles([fileName], dir);
 
-    expect(result.data.size).toBe(0);
-    expect(result.errors).toEqual([{ error, meta }]);
-  });
+      expect(result.data.size).toBe(0);
+      expect(result.errors).toEqual([{ error, meta }]);
+    }
+  );
 });
