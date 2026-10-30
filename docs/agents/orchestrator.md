@@ -1,6 +1,6 @@
 # Orchestrator
 
-One session in the main checkout drives one Herdr agent per issue, each in its own worktree. The orchestrator scopes, prompts, waits and reviews. The user merges.
+One session in the main checkout drives one Herdr agent per issue, each in its own worktree. The orchestrator scopes, prompts, waits and reviews. It also runs each merge, and the user approves each one.
 
 The run requires Herdr and Claude Code. Without them, work on one issue at a time as AGENTS.md [`# Worktrees`](../../AGENTS.md#worktrees) describes, with `pnpm worktree:new`.
 
@@ -32,6 +32,7 @@ For `pnpm worktree:new` as well as the run:
 - Claude Code with the `auto` permission mode: `worktree:agent` starts each agent in it.
 - `jq`: `worktree.sh` reads Herdr's output and session logs with it.
 - git 2.38 or later, for `git merge-tree --write-tree` in step 6.
+- An `ask` rule for merges in `~/.claude/settings.json`: `"permissions": {"ask": ["Bash(gh pr merge *)"]}`. Claude Code then stops and asks the user before any `gh pr merge` runs, even in `auto` mode. That keeps each merge on the user's word. The rule is global, so it also stops worker agents from merging.
 
 ## Run
 
@@ -65,16 +66,18 @@ For `pnpm worktree:new` as well as the run:
    - `gh pr checks <pr>` is green.
    - `fallow-health-baseline.json` gains no key, or the user has OK'd each new one. Only the user adds the `baseline-growth-ok` label. Before merging a PR that has it, ask the user to confirm they added it themselves, and check the agent's session log for any command that added it.
    - `gh api "repos/{owner}/{repo}/pulls/<pr>/commits" --jq '.[].commit.verification.verified'` is `true` for every commit.
-6. **Merge.** Give a merge command only for a PR that step 3's table marks "ready to merge": it meets every item of step 5's ready list, and no round of work on it is running. Mark any other open PR "not yet: <reason>" in the same message. On 2026-10-19 the user ran `gh pr merge 97` while its rebase round was still running, and GitHub refused it because of a conflict. The status update had said a round was left, but not "don't merge".
+6. **Merge.** Run a merge only for a PR that step 3's table marks "ready to merge": it meets every item of step 5's ready list, and no round of work on it is running. Mark any other open PR "not yet: <reason>" in the same message. On 2026-10-19 the user ran `gh pr merge 97` while its rebase round was still running, and GitHub refused it because of a conflict. The status update had said a round was left, but not "don't merge".
 
    Before merging two open PRs whose files overlap, run `git fetch` and `git merge-tree --write-tree origin/<a> origin/<b>`. It exits 1 when they conflict. Merge one, then have the other agent rebase on main.
 
    Count the PR's commits: `gh api "repos/{owner}/{repo}/pulls/<pr>/commits" --jq length`. The repo's squash default pastes every commit message into the body.
-   - One commit: give the user `! gh pr merge <pr> --squash` to run.
-   - Two or more: prepare the message. The subject is the PR title plus ` (#<pr>)`. The body describes only the final diff, with no commit list and no `Closes #<n>` (the PR body's keyword closes the issue), and ends with the `Co-Authored-By` trailer. Show the user both, write the body to a file outside the repo, and give `! gh pr merge <pr> --squash --subject "<subject>" --body-file <absolute path>` to run.
-7. **Clean up.** After the user says it's merged, poll `gh issue view <n> --json state` until the issue is closed. That can take up to a minute; close it by hand only after that.
+   - One commit: run `gh pr merge <pr> --squash`.
+   - Two or more: prepare the message. The subject is the PR title plus ` (#<pr>)`. The body describes only the final diff, with no commit list and no `Closes #<n>` (the PR body's keyword closes the issue), and ends with the `Co-Authored-By` trailer. Show the user both, write the body to a file outside the repo, and run `gh pr merge <pr> --squash --subject "<subject>" --body-file <absolute path>`.
+
+   Claude Code then asks the user to approve the command. A declined prompt means don't merge.
+7. **Clean up.** After the merge succeeds, or the user says they merged it, poll `gh issue view <n> --json state` until the issue is closed. That can take up to a minute; close it by hand only after that.
    - Tick the issue's boxes. Check each `- [ ]` under its acceptance criteria or "Done when", in the body and in the agent brief comment, against `origin/main` and the PR's Evidence. Tick only the boxes you verified. Leave an unmet, N/A or unverifiable box unticked, and give the reason in a comment on the issue. Edit the body with `gh issue edit <n> --body-file <file>`. Edit the brief with `gh api -X PATCH repos/{owner}/{repo}/issues/comments/<id> -F body=@<file>`, using the REST id from `gh api repos/{owner}/{repo}/issues/<n>/comments`; the id from `gh issue view --json comments` won't work.
-   - Then run `pnpm worktree:remove <branch>` from the main checkout. It also closes the agent's Herdr workspace and pane, and the user saying it's merged is consent for that.
+   - Then run `pnpm worktree:remove <branch>` from the main checkout. It also closes the agent's Herdr workspace and pane. A merge the user approved, or the user saying they merged it, is consent for that.
 
 When several open PRs edit `fallow-health-baseline.json`, merge them one at a time. Otherwise they conflict, or still hold entries that main has already dropped, which CI's growth check reads as new keys. After each merge, have the next agent rebase on main, re-run `pnpm fallow:health:baseline` (never edit the JSON by hand), and check that the JSON diff holds only its own deletions: Git `rerere` can silently replay an old conflict resolution.
 
@@ -85,7 +88,7 @@ When the user wants a reflection on the run, keep a hiccup log as you go: each f
 Replace each `<…>`. The agent can't see this conversation, so put in the prompt everything that step 1 settled.
 
 ````markdown
-You are implementing GitHub issue #<n> (<owner>/<repo>) in this worktree (branch `<branch>`). An orchestrator session in the main checkout (Herdr pane <orchestrator pane>) drives you. It reviews your diff and answers your questions. The user merges PRs; you never do.
+You are implementing GitHub issue #<n> (<owner>/<repo>) in this worktree (branch `<branch>`). An orchestrator session in the main checkout (Herdr pane <orchestrator pane>) drives you. It reviews your diff and answers your questions. The orchestrator merges PRs, with the user's approval; you never do.
 
 ## Context
 
