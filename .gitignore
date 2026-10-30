@@ -49,7 +49,7 @@ prod*.*
 db_dump
 turso-cakalne-dobe.rtf
 
-//
+# Not "//": Tailwind 4.3 reads a bare // line as ignoring the project root (#128)
 /mock-data
 
 // mcp context-mode
