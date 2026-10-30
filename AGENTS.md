@@ -32,4 +32,3 @@ Before changing any file for an issue, run `git rev-parse --path-format=absolute
 In a worktree, the database is its own `dev.db`, opened directly through `DATABASE_URL=file:dev.db`; `turso dev` runs only in the main checkout.
 
 Once the user confirms the PR is merged, `pnpm worktree:remove <branch>`, run from the main checkout, deletes the worktree and its branch.
-

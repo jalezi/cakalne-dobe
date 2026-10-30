@@ -122,22 +122,22 @@ describe('ingestSnapshot', () => {
           .spyOn(waitingTimesHelpers, 'insertWaitingTimes')
           .mockRejectedValueOnce(new Error('step 5 failure')),
     },
-  ])('rolls back all writes when step $step ($helper) fails', async ({
-    step,
-    fail,
-  }) => {
-    fail();
+  ])(
+    'rolls back all writes when step $step ($helper) fails',
+    async ({ step, fail }) => {
+      fail();
 
-    await expect(
-      ingestSnapshot(snapshotData, 'gitlab-job-1', { db })
-    ).rejects.toThrow(`step ${step} failure`);
+      await expect(
+        ingestSnapshot(snapshotData, 'gitlab-job-1', { db })
+      ).rejects.toThrow(`step ${step} failure`);
 
-    await expect(countRows(db, schema.jobs)).resolves.toBe(0);
-    await expect(countRows(db, schema.procedures)).resolves.toBe(0);
-    await expect(countRows(db, schema.maxAllowedDays)).resolves.toBe(0);
-    await expect(countRows(db, schema.institutions)).resolves.toBe(0);
-    await expect(countRows(db, schema.waitingPeriods)).resolves.toBe(0);
-  });
+      await expect(countRows(db, schema.jobs)).resolves.toBe(0);
+      await expect(countRows(db, schema.procedures)).resolves.toBe(0);
+      await expect(countRows(db, schema.maxAllowedDays)).resolves.toBe(0);
+      await expect(countRows(db, schema.institutions)).resolves.toBe(0);
+      await expect(countRows(db, schema.waitingPeriods)).resolves.toBe(0);
+    }
+  );
 });
 
 type CountableTable =

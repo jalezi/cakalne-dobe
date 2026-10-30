@@ -1,6 +1,7 @@
 # PRD: Enforce Data Normalization at Schema Layer
 
 ## Candidate
+
 #5 — Normalization Enforced Only at Ingestion Time
 
 ## Problem Statement
@@ -16,6 +17,7 @@ The key format in `SnapshotInsertPayload` Maps — `${trimmedFacility}-${procedu
 Push normalization to the **schema/insert boundary**. Options:
 
 ### Option A: Drizzle Hooks (Recommended)
+
 ```typescript
 export const institutions = sqliteTable('institutions', {
   name: text('name')
@@ -25,6 +27,7 @@ export const institutions = sqliteTable('institutions', {
 ```
 
 ### Option B: Insert Wrapper Function
+
 ```typescript
 export function normalizeInstitutionName(name: unknown): string {
   return trimmedStringSchema.parse(name);
@@ -36,6 +39,7 @@ db.insert(institutions).values({ name: normalized });
 ```
 
 ### Option C: Database Constraint + Comment
+
 Document the rule: "institution.name must be trimmed and normalized." Add a database comment or check constraint.
 
 **Recommended: Option B** — explicit, testable, language-level control without ORM magic.
@@ -45,12 +49,15 @@ Also: document `SnapshotInsertPayload` key format explicitly. The `${facility}-$
 ## Benefits
 
 ### Locality
+
 Normalization rule lives at the insert boundary, enforced for **all paths** — transformer, direct inserts, seeding, APIs.
 
 ### Leverage
+
 Transformer becomes simpler; callers don't need to know about trimming. New ingestion sources inherit normalization for free.
 
 ### Correctness
+
 Duplicates can't sneak in through backdoor inserts. The schema/insert layer is the enforcement point.
 
 ## Success Criteria
@@ -75,6 +82,7 @@ Duplicates can't sneak in through backdoor inserts. The schema/insert layer is t
 2. Update `src/snapshot/transformer.ts`:
    - Import and use `normalizeInstitutionName()` instead of inline calls
 3. Export normalized key format from a constant:
+
    ```typescript
    export function snapshotInsertPayloadKey(
      facility: string,
@@ -88,13 +96,16 @@ Duplicates can't sneak in through backdoor inserts. The schema/insert layer is t
 6. Seed code uses the normalization function where needed
 
 ## Estimated Effort
+
 Small — extraction of normalization logic, documentation, test coverage. Mostly straightforward.
 
 ## Related Documents
+
 - Architectural Review: #4 Error Types (completed) ✓
 - Related: #2 Snapshot Pipeline Seam (uses normalized keys)
 - Related: #3 Ingestion Handler (all insert paths pass through)
 
 ## Dependencies
+
 - #4 Error types (done) ✓
 - Independent otherwise — can be done in parallel with #1, #2

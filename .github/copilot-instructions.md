@@ -57,7 +57,11 @@ import { getProcedureAvgWtForJob as query } from '@/db/queries/waiting-periods';
 export const getProcedureAvgWtForJobAction = createAction(
   z.object({ jobId: z.string().trim().min(1) }),
   (params) => query(db, params),
-  { messages: { invalidInput: 'Invalid input for getProcedureAvgWtForJobAction.' } }
+  {
+    messages: {
+      invalidInput: 'Invalid input for getProcedureAvgWtForJobAction.',
+    },
+  }
 );
 ```
 

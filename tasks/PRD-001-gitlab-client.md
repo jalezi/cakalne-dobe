@@ -1,18 +1,20 @@
 # PRD: Consolidate GitLab Client Module
 
 ## Implementation order:
+
 - 1
 - 5
 - 2
 - 3
 
 ## Candidate
+
 #1 — Fragmented GitLab Client (pass-through utils)
 
 ## Problem Statement
 
 Currently, GitLab API communication is scattered across three single-function modules:
-- `src/utils/get-jobs.ts` wraps `graphQLClient.request()` 
+- `src/utils/get-jobs.ts` wraps `graphQLClient.request()`
 - `src/utils/get-last-job-id.ts` wraps `getJobs()` and extracts ID
 - `src/utils/get-json.ts` wraps `fetch()` and validates with schema
 
@@ -47,27 +49,34 @@ export interface GitLabClient {
   getLatestJobId(
     first?: number,
     after?: string
-  ): Promise<Result<{ gitLabJobId: string; jobFinishedAt: string }, GitLabClientMeta>>;
-  
+  ): Promise<
+    Result<{ gitLabJobId: string; jobFinishedAt: string }, GitLabClientMeta>
+  >;
+
   getJobArtifact(jobId: string): Promise<Result<AllData, GitLabClientMeta>>;
 }
 
 export function createGitLabClient(): GitLabClient {
-  return { /* implementation */ };
+  return {
+    /* implementation */
+  };
 }
 ```
 
 ## Benefits
 
 ### Locality
+
 All GitLab communication changes in one place. Token refresh, pagination, rate-limit handling — one module to update.
 
 ### Leverage
+
 Callers express intent, not mechanism:
 - `gitLabClient.getLatestJobId()` not `graphQLClient.request() + nodes[0].id`
 - `gitLabClient.getJobArtifact(id)` not `fetch(url) + json() + validate()`
 
 ### Testability
+
 Real seam emerges: in-memory adapter for tests (GitLab API never called in CI).
 
 ## Success Criteria
@@ -90,8 +99,10 @@ Real seam emerges: in-memory adapter for tests (GitLab API never called in CI).
 6. Update tests to use in-memory adapter
 
 ## Estimated Effort
+
 Medium — consolidation of three files, refactoring one call site, test coverage.
 
 ## Related Documents
+
 - Architectural Review: #4 Error Types (completed)
 - Next: #2 (Snapshot Pipeline Seam) depends on solid error handling ✓

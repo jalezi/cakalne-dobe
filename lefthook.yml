@@ -7,10 +7,10 @@ pre-commit:
     lint:
       run: pnpm biome check --write --no-errors-on-unmatched --files-ignore-unknown=true --staged {staged_files}
       stage_fixed: true
-    
+
     # Type check
     type-check:
-      glob: '*.{ts,tsx,mts}'
+      glob: "*.{ts,tsx,mts}"
       run: pnpm tsc --noEmit
       skip:
         - merge

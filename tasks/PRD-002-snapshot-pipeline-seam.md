@@ -1,6 +1,7 @@
 # PRD: Make Snapshot Pipeline Seam Testable
 
 ## Candidate
+
 #2 — Hardwired Snapshot Pipeline (hypothetical seam)
 
 ## Problem Statement
@@ -30,12 +31,15 @@ Now tests can inject `createInMemorySnapshotSource()` or mock sources without to
 ## Benefits
 
 ### Locality
+
 Snapshot pipeline logic concentrated at the interface (`fetchAndPrepareSnapshot`), not scattered across test setup and HTTP stubs.
 
 ### Leverage
-Existing in-memory source becomes *actually useful* — not dead code. Tests become explicit about what they're testing: transformer logic vs. source fetching.
+
+Existing in-memory source becomes _actually useful_ — not dead code. Tests become explicit about what they're testing: transformer logic vs. source fetching.
 
 ### Seam Becomes Real
+
 Two adapters (HTTP + in-memory) = real seam. Opens door to file sources, API caching, etc. without changing the pipeline.
 
 ## Success Criteria
@@ -63,12 +67,15 @@ Two adapters (HTTP + in-memory) = real seam. Opens door to file sources, API cac
 5. Verify `test/snapshot-source.test.ts` covers both adapters
 
 ## Estimated Effort
+
 Small — straightforward parameter addition, test refactoring to use in-memory adapter.
 
 ## Related Documents
+
 - Architectural Review: #4 Error Types (completed) ✓
 - Depends on: #1 GitLab Client (independent, but good to do first)
 - Related: #5 Normalization
 
 ## Dependencies
+
 - Clean error types from #4 (already done) ✓

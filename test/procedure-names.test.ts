@@ -114,201 +114,189 @@ describe('procedure names', () => {
     await expect(storedProcedures(seedDb)).resolves.toEqual(expected);
   });
 
-  it.each(
-    paths
-  )('$path: updates a stored seed-form name to the Snapshot form', async ({
-    db,
-    ingest,
-  }) => {
-    await db.insert(schema.procedures).values([
-      { code: 'P1', name: 'Dermatološki pregled-prvi' },
-      { code: 'P2', name: 'Kontrolni pregled' },
-    ]);
+  it.each(paths)(
+    '$path: updates a stored seed-form name to the Snapshot form',
+    async ({ db, ingest }) => {
+      await db.insert(schema.procedures).values([
+        { code: 'P1', name: 'Dermatološki pregled-prvi' },
+        { code: 'P2', name: 'Kontrolni pregled' },
+      ]);
 
-    await ingest(
-      buildSnapshot([
+      await ingest(
+        buildSnapshot([
+          { code: 'P1', name: 'Dermatološki pregled - prvi' },
+          { code: 'P2', name: 'Kontrolni pregled' },
+        ]),
+        'gitlab-job-1'
+      );
+
+      await expect(storedProcedures(db)).resolves.toEqual([
         { code: 'P1', name: 'Dermatološki pregled - prvi' },
         { code: 'P2', name: 'Kontrolni pregled' },
-      ]),
-      'gitlab-job-1'
-    );
+      ]);
+    }
+  );
 
-    await expect(storedProcedures(db)).resolves.toEqual([
-      { code: 'P1', name: 'Dermatološki pregled - prvi' },
-      { code: 'P2', name: 'Kontrolni pregled' },
-    ]);
-  });
+  it.each(paths)(
+    '$path: skips a rename to a name another code holds, warns, and ingests the rest',
+    async ({ db, ingest }) => {
+      // P9 holds P1's new name and isn't in the Snapshot, so nothing frees it
+      await db.insert(schema.procedures).values([
+        { code: 'P1', name: 'Pregled-prvi' },
+        { code: 'P2', name: 'Kontrola-drugi' },
+        { code: 'P9', name: 'Pregled - prvi' },
+      ]);
 
-  it.each(
-    paths
-  )('$path: skips a rename to a name another code holds, warns, and ingests the rest', async ({
-    db,
-    ingest,
-  }) => {
-    // P9 holds P1's new name and isn't in the Snapshot, so nothing frees it
-    await db.insert(schema.procedures).values([
-      { code: 'P1', name: 'Pregled-prvi' },
-      { code: 'P2', name: 'Kontrola-drugi' },
-      { code: 'P9', name: 'Pregled - prvi' },
-    ]);
+      await ingest(
+        buildSnapshot([
+          { code: 'P1', name: 'Pregled - prvi' },
+          { code: 'P2', name: 'Kontrola - drugi' },
+        ]),
+        'gitlab-job-1'
+      );
 
-    await ingest(
-      buildSnapshot([
-        { code: 'P1', name: 'Pregled - prvi' },
+      expect(console.warn).toHaveBeenCalledWith(
+        'Procedure P1 keeps the name "Pregled-prvi": "Pregled - prvi" belongs to P9.'
+      );
+      await expect(storedProcedures(db)).resolves.toEqual([
+        { code: 'P1', name: 'Pregled-prvi' },
         { code: 'P2', name: 'Kontrola - drugi' },
-      ]),
-      'gitlab-job-1'
-    );
+        { code: 'P9', name: 'Pregled - prvi' },
+      ]);
+      await expect(db.$count(schema.jobs)).resolves.toBe(1);
+      await expect(db.$count(schema.waitingPeriods)).resolves.toBe(2);
+    }
+  );
 
-    expect(console.warn).toHaveBeenCalledWith(
-      'Procedure P1 keeps the name "Pregled-prvi": "Pregled - prvi" belongs to P9.'
-    );
-    await expect(storedProcedures(db)).resolves.toEqual([
-      { code: 'P1', name: 'Pregled-prvi' },
-      { code: 'P2', name: 'Kontrola - drugi' },
-      { code: 'P9', name: 'Pregled - prvi' },
-    ]);
-    await expect(db.$count(schema.jobs)).resolves.toBe(1);
-    await expect(db.$count(schema.waitingPeriods)).resolves.toBe(2);
-  });
+  it.each(paths)(
+    '$path: gives a name freed by an earlier rename to a later one',
+    async ({ db, ingest }) => {
+      await db.insert(schema.procedures).values([
+        { code: 'P1', name: 'Pregled-prvi' },
+        { code: 'P2', name: 'Pregled-drugi' },
+      ]);
 
-  it.each(
-    paths
-  )('$path: gives a name freed by an earlier rename to a later one', async ({
-    db,
-    ingest,
-  }) => {
-    await db.insert(schema.procedures).values([
-      { code: 'P1', name: 'Pregled-prvi' },
-      { code: 'P2', name: 'Pregled-drugi' },
-    ]);
+      await ingest(
+        buildSnapshot([
+          { code: 'P1', name: 'Pregled - prvi' },
+          { code: 'P2', name: 'Pregled-prvi' },
+        ]),
+        'gitlab-job-1'
+      );
 
-    await ingest(
-      buildSnapshot([
+      expect(console.warn).not.toHaveBeenCalled();
+      await expect(storedProcedures(db)).resolves.toEqual([
         { code: 'P1', name: 'Pregled - prvi' },
         { code: 'P2', name: 'Pregled-prvi' },
-      ]),
-      'gitlab-job-1'
-    );
+      ]);
+    }
+  );
 
-    expect(console.warn).not.toHaveBeenCalled();
-    await expect(storedProcedures(db)).resolves.toEqual([
-      { code: 'P1', name: 'Pregled - prvi' },
-      { code: 'P2', name: 'Pregled-prvi' },
-    ]);
-  });
+  it.each(paths)(
+    '$path: skips a rename to the name of a new code in the same Snapshot, and inserts the new code',
+    async ({ db, ingest }) => {
+      await db
+        .insert(schema.procedures)
+        .values({ code: 'P1', name: 'Pregled-prvi' });
 
-  it.each(
-    paths
-  )('$path: skips a rename to the name of a new code in the same Snapshot, and inserts the new code', async ({
-    db,
-    ingest,
-  }) => {
-    await db
-      .insert(schema.procedures)
-      .values({ code: 'P1', name: 'Pregled-prvi' });
+      // P1 first: renaming it before P5's insert would take P5's name
+      await ingest(
+        buildSnapshot([
+          { code: 'P1', name: 'Pregled - prvi' },
+          { code: 'P5', name: 'Pregled - prvi' },
+        ]),
+        'gitlab-job-1'
+      );
 
-    // P1 first: renaming it before P5's insert would take P5's name
-    await ingest(
-      buildSnapshot([
-        { code: 'P1', name: 'Pregled - prvi' },
+      expect(console.warn).toHaveBeenCalledWith(
+        'Procedure P1 keeps the name "Pregled-prvi": "Pregled - prvi" belongs to P5.'
+      );
+      await expect(storedProcedures(db)).resolves.toEqual([
+        { code: 'P1', name: 'Pregled-prvi' },
         { code: 'P5', name: 'Pregled - prvi' },
-      ]),
-      'gitlab-job-1'
-    );
+      ]);
+      await expect(db.$count(schema.jobs)).resolves.toBe(1);
+      await expect(db.$count(schema.waitingPeriods)).resolves.toBe(2);
+    }
+  );
 
-    expect(console.warn).toHaveBeenCalledWith(
-      'Procedure P1 keeps the name "Pregled-prvi": "Pregled - prvi" belongs to P5.'
-    );
-    await expect(storedProcedures(db)).resolves.toEqual([
-      { code: 'P1', name: 'Pregled-prvi' },
-      { code: 'P5', name: 'Pregled - prvi' },
-    ]);
-    await expect(db.$count(schema.jobs)).resolves.toBe(1);
-    await expect(db.$count(schema.waitingPeriods)).resolves.toBe(2);
-  });
+  it.each(paths)(
+    '$path: inserts a new code under the name a rename in the same Snapshot frees',
+    async ({ db, ingest }) => {
+      await db
+        .insert(schema.procedures)
+        .values({ code: 'P1', name: 'Kontrola' });
 
-  it.each(
-    paths
-  )('$path: inserts a new code under the name a rename in the same Snapshot frees', async ({
-    db,
-    ingest,
-  }) => {
-    await db.insert(schema.procedures).values({ code: 'P1', name: 'Kontrola' });
+      // P5 first: inserting it before P1's rename would hit P1's stored name
+      await ingest(
+        buildSnapshot([
+          { code: 'P5', name: 'Kontrola' },
+          { code: 'P1', name: 'Kontrola - prvi' },
+        ]),
+        'gitlab-job-1'
+      );
 
-    // P5 first: inserting it before P1's rename would hit P1's stored name
-    await ingest(
-      buildSnapshot([
-        { code: 'P5', name: 'Kontrola' },
+      expect(console.warn).not.toHaveBeenCalled();
+      await expect(storedProcedures(db)).resolves.toEqual([
         { code: 'P1', name: 'Kontrola - prvi' },
-      ]),
-      'gitlab-job-1'
-    );
-
-    expect(console.warn).not.toHaveBeenCalled();
-    await expect(storedProcedures(db)).resolves.toEqual([
-      { code: 'P1', name: 'Kontrola - prvi' },
-      { code: 'P5', name: 'Kontrola' },
-    ]);
-    await expect(db.$count(schema.waitingPeriods)).resolves.toBe(2);
-  });
-
-  it.each(
-    paths
-  )('$path: keeps a name a rename frees for the new code, not a later rename', async ({
-    db,
-    ingest,
-  }) => {
-    await db.insert(schema.procedures).values([
-      { code: 'P1', name: 'Kontrola' },
-      { code: 'P2', name: 'Pregled' },
-    ]);
-
-    await ingest(
-      buildSnapshot([
         { code: 'P5', name: 'Kontrola' },
+      ]);
+      await expect(db.$count(schema.waitingPeriods)).resolves.toBe(2);
+    }
+  );
+
+  it.each(paths)(
+    '$path: keeps a name a rename frees for the new code, not a later rename',
+    async ({ db, ingest }) => {
+      await db.insert(schema.procedures).values([
+        { code: 'P1', name: 'Kontrola' },
+        { code: 'P2', name: 'Pregled' },
+      ]);
+
+      await ingest(
+        buildSnapshot([
+          { code: 'P5', name: 'Kontrola' },
+          { code: 'P1', name: 'Kontrola - prvi' },
+          { code: 'P2', name: 'Kontrola' },
+        ]),
+        'gitlab-job-1'
+      );
+
+      expect(console.warn).toHaveBeenCalledWith(
+        'Procedure P2 keeps the name "Pregled": "Kontrola" belongs to P5.'
+      );
+      await expect(storedProcedures(db)).resolves.toEqual([
         { code: 'P1', name: 'Kontrola - prvi' },
-        { code: 'P2', name: 'Kontrola' },
-      ]),
-      'gitlab-job-1'
-    );
+        { code: 'P2', name: 'Pregled' },
+        { code: 'P5', name: 'Kontrola' },
+      ]);
+    }
+  );
 
-    expect(console.warn).toHaveBeenCalledWith(
-      'Procedure P2 keeps the name "Pregled": "Kontrola" belongs to P5.'
-    );
-    await expect(storedProcedures(db)).resolves.toEqual([
-      { code: 'P1', name: 'Kontrola - prvi' },
-      { code: 'P2', name: 'Pregled' },
-      { code: 'P5', name: 'Kontrola' },
-    ]);
-  });
+  it.each(paths)(
+    '$path: leaves a procedure whose name already matches untouched',
+    async ({ db, ingest }) => {
+      const updatedAt = new Date('2026-01-01T00:00:00Z');
+      await db
+        .insert(schema.procedures)
+        .values({ code: 'P1', name: 'Pregled - prvi', updatedAt });
 
-  it.each(
-    paths
-  )('$path: leaves a procedure whose name already matches untouched', async ({
-    db,
-    ingest,
-  }) => {
-    const updatedAt = new Date('2026-01-01T00:00:00Z');
-    await db
-      .insert(schema.procedures)
-      .values({ code: 'P1', name: 'Pregled - prvi', updatedAt });
+      await ingest(
+        buildSnapshot([{ code: 'P1', name: 'Pregled - prvi' }]),
+        'gitlab-job-1'
+      );
 
-    await ingest(
-      buildSnapshot([{ code: 'P1', name: 'Pregled - prvi' }]),
-      'gitlab-job-1'
-    );
-
-    expect(console.warn).not.toHaveBeenCalled();
-    await expect(
-      db
-        .select({
-          name: schema.procedures.name,
-          updatedAt: schema.procedures.updatedAt,
-        })
-        .from(schema.procedures)
-    ).resolves.toEqual([{ name: 'Pregled - prvi', updatedAt }]);
-  });
+      expect(console.warn).not.toHaveBeenCalled();
+      await expect(
+        db
+          .select({
+            name: schema.procedures.name,
+            updatedAt: schema.procedures.updatedAt,
+          })
+          .from(schema.procedures)
+      ).resolves.toEqual([{ name: 'Pregled - prvi', updatedAt }]);
+    }
+  );
 
   it('API: keeps the counts it reports, a renamed procedure counted as existing', async () => {
     await apiDb
