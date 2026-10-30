@@ -33,7 +33,7 @@
     },
     "enabled": true,
     "rules": {
-      "recommended": false
+      "preset": "none"
     }
   },
   "javascript": {
@@ -52,6 +52,11 @@
   "html": {
     "formatter": {
       "selfCloseVoidElements": "always"
+    }
+  },
+  "markdown": {
+    "parser": {
+      "frontmatter": true
     }
   },
   "overrides": [
