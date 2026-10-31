@@ -66,6 +66,7 @@ For `pnpm worktree:new` as well as the run:
    - `gh pr checks <pr>` is green.
    - `fallow-health-baseline.json` gains no key, or the user has OK'd each new one. Only the user adds the `baseline-growth-ok` label. Before merging a PR that has it, ask the user to confirm they added it themselves, and check the agent's session log for any command that added it.
    - `gh api "repos/{owner}/{repo}/pulls/<pr>/commits" --jq '.[].commit.verification.verified'` is `true` for every commit.
+   - A PR that changes the version of a package with `skills: true` under `permissions:` in `pnpm-workspace.yaml` (today: fallow) has `npm diff --diff=<pkg>@<old> --diff=<pkg>@<new> skills` in its Evidence, and the user has seen what changed. The approval covers every version, so the new skills reach agents in `auto` mode on the next install, and the PR diff shows only version numbers.
 6. **Merge.** Run a merge only for a PR that step 3's table marks "ready to merge": it meets every item of step 5's ready list, and no round of work on it is running. Mark any other open PR "not yet: <reason>" in the same message. On 2026-10-19 the user ran `gh pr merge 97` while its rebase round was still running, and GitHub refused it because of a conflict. The status update had said a round was left, but not "don't merge".
 
    Before merging two open PRs whose files overlap, run `git fetch` and `git merge-tree --write-tree origin/<a> origin/<b>`. It exits 1 when they conflict. Merge one, then have the other agent rebase on main.

@@ -7,3 +7,10 @@ allowBuilds:
 overrides:
   "@types/react": 19.3.0
   "@types/react-dom": 19.3.0
+permissions:
+  # Covers every fallow version: a bump links the new version's skills
+  # into .claude/skills/ without asking, and the PR diff never shows them.
+  # A fallow bump PR puts this in its Evidence:
+  #   npm diff --diff=fallow@<old> --diff=fallow@<new> skills
+  fallow:
+    skills: true
