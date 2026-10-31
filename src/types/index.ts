@@ -1,22 +1,4 @@
-import { type RankingInfo } from '@tanstack/match-sorter-utils';
-import type { FilterFn, RowData } from '@tanstack/react-table';
 import type * as schema from '@/db/schema';
-import type { ProcedureWithMaxAllowedDays } from '@/lib/zod-schemas/data-schemas';
-
-declare module '@tanstack/table-core' {
-  interface TableMeta<TData extends RowData> {
-    allowedMaxWaitingTimes?: ProcedureWithMaxAllowedDays[];
-    procedureCode?: string;
-    headerTextMap?: Map<string, string>;
-    day?: string;
-  }
-  interface FilterFns {
-    fuzzy: FilterFn<unknown>;
-  }
-  interface FilterMeta {
-    itemRank: RankingInfo;
-  }
-}
 
 export type Result<TData, TMeta = undefined> =
   | { success: true; data: TData }
