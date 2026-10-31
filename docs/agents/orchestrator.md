@@ -33,6 +33,7 @@ For `pnpm worktree:new` as well as the run:
 - `jq`: `worktree.sh` reads Herdr's output and session logs with it.
 - git 2.38 or later, for `git merge-tree --write-tree` in step 6.
 - An `ask` rule for merges in `~/.claude/settings.json`: `"permissions": {"ask": ["Bash(gh pr merge *)"]}`. Claude Code then stops and asks the user before any `gh pr merge` runs, even in `auto` mode. That keeps each merge on the user's word. The rule is global, so it also stops worker agents from merging.
+- Two `autoMode` entries in `~/.claude/settings.json`, for the force-push after a rebase (step 6, and the baseline paragraph after step 7): an `autoMode.allow` rule for `--force-with-lease` pushes of rebased feature branches, never `main`, and an `autoMode.environment` that trusts this repo and its worktrees folder. The user adds both by hand. Auto mode reads `autoMode` only from user settings, managed settings or `--settings`, not from the repo's `.claude/` files, and it refuses Claude's own edit as `[Self-Modification]`. Run `claude auto-mode config` to check the effective config. Without the rule, auto mode blocks the push as `[Git Destructive]`, as it did for #139's rebase on 2026-10-30, and the user runs each rebase's push from the orchestrator pane.
 
 ## Run
 
@@ -69,7 +70,7 @@ For `pnpm worktree:new` as well as the run:
    - A PR that changes the version of a package with `skills: true` under `permissions:` in `pnpm-workspace.yaml` (today: fallow) has `npm diff --diff=<pkg>@<old> --diff=<pkg>@<new> skills` in its Evidence, and the user has seen what changed. The approval covers every version, so the new skills reach agents in `auto` mode on the next install, and the PR diff shows only version numbers.
 6. **Merge.** Run a merge only for a PR that step 3's table marks "ready to merge": it meets every item of step 5's ready list, and no round of work on it is running. Mark any other open PR "not yet: <reason>" in the same message. On 2026-10-19 the user ran `gh pr merge 97` while its rebase round was still running, and GitHub refused it because of a conflict. The status update had said a round was left, but not "don't merge".
 
-   Before merging two open PRs whose files overlap, run `git fetch` and `git merge-tree --write-tree origin/<a> origin/<b>`. It exits 1 when they conflict. Merge one, then have the other agent rebase on main.
+   Before merging two open PRs whose files overlap, run `git fetch` and `git merge-tree --write-tree origin/<a> origin/<b>`. It exits 1 when they conflict. Merge one, then have the other agent rebase on main and push with `git push --force-with-lease origin <branch>`. If auto mode blocks the push, the agent stops and reports; it doesn't work around the block.
 
    Count the PR's commits: `gh api "repos/{owner}/{repo}/pulls/<pr>/commits" --jq length`. The repo's squash default pastes every commit message into the body.
    - One commit: run `gh pr merge <pr> --squash`.
@@ -80,7 +81,7 @@ For `pnpm worktree:new` as well as the run:
    - Tick the issue's boxes. Check each `- [ ]` under its acceptance criteria or "Done when", in the body and in the agent brief comment, against `origin/main` and the PR's Evidence. Tick only the boxes you verified. Leave an unmet, N/A or unverifiable box unticked, and give the reason in a comment on the issue. Edit the body with `gh issue edit <n> --body-file <file>`. Edit the brief with `gh api -X PATCH repos/{owner}/{repo}/issues/comments/<id> -F body=@<file>`, using the REST id from `gh api repos/{owner}/{repo}/issues/<n>/comments`; the id from `gh issue view --json comments` won't work.
    - Then run `pnpm worktree:remove <branch>` from the main checkout. It also closes the agent's Herdr workspace and pane. A merge the user approved, or the user saying they merged it, is consent for that.
 
-When several open PRs edit `fallow-health-baseline.json`, merge them one at a time. Otherwise they conflict, or still hold entries that main has already dropped, which CI's growth check reads as new keys. After each merge, have the next agent rebase on main, re-run `pnpm fallow:health:baseline` (never edit the JSON by hand), and check that the JSON diff holds only its own deletions: Git `rerere` can silently replay an old conflict resolution.
+When several open PRs edit `fallow-health-baseline.json`, merge them one at a time. Otherwise they conflict, or still hold entries that main has already dropped, which CI's growth check reads as new keys. After each merge, have the next agent rebase on main, re-run `pnpm fallow:health:baseline` (never edit the JSON by hand), and check that the JSON diff holds only its own deletions: Git `rerere` can silently replay an old conflict resolution. Then it pushes with `git push --force-with-lease origin <branch>`. If auto mode blocks the push, the agent stops and reports; it doesn't work around the block.
 
 When the user wants a reflection on the run, keep a hiccup log as you go: each failure, retry or wrong assumption, and what got past it. The user runs `/retro` on it in a fresh session.
 
