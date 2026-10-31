@@ -37,7 +37,7 @@ For `pnpm worktree:new` as well as the run:
 
 ## Run
 
-1. **History.** Run `pnpm issue:history <n>`. When a merged PR or a commit on main already mentions the issue, read what shipped. Then check each acceptance criterion against the current code: `none` means no PR or commit names the issue, not that nothing changed. Re-check the issue's other claims about code, data and other issues against main too. Text written before a related PR merged can be stale. Some is written from memory: #66 put collapsing repeated spaces out of scope as a behaviour change, but `trimmedStringSchema` already collapsed them. Done when every criterion is marked met, open or moot, and the user has agreed the remaining scope.
+1. **History.** Read the issue with its comments: `gh issue view <n> --comments`. When triage left an Agent Brief comment, its acceptance criteria and out-of-scope list count along with the body's. On 2026-10-31 the orchestrator read only #135's body, and #135 was closed by #160 without two criteria that only its brief listed. Run `pnpm issue:history <n>`. When a merged PR or a commit on main already mentions the issue, read what shipped. Then check each acceptance criterion against the current code: `none` means no PR or commit names the issue, not that nothing changed. Re-check the issue's other claims about code, data and other issues against main too. Text written before a related PR merged can be stale. Some is written from memory: #66 put collapsing repeated spaces out of scope as a behaviour change, but `trimmedStringSchema` already collapsed them. Done when every criterion is marked met, open or moot, and the user has agreed the remaining scope.
 2. **Prompt.** Fill in the [prompt template](#prompt-template) and write it to a file outside the repo. Pass its absolute path in the next step, because pnpm runs scripts from the package root.
    - Check each claim the prompt makes about code, versions or data against main, and run each example command. The #61 prompt said fixture dates must be recent, but date ranges count back from the latest file's date. #93's brief listed git 2.31 but not the 2.38 that `git merge-tree --write-tree` needs.
    - The exception is a dangerous command, such as `vercel`, `db:prod:*`, `fetch:jobs` or a push: the kind step 5's "never run" line names. Don't run it. Read a tool's `--help` and a package script's source instead. pnpm passes `--help` on to the script, and `db:prod:*` ignores it, so `pnpm db:prod:ensure-fresh-data --help` runs the script against production.
@@ -55,7 +55,7 @@ For `pnpm worktree:new` as well as the run:
      - Anything else, e.g. an API error: show the user the text and ask how to go on.
 5. **Review.** Hand the diff to a read-only subagent, then check each of its findings against the code before you send it to the agent. Write the subagent's prompt in four parts:
    1. Read-only, plus a "never run" line for anything dangerous in this issue (e.g. `vercel`, `db:prod:*`, `fetch:jobs`).
-   2. The spec (`gh issue view <n>`) and the diff (`gh pr diff <pr>`).
+   2. The spec (`gh issue view <n> --comments`) and the diff (`gh pr diff <pr>`).
    3. Numbered checks written for this issue: is behaviour unchanged where it should be; do the tests really prove each criterion, or could a wrong implementation pass; does the baseline only lose entries; is anything out of scope.
    4. Under 300 words, findings only, each with `file:line`, ending in a one-line verdict.
 
@@ -96,7 +96,7 @@ You are implementing GitHub issue #<n> (<owner>/<repo>) in this worktree (branch
 
 ## Context
 
-Read the issue first: `gh issue view <n>`. It is the spec. <What already shipped for it, and the remaining scope the user agreed.> The files you'll touch: <files>.
+Read the issue first, with its comments: `gh issue view <n> --comments`. The body is the spec, together with the acceptance criteria and out-of-scope list of the Agent Brief comment, when there is one. <What already shipped for it, and the remaining scope the user agreed.> The files you'll touch: <files>.
 
 ## Task
 
