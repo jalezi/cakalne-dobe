@@ -19,6 +19,8 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    # The job stops after 10 minutes, so a hung step can't hold it for GitHub's 6-hour default. Runs take about a minute.
+    timeout-minutes: 10
     steps:
       # On a PR, HEAD is GitHub's merge commit. Depth 2 also fetches its first parent, HEAD^1: the base commit
       # the merge was built on, whose baseline the growth gate compares with.
