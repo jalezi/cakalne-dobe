@@ -15,8 +15,10 @@ export default defineConfig({
       provider: 'v8',
       // Include untested files so they report 0% instead of being omitted
       include: ['src/**/*.{ts,tsx}', 'seed/**/*.ts', 'scripts/**/*.ts'],
-      // json writes coverage/coverage-final.json, read by `fallow health`
-      reporter: ['text-summary', 'json'],
+      // json writes coverage/coverage-final.json, read by `fallow health`; json-summary feeds the CI coverage table
+      reporter: ['text-summary', 'json', 'json-summary'],
+      // Floors to raise over time, not targets
+      thresholds: { statements: 83, branches: 78, functions: 78, lines: 83 },
     },
     projects: [
       {
