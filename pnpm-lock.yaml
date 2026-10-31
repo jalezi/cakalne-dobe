@@ -196,11 +196,11 @@ importers:
         specifier: ^0.45.4
         version: 0.45.4(@libsql/client@0.18.0)(@types/better-sqlite3@7.6.13)(better-sqlite3@12.2.0)(gel@2.0.1(supports-color@7.2.0))
       graphql:
-        specifier: ^16.13.2
-        version: 16.13.2
+        specifier: ^16.14.2
+        version: 16.14.2
       graphql-request:
         specifier: ^7.4.0
-        version: 7.4.0(graphql@16.13.2)
+        version: 7.4.0(graphql@16.14.2)
       lucide-react:
         specifier: ^1.64.0
         version: 1.64.0(@types/react@19.3.0)(react@19.3.1)
@@ -1505,7 +1505,7 @@ packages:
     resolution: {integrity: sha512-M5fB67y7jPObI45vhD82RskWwCSm0scOvenV/I6K8tIi2gfr9DXqQqJ+iw+Wi6SgapikdOiJibYzz1gW47fsDg==}
     engines: {node: '>=23.5.0 || ^22.13.0 || ^20.17.0'}
     peerDependencies:
-      '@types/node': '>=18'
+      '@types/node': ^24.19.2
     peerDependenciesMeta:
       '@types/node':
         optional: true
@@ -1608,7 +1608,7 @@ packages:
     resolution: {integrity: sha512-2rnHX8RPo4glJYqnFc/v3nQeIhDcjyRRyaT7MGcfL/8xv/8K03SXYoA2tX06WVSKywWOE/ncbG3dtuzLjR5TCQ==}
     engines: {node: '>=23.5.0 || ^22.13.0 || ^20.17.0'}
     peerDependencies:
-      '@types/node': '>=18'
+      '@types/node': ^24.19.2
     peerDependenciesMeta:
       '@types/node':
         optional: true
@@ -2938,8 +2938,8 @@ packages:
     peerDependencies:
       graphql: 14 - 16
 
-  graphql@16.13.2:
-    resolution: {integrity: sha512-5bJ+nf/UCpAjHM8i06fl7eLyVC9iuNAjm9qzkiu2ZGhM0VscSvS6WDPfAwkdkBuoXGM9FJSbKl6wylMwP9Ktig==}
+  graphql@16.14.2:
+    resolution: {integrity: sha512-Chq1s4CY7jmh8gO2qvLIJyfCDIN+EHLFW/9iShnp1z8FjBQMoodWP1kDC36VAMXXIvAjj4ARa7ntfAV2BrjsbA==}
     engines: {node: ^12.22.0 || ^14.16.0 || ^16.0.0 || >=17.0.0}
 
   has-flag@4.0.0:
@@ -4332,7 +4332,7 @@ snapshots:
     dependencies:
       '@babel/compat-data': 7.29.0
       '@babel/helper-validator-option': 7.27.1
-      browserslist: 4.28.2
+      browserslist: 4.29.5
       lru-cache: 5.1.1
       semver: 6.3.1
 
@@ -5061,9 +5061,9 @@ snapshots:
 
   '@floating-ui/utils@0.2.12': {}
 
-  '@graphql-typed-document-node/core@3.2.0(graphql@16.13.2)':
+  '@graphql-typed-document-node/core@3.2.0(graphql@16.14.2)':
     dependencies:
-      graphql: 16.13.2
+      graphql: 16.14.2
 
   '@img/colour@1.1.0':
     optional: true
@@ -6472,12 +6472,12 @@ snapshots:
 
   graceful-fs@4.2.11: {}
 
-  graphql-request@7.4.0(graphql@16.13.2):
+  graphql-request@7.4.0(graphql@16.14.2):
     dependencies:
-      '@graphql-typed-document-node/core': 3.2.0(graphql@16.13.2)
-      graphql: 16.13.2
+      '@graphql-typed-document-node/core': 3.2.0(graphql@16.14.2)
+      graphql: 16.14.2
 
-  graphql@16.13.2: {}
+  graphql@16.14.2: {}
 
   has-flag@4.0.0:
     optional: true
@@ -6862,7 +6862,7 @@ snapshots:
       '@open-draft/deferred-promise': 3.0.0
       '@types/statuses': 2.0.6
       cookie: 1.1.1
-      graphql: 16.13.2
+      graphql: 16.14.2
       headers-polyfill: 5.0.1
       is-node-process: 1.2.0
       outvariant: 1.4.3
