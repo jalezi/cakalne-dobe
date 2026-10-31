@@ -1,5 +1,5 @@
 import {
-  graphQLClient,
+  GIT_LAB_GRAPHQL_API_URL,
   type ProjectJobs,
   projectJobsQuery,
   requiredVars,
@@ -7,6 +7,8 @@ import {
 import { type FetchResponse } from '@/types';
 
 type JobsArgs = { first?: number; after?: string };
+
+type GraphQLResponseBody = { data: ProjectJobs; errors?: unknown[] };
 
 export const getJobs = async (
   options?: JobsArgs
@@ -17,21 +19,35 @@ export const getJobs = async (
     ...options,
   };
 
-  graphQLClient.setHeader(
-    'Cache-Control',
-    'max-age=60, stale-while-revalidate=59'
-  );
-
   try {
-    const response = await graphQLClient.request<ProjectJobs>(
-      projectJobsQuery,
-      {
-        ...requiredVars,
-        ...mergedOptions,
-      }
-    );
+    const response = await fetch(GIT_LAB_GRAPHQL_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'max-age=60, stale-while-revalidate=59',
+      },
+      body: JSON.stringify({
+        query: projectJobsQuery,
+        variables: {
+          ...requiredVars,
+          ...mergedOptions,
+        },
+      }),
+    });
 
-    return { success: true, data: response.project };
+    if (!response.ok) {
+      throw new Error(`GitLab GraphQL API responded with ${response.status}`);
+    }
+
+    const body = (await response.json()) as GraphQLResponseBody;
+
+    if (body.errors?.length) {
+      throw new Error(
+        `GitLab GraphQL API errors: ${JSON.stringify(body.errors)}`
+      );
+    }
+
+    return { success: true, data: body.data.project };
   } catch (error) {
     console.error(error);
     return { success: false, error: 'Failed to fetch jobs' };

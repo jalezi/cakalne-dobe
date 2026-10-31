@@ -9,4 +9,4 @@ To find new data, the app lists the successful CI jobs of the public GitLab proj
 
 ## Consequences
 
-Calling the API takes only an HTTP POST of `{ query, variables }`, so it needs no GraphQL client library and no `graphql` package. Today the app still calls it through `graphql-request`; #136 replaces that with a plain `fetch`. The job data itself is not fetched through this API: each job's `out.json` artifact comes from GitLab Pages.
+Calling the API takes only an HTTP POST of `{ query, variables }`, so it needs no GraphQL client library and no `graphql` package. The app calls it with a plain `fetch`. The job data itself is not fetched through this API: each job's `out.json` artifact comes from GitLab Pages.
