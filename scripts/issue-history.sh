@@ -44,6 +44,9 @@ echo "${prs:-none}"
 echo
 echo "Commits on origin/main that mention #$n:"
 git fetch --quiet origin main
+if [ "$(git rev-parse --is-shallow-repository)" = true ]; then
+  echo "warning: this clone is shallow, so the commit list may miss older commits; run git fetch --unshallow to fix it" >&2
+fi
 # Not followed by a digit, so #1 doesn't match #12
 commits=$(git log --oneline -E --grep="#$n([^0-9]|\$)" origin/main)
 echo "${commits:-none}"
