@@ -58,3 +58,8 @@ jobs:
       # may grow. Either way, a finding missing from the baseline still fails.
       - if: ${{ github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'baseline-growth-ok') }}
         run: pnpm exec fallow health --coverage coverage/coverage-final.json --baseline fallow-health-baseline.json --baseline-mode identity
+
+      # The env module needs DATABASE_URL when route modules load; libSQL creates the empty file. No page reads it at build time
+      - run: pnpm exec next build
+        env:
+          DATABASE_URL: file:ci.db
