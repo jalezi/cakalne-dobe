@@ -105,7 +105,7 @@ describe('getJobs', () => {
 
   it('should fail on a non-2xx status', async () => {
     mockFetch.mockResolvedValueOnce(
-      jsonResponse({ message: 'Internal Server Error' }, 500)
+      jsonResponse({ data: { project: mockProject } }, 500)
     );
 
     const result = await getJobs();
