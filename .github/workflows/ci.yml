@@ -48,6 +48,11 @@ jobs:
           [ -f coverage/coverage-summary.json ] || exit 0
           jq -r '"### Coverage", "", "| Metric | Percent | Covered/Total |", "|:--|--:|--:|", (.total as $t | ("statements", "branches", "functions", "lines") as $m | $t[$m] | "| \($m) | \(.pct)% | \(.covered)/\(.total) |")' coverage/coverage-summary.json >> "$GITHUB_STEP_SUMMARY"
 
+      # Report-only for now: a fail verdict exits 1, which continue-on-error keeps from failing verify
+      - if: ${{ github.event_name == 'pull_request' }}
+        continue-on-error: true
+        run: pnpm exec fallow audit --base HEAD^1 --coverage coverage/coverage-final.json --format github-summary >> "$GITHUB_STEP_SUMMARY"
+
       - run: pnpm fallow
 
       # Logs the commit the growth gate compares with, next to the PR's base.sha, which matches it on a fresh PR
