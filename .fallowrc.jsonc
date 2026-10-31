@@ -1,10 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
   "ignoreExportsUsedInFile": true,
-  "ignoreDependencies": [
-    // Peer-dep shim pinned via pnpm overrides, not imported directly
-    "parse5"
-  ],
   "ignoreFindings": [
     // shadcn/ui components — exports are part of the public component API,
     // not all are consumed internally
