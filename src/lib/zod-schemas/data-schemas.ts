@@ -29,10 +29,6 @@ export const procedureWithMaxAllowedDaysSchema = z.object({
   maxAllowedDays: maxAllowedDaysByUrgencySchema,
 });
 
-export type ProcedureWithMaxAllowedDays = z.infer<
-  typeof procedureWithMaxAllowedDaysSchema
->;
-
 export const procedureWithWaitingPeriodSchema =
   procedureWithMaxAllowedDaysSchema.extend({
     waitingPeriods: waitingPeriodsByUrgencySchema,
