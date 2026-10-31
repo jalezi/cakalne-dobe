@@ -16,7 +16,7 @@
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:mutation": "stryker run",
-    "prepare": "lefthook install",
+    "prepare": "d=$(git rev-parse --path-format=absolute --git-dir 2>/dev/null) || exit 0; [ \"$d\" = \"$(git rev-parse --path-format=absolute --git-common-dir)\" ] || exit 0; lefthook install",
     "drizzle:local:push": "drizzle-kit push --config=./drizzle/config/local.ts",
     "drizzle:prod:push": "drizzle-kit push --config=./drizzle/config/prod.ts",
     "drizzle:local:studio": "drizzle-kit studio --config=./drizzle/config/local.ts --port 4000",
