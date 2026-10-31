@@ -5,6 +5,7 @@ allowBuilds:
   msw: false
   sharp: true
 overrides:
+  "@types/node": ^24.19.2
   "@types/react": 19.3.0
   "@types/react-dom": 19.3.0
 permissions:
