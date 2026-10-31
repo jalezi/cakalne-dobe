@@ -33,6 +33,7 @@ For `pnpm worktree:new` as well as the run:
 - `jq`: `worktree.sh` reads Herdr's output and session logs with it.
 - git 2.38 or later, for `git merge-tree --write-tree` in step 6.
 - An `ask` rule for merges in `~/.claude/settings.json`: `"permissions": {"ask": ["Bash(gh pr merge *)"]}`. Claude Code then stops and asks the user before any `gh pr merge` runs, even in `auto` mode. That keeps each merge on the user's word. The rule is global, so it also stops worker agents from merging.
+- For a [stacked run](#stacked-run), add `"Bash(gh stack merge *)"` to the same `ask` list. The `gh pr merge` rule doesn't match `gh stack merge`.
 - Two `autoMode` entries in `~/.claude/settings.json`, for the force-push after a rebase (step 6, and the baseline paragraph after step 7): an `autoMode.allow` rule for `--force-with-lease` pushes of rebased feature branches, never `main`, and an `autoMode.environment` that trusts this repo and its worktrees folder. The user adds both by hand. Auto mode reads `autoMode` only from user settings, managed settings or `--settings`, not from the repo's `.claude/` files, and it refuses Claude's own edit as `[Self-Modification]`. Run `claude auto-mode config` to check the effective config. Without the rule, auto mode blocks the push as `[Git Destructive]`, as it did for #139's rebase on 2026-10-30, and the user runs each rebase's push from the orchestrator pane.
 
 ## Run
@@ -86,6 +87,32 @@ For `pnpm worktree:new` as well as the run:
 When several open PRs edit `fallow-health-baseline.json`, merge them one at a time. Otherwise they conflict, or still hold entries that main has already dropped, which CI's growth check reads as new keys. After each merge, have the next agent rebase on main, re-run `pnpm fallow:health:baseline` (never edit the JSON by hand), and check that the JSON diff holds only its own deletions: Git `rerere` can silently replay an old conflict resolution. Then it pushes with `git push --force-with-lease origin <branch>`. If auto mode blocks the push, the agent stops and reports; it doesn't work around the block.
 
 When the user wants a reflection on the run, keep a hiccup log as you go: each failure, retry or wrong assumption, and what got past it. The user runs `/retro` on it in a fresh session.
+
+## Stacked run
+
+A stack is a chain of PRs made with `gh stack` (v0.1.1), each PR based on the one below it. These steps replace the [run](#run)'s where they differ; the rest stays the same. Tried once, on 2026-10-31: five `docs(orchestrator)` layers, #153 → #149 → #122 → #123 → #167 (PRs #169–#173, GitHub "Stack #174").
+
+1. **When.** A chain of issues that build on each other in one file or area. Give the stack one worktree and one agent: git won't check out one branch in two worktrees, and `gh stack rebase` rebases every layer. One big issue split into layers is untested. So is `fallow-health-baseline.json` across layers: no layer in the trial touched it.
+2. **Setup.** Add the `gh stack merge` ask rule from [The run](#the-run). It also stops `gh stack merge --help`, so a prompt that asks for flag checks should expect that dialog (2026-10-31). In Run step 3, pass the bottom layer's branch: `pnpm worktree:agent <bottom branch> <prompt-file>`.
+3. **Prompt.** Write one prompt for the stack, with a table of the layers (issue and branch each). In the [template](#prompt-template)'s Ship, replace the commit, push and PR bullets with these; the rest stays:
+   - `gh stack init <bottom branch>` adopts the worktree's branch as layer 1. For each next layer, run `gh stack add <branch>`, edit, then `git commit`. Leave out `-A` and `-u`, which open an editor without `-m`, and `-m`, which names the branch from the message when no branch is given.
+   - Exactly one signed commit per layer. `gh stack merge` has no `--subject` or `--body`, so the squash uses the commit message, `Co-Authored-By` trailer included. Keep `Closes #<n>` out of it. In the commit message and the PR bodies, put no closing word (close, closed, fix, resolve…) right before any issue number. On 2026-10-31 such a phrase in #173's body linked #135 as well as #167.
+   - `gh stack submit --auto --open` pushes every layer and opens ready PRs. Without `--auto` an editor opens; without `--open` the PRs are drafts. Each PR's base is the layer below. Titles are the commit subjects, and bodies are the commit body plus a "Stack created with GitHub Stacks CLI" footer, so then run `gh pr edit <pr> --title <subject> --body-file <file>`. Each body has `Closes #<n>` for its own issue only. `closingIssuesReferences` lists it even when the base isn't `main`.
+   - For a review fix, check out the layer that owns it, run `git commit --amend`, then `gh stack rebase --no-trunk` to cascade it up, and `gh stack push`. That push is a force-with-lease. Auto mode didn't block it on 2026-10-31, and the rebased commits stayed signed. If auto mode blocks it, the agent stops and reports.
+4. **Review.** Review each layer's own diff, `git diff <layer below>..<layer>`, as Run step 5 says. Before a merge, check Run step 5's ready list for every layer it includes.
+5. **Merge.** From the main checkout, run `gh stack merge <top PR to include> --squash --yes`. It merges every layer up to that PR in one go, or none, and the ask rule makes the user approve it. A bare number is read as a stack number first, then as a PR. Each layer lands as its own squash commit: its commit message plus ` (#<pr>)`, with no commit list. On 2026-10-31, `gh stack merge 170` landed #169 and #170 only.
+   - After a partial merge, GitHub rebases the layers above onto `main` itself (committer "GitHub", signatures valid) and retargets the lowest open one to `main`. Wait for `verify` to re-run on them, then check their ready list again.
+   - The agent's local branches are now behind. Catching them up with `gh stack sync` is untested, and so is the web UI's **Rebase stack**.
+6. **Clean up.** Each layer's PR closes its own issue. Poll and tick boxes per issue, as Run step 7 says. Then run `pnpm worktree:remove <bottom branch>`. It checks only the named branch, so it worked on 2026-10-31 with the top layer checked out, and the gh-stack metadata goes with the worktree. The other local layer branches stay. The layers GitHub rebased after a partial merge differ in SHA from their merged PR heads, so `worktree:remove` would refuse them. For each remaining branch, check that its patch matches its PR's head, then delete it. `git show <branch>` shows only the top commit, which is the whole layer while each layer is one commit:
+
+   ```sh
+   git fetch origin pull/<pr>/head
+   git show <branch> | git patch-id --stable
+   git show FETCH_HEAD | git patch-id --stable
+   git branch -D <branch>
+   ```
+
+   Run the last line only when the two patch ids (the first field) match. The pipes feed `patch-id`; check its output, not the exit code. GitHub deletes the remote branches.
 
 ## Prompt template
 
