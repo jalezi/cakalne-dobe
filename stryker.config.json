@@ -1,10 +1,12 @@
 {
   "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "$comment": "tsconfigFile points at a file that doesn't exist, so Stryker skips its tsconfig step, which needs the JavaScript API that TypeScript 7 lacks. \"/.claude\" in ignorePatterns stops the sandbox copy failing with ENOTSUP on the .claude/skills symlinks. Remove both once Stryker supports TypeScript 7: https://github.com/stryker-mutator/stryker-js/issues/6111",
   "testRunner": "vitest",
   "plugins": ["@stryker-mutator/vitest-runner"],
   "vitest": {
     "configFile": "vitest.config.mts"
   },
+  "tsconfigFile": "tsconfig.stryker-intentionally-missing.json",
   "mutate": [
     "src/services/**/*.ts",
     "src/db/transforms/**/*.ts",
@@ -18,7 +20,8 @@
     "/db_dump",
     "/coverage",
     "/.next",
-    "/.temp"
+    "/.temp",
+    "/.claude"
   ],
   "reporters": ["clear-text", "progress", "html"]
 }

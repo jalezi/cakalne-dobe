@@ -1,0 +1,40 @@
+name: mutation
+
+# Report only: a low mutation score never fails the job, only a crash or the timeout does.
+on:
+  schedule:
+    # Wednesdays at 03:17 UTC
+    - cron: "17 3 * * 3"
+  workflow_dispatch:
+  # GitHub dispatches only workflows already on the default branch, so a PR that changes this file runs it.
+  # Other PRs don't.
+  pull_request:
+    paths: [ .github/workflows/mutation.yml ]
+
+permissions:
+  contents: read
+
+jobs:
+  mutation:
+    runs-on: ubuntu-latest
+    # Runs take well under a minute of Stryker time.
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      # Version comes from the packageManager field in package.json
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:mutation
+
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: mutation-report
+          path: reports/mutation/
