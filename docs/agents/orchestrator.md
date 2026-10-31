@@ -64,7 +64,7 @@ For `pnpm worktree:new` as well as the run:
    Check the agent's own claims about risk against the code before you pass them to the user. On 2026-10-18 the orchestrator relayed a wrong claim from the agent on #68: that a `config.matcher` change could block the Job webhook.
 
    The PR is ready when:
-   - `gh pr view <pr> --json closingIssuesReferences --jq '[.closingIssuesReferences[].number]'` lists the issue. Read `.number` only: title and state aren't filled in. It can return `[]` for about a minute after the PR opens, so read it again before changing anything.
+   - `gh pr view <pr> --json closingIssuesReferences --jq '[.closingIssuesReferences[].number]'` lists the issue. Read `.number` only: title and state aren't filled in. It can return `[]` for about a minute after the PR opens, so read it again before changing anything. For a `Refs` PR, the list doesn't include the issue, and the PR body has `Refs #<n>` instead.
    - `gh pr checks <pr>` is green.
    - `fallow-health-baseline.json` gains no key, or the user has OK'd each new one. Only the user adds the `baseline-growth-ok` label. Before merging a PR that has it, ask the user to confirm they added it themselves, and check the agent's session log for any command that added it.
    - `gh api "repos/{owner}/{repo}/pulls/<pr>/commits" --jq '.[].commit.verification.verified'` is `true` for every commit.
@@ -80,6 +80,7 @@ For `pnpm worktree:new` as well as the run:
    Claude Code then asks the user to approve the command. A declined prompt means don't merge.
 7. **Clean up.** After the merge succeeds, or the user says they merged it, poll `gh issue view <n> --json state` until the issue is closed. That can take up to a minute; close it by hand only after that.
    - Tick the issue's boxes. Check each `- [ ]` under its acceptance criteria or "Done when", in the body and in the agent brief comment, against `origin/main` and the PR's Evidence. Tick only the boxes you verified. Leave an unmet, N/A or unverifiable box unticked, and give the reason in a comment on the issue. Edit the body with `gh issue edit <n> --body-file <file>`. Edit the brief with `gh api -X PATCH repos/{owner}/{repo}/issues/comments/<id> -F body=@<file>`, using the REST id from `gh api repos/{owner}/{repo}/issues/<n>/comments`; the id from `gh issue view --json comments` won't work.
+   - For a `Refs` merge, skip the close poll: the issue stays open by design. Tick only the boxes this PR alone meets; a box about the whole issue waits for the closing PR. #118 (`Refs #114`, 2026-10-20) met some boxes that covered the whole suite, but they weren't part 1's to tick.
    - Then run `pnpm worktree:remove <branch>` from the main checkout. It also closes the agent's Herdr workspace and pane. A merge the user approved, or the user saying they merged it, is consent for that.
 
 When several open PRs edit `fallow-health-baseline.json`, merge them one at a time. Otherwise they conflict, or still hold entries that main has already dropped, which CI's growth check reads as new keys. After each merge, have the next agent rebase on main, re-run `pnpm fallow:health:baseline` (never edit the JSON by hand), and check that the JSON diff holds only its own deletions: Git `rerere` can silently replay an old conflict resolution. Then it pushes with `git push --force-with-lease origin <branch>`. If auto mode blocks the push, the agent stops and reports; it doesn't work around the block.
@@ -120,6 +121,7 @@ Constraints: surgical changes only, no unrelated edits. Never re-save the fallow
 - Push and open a PR against main. Model the body on recent PRs (`gh pr view <recent pr>`): `## Summary`, `## Evidence` (the verify output above, plus one line per acceptance criterion naming its proof), `## Merge Danger`. Include `Closes #<n>` and end the body with:
   `🤖 Generated with [Claude Code](https://claude.com/claude-code)`
 - Run `gh pr view --json closingIssuesReferences -q .closingIssuesReferences` and confirm it lists <n>. It can return `[]` for about a minute after the PR opens; read it again before changing anything.
+- If the PR ships only part of the issue, write `Refs #<n>` instead of `Closes #<n>`, and skip the check above. Comment on the issue as "Leave an issue open on purpose" in `docs/agents/issue-tracker.md` says. Keep the work that's left in this worktree (e.g. on its own branch), not in a session scratchpad, which may not outlast the session.
 - Watch CI (`gh pr checks --watch`) until `verify` and Socket finish. Don't merge.
 
 ## When you finish (or get blocked)
