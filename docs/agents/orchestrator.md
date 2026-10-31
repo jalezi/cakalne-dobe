@@ -107,6 +107,7 @@ Constraints: surgical changes only, no unrelated edits. Never re-save the fallow
 - Run each check as its own command, with no pipe (`| tail`, `| head`, `| grep`), so the exit code you report is the check's.
 - If the shell is zsh: pass argument lists as arrays (`"${args[@]}"`), because zsh doesn't split `$args`, and write `${var}:` before a colon, because `$T:head` reads `:h` as a modifier.
 - To build, run `DATABASE_URL=file:dev.db pnpm build`. `worktree.sh` writes only `.env.development.local`, which a production build doesn't load, so a plain `pnpm build` stops at "Collecting page data".
+- Two DB scripts wait for input. Run `pnpm drizzle:local:push < /dev/null`: with input left open, it prints "No changes detected" and never exits. Run `pnpm db:local:seed <<< N`: it first asks "Delete tables: N/y", and `N` keeps the tables. Both cost a retry in #131.
 - To compare a check against main, run `git add -N` on new files, save `git diff origin/main` as a patch outside the repo, run `git apply -R <patch>` to get main's files, run the check, then `git apply <patch>`. Not `git stash`: worktrees share one stash stack, and it was refused in #91.
 - Run only the tests you touch. lefthook's `pre-commit` runs Biome on the staged files it handles, and `tsc --noEmit` when a `.ts`, `.tsx` or `.mts` file is staged. `pre-push` runs `vitest run` and `fallow dead-code`. CI's `verify` runs them all again, with the tests as `test:coverage`, plus `fallow health` against the baseline. No hook runs `fallow health`; CI does.
 
