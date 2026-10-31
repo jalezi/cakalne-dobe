@@ -1,30 +1,18 @@
-import { join } from 'node:path';
 import { createClient } from '@libsql/client';
 import { createId } from '@paralleldrive/cuid2';
 import { sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/libsql';
-import { inject } from 'vitest';
 import * as schema from '../schema';
 
 /**
- * Creates a SQLite database file for testing, in the temp folder that
- * test/global-setup.ts creates for each test run and deletes when the run ends.
- * It isn't `:memory:` because @libsql/client opens a new connection after
- * `transaction()`, and a new connection to `:memory:` opens a new, empty database.
- * @returns A drizzle database instance connected to the new database file
+ * Creates an in-memory SQLite database for testing. Nothing is written to disk.
+ * Since @libsql/client 0.18.0, an in-memory database keeps its connection
+ * across `transaction()`, so the tables survive a transaction.
+ * @returns A drizzle database instance connected to the new database
  */
 export function getTestDb() {
-  const dir = inject('testDbDir');
-  if (!dir) {
-    throw new Error(
-      'getTestDb needs test/global-setup.ts in the Vitest globalSetup of this project'
-    );
-  }
-
-  // A file, not `:memory:`, so the tables survive a transaction (see above)
-  const client = createClient({
-    url: `file:${join(dir, `${createId()}.db`)}`,
-  });
+  // Each client opens its own `:memory:` database, so no two calls share one
+  const client = createClient({ url: ':memory:' });
 
   // Create a drizzle instance with our schema
   const db = drizzle(client, { schema });

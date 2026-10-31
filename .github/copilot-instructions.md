@@ -110,7 +110,7 @@ Three urgency types tracked throughout codebase:
 ### Testing Patterns
 
 - Mock env module in tests: `vi.mock('@/lib/env', () => ({...}))`
-- Each test gets its own libSQL file database from `getTestDb` in `src/db/test/`, in a temp folder that `test/global-setup.ts` creates
+- Each test gets its own in-memory libSQL database (`:memory:`) from `getTestDb` in `src/db/test/`
 - Test fixtures in `src/db/test/` with setup/cleanup utilities
 
 ## Key Files for Context
