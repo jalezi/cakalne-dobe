@@ -14,6 +14,7 @@ Issues and specs for this repo live as GitHub issues. Use the `gh` CLI for all o
 - **Apply / remove labels**: `gh issue edit <number> --add-label "..."` / `--remove-label "..."`
 - **Close**: first tick each acceptance-criteria box you verified against the code. Leave unmet or N/A boxes unticked, with the reason in the closing comment. Then post the explanation with `gh issue comment <number> --body "..."`, then `gh issue close <number>`. On an already-closed issue, `gh issue close --comment` drops the comment and still exits 0.
 - **Leave an issue open on purpose**: a PR that says `Refs #<number>` instead of a closing keyword also comments on the issue with what shipped and what's left.
+- **UI evidence in acceptance criteria**: `gh` can't attach images to a PR body or comment, so a criterion must not ask for screenshots "in the PR". Ask for PNGs saved in the agent's worktree under `.temp/screens-<n>/before/` and `.temp/screens-<n>/after/`, listed in the PR's Evidence, and compared pair by pair with `cmp`. A byte-identical pair shows no visual change. The agent describes any differences in words, and the orchestrator reviews them. #128 asked for screenshots in the PR, and on 2026-10-30 that box had to stay unticked.
 
 Infer the repo from `git remote -v`; `gh` does this automatically when run inside a clone.
 
