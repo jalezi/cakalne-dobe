@@ -1,172 +1,140 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import * as gqlModule from '@/lib/gql';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { projectJobsQuery } from '@/lib/gql';
 import { getJobs } from './get-jobs';
 
-// Define mock types
-type MockFunction = ReturnType<typeof vi.fn>;
+const mockFetch = vi.fn();
 
-// Mock the GraphQL client
-vi.mock('@/lib/gql', () => {
-  return {
-    graphQLClient: {
-      setHeader: vi.fn(),
-      request: vi.fn(),
-    },
-    projectJobsQuery: 'mocked-query',
-    requiredVars: {
-      fullPath: 'wayback-automachine/cakalne-dobe',
-      statuses: ['SUCCESS'],
-    },
+const jsonResponse = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+
+const getRequest = () => {
+  const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+  const body = JSON.parse(init.body as string) as {
+    query: string;
+    variables: Record<string, unknown>;
   };
-});
+  return { url, init, body };
+};
+
+const mockProject = {
+  jobs: {
+    pageInfo: {
+      endCursor: 'end-cursor',
+      hasNextPage: false,
+      hasPreviousPage: false,
+      startCursor: 'start-cursor',
+    },
+    count: 2,
+    nodes: [
+      {
+        name: 'run',
+        finishedAt: '2023-01-01T12:00:00Z',
+        detailedStatus: {
+          detailsPath: '/path/to/job/1',
+        },
+      },
+      {
+        name: 'run',
+        finishedAt: '2023-01-02T12:00:00Z',
+        detailedStatus: {
+          detailsPath: '/path/to/job/2',
+        },
+      },
+    ],
+  },
+};
 
 describe('getJobs', () => {
   beforeEach(() => {
-    vi.resetAllMocks();
+    vi.stubGlobal('fetch', mockFetch);
+    // Mock console.error to avoid cluttering test output
+    vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
-  it('should fetch jobs with default options when no options are provided', async () => {
-    // Mock successful response
-    const mockResponse = {
-      project: {
-        jobs: {
-          pageInfo: {
-            endCursor: 'end-cursor',
-            hasNextPage: false,
-            hasPreviousPage: false,
-            startCursor: 'start-cursor',
-          },
-          count: 2,
-          nodes: [
-            {
-              name: 'run',
-              finishedAt: '2023-01-01T12:00:00Z',
-              detailedStatus: {
-                detailsPath: '/path/to/job/1',
-              },
-            },
-            {
-              name: 'run',
-              finishedAt: '2023-01-02T12:00:00Z',
-              detailedStatus: {
-                detailsPath: '/path/to/job/2',
-              },
-            },
-          ],
-        },
-      },
-    };
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+    mockFetch.mockReset();
+  });
 
-    // Set up the mock to return our test data
-    (gqlModule.graphQLClient.request as MockFunction).mockResolvedValueOnce(
-      mockResponse
+  it('should POST the query with default options when no options are provided', async () => {
+    mockFetch.mockResolvedValueOnce(
+      jsonResponse({ data: { project: mockProject } })
     );
 
-    // Call the function without options
     const result = await getJobs();
 
-    // Verify headers were set
-    expect(gqlModule.graphQLClient.setHeader).toHaveBeenCalledWith(
-      'Cache-Control',
-      'max-age=60, stale-while-revalidate=59'
-    );
-
-    // Verify request was made with default options
-    expect(gqlModule.graphQLClient.request).toHaveBeenCalledWith(
-      expect.anything(), // The query
-      expect.objectContaining({
-        first: 100,
-        // Check other required vars are present
-        fullPath: expect.any(String),
-        statuses: expect.any(Array),
-      })
-    );
-
-    // Verify the result is correct
-    expect(result).toEqual({
-      success: true,
-      data: mockResponse.project,
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    const { url, init, body } = getRequest();
+    expect(url).toBe('https://gitlab.com/api/graphql');
+    expect(init.method).toBe('POST');
+    expect(init.headers).toEqual({
+      'Content-Type': 'application/json',
+      'Cache-Control': 'max-age=60, stale-while-revalidate=59',
     });
+    expect(body).toEqual({
+      query: projectJobsQuery,
+      variables: {
+        first: 100,
+        fullPath: 'wayback-automachine/cakalne-dobe',
+        statuses: ['SUCCESS'],
+      },
+    });
+
+    expect(result).toEqual({ success: true, data: mockProject });
   });
 
-  it('should fetch jobs with custom options when provided', async () => {
-    // Mock successful response
-    const mockResponse = {
-      project: {
-        jobs: {
-          pageInfo: {
-            endCursor: 'end-cursor',
-            hasNextPage: true,
-            hasPreviousPage: false,
-            startCursor: 'start-cursor',
-          },
-          count: 1,
-          nodes: [
-            {
-              name: 'run',
-              finishedAt: '2023-01-01T12:00:00Z',
-              detailedStatus: {
-                detailsPath: '/path/to/job/1',
-              },
-            },
-          ],
-        },
-      },
-    };
-
-    // Set up the mock to return our test data
-    (gqlModule.graphQLClient.request as MockFunction).mockResolvedValueOnce(
-      mockResponse
+  it('should POST the query with custom options when provided', async () => {
+    mockFetch.mockResolvedValueOnce(
+      jsonResponse({ data: { project: mockProject } })
     );
 
-    // Custom options
-    const customOptions = {
+    const result = await getJobs({ first: 1, after: 'some-cursor' });
+
+    expect(getRequest().body.variables).toEqual({
       first: 1,
       after: 'some-cursor',
-    };
+      fullPath: 'wayback-automachine/cakalne-dobe',
+      statuses: ['SUCCESS'],
+    });
+    expect(result).toEqual({ success: true, data: mockProject });
+  });
 
-    // Call the function with custom options
-    const result = await getJobs(customOptions);
+  it('should fail on a non-2xx status', async () => {
+    mockFetch.mockResolvedValueOnce(
+      jsonResponse({ message: 'Internal Server Error' }, 500)
+    );
 
-    // Verify request was made with custom options
-    expect(gqlModule.graphQLClient.request).toHaveBeenCalledWith(
-      expect.anything(), // The query
-      expect.objectContaining({
-        first: 1,
-        after: 'some-cursor',
-        // Check other required vars are present
-        fullPath: expect.any(String),
-        statuses: expect.any(Array),
+    const result = await getJobs();
+
+    expect(console.error).toHaveBeenCalled();
+    expect(result).toEqual({ success: false, error: 'Failed to fetch jobs' });
+  });
+
+  it('should fail on a GraphQL errors body', async () => {
+    mockFetch.mockResolvedValueOnce(
+      jsonResponse({
+        data: { project: null },
+        errors: [{ message: 'Field does not exist' }],
       })
     );
 
-    // Verify the result is correct
-    expect(result).toEqual({
-      success: true,
-      data: mockResponse.project,
-    });
-  });
-
-  it('should handle errors gracefully', async () => {
-    // Set up the mock to throw an error
-    const mockError = new Error('Network error');
-    (gqlModule.graphQLClient.request as MockFunction).mockRejectedValueOnce(
-      mockError
-    );
-
-    // Mock console.error to avoid cluttering test output
-    console.error = vi.fn();
-
-    // Call the function
     const result = await getJobs();
 
-    // Verify error was logged
-    expect(console.error).toHaveBeenCalledWith(mockError);
+    expect(console.error).toHaveBeenCalled();
+    expect(result).toEqual({ success: false, error: 'Failed to fetch jobs' });
+  });
 
-    // Verify the result contains the error
-    expect(result).toEqual({
-      success: false,
-      error: 'Failed to fetch jobs',
-    });
+  it('should fail when fetch rejects', async () => {
+    const mockError = new Error('Network error');
+    mockFetch.mockRejectedValueOnce(mockError);
+
+    const result = await getJobs();
+
+    expect(console.error).toHaveBeenCalledWith(mockError);
+    expect(result).toEqual({ success: false, error: 'Failed to fetch jobs' });
   });
 });

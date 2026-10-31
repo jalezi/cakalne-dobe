@@ -1,4 +1,3 @@
-import { GraphQLClient, gql } from 'graphql-request';
 import { z } from 'zod';
 
 export const GIT_LAB_GRAPHQL_API_URL = 'https://gitlab.com/api/graphql';
@@ -40,7 +39,7 @@ const projectJobsSchema = z.object({
 
 export type ProjectJobs = z.infer<typeof projectJobsSchema>;
 
-export const projectJobsQuery = gql`
+export const projectJobsQuery = `
   query getJobs(
     $fullPath: ID!
     $after: String
@@ -72,4 +71,3 @@ export const requiredVars = {
   fullPath: PROJECT_FULL_PATH,
   statuses: PROJECT_JOB_STATUSES,
 };
-export const graphQLClient = new GraphQLClient(GIT_LAB_GRAPHQL_API_URL);
