@@ -41,6 +41,13 @@ jobs:
       - run: pnpm exec biome ci .
       # Also writes coverage/coverage-final.json for fallow health
       - run: pnpm test:coverage
+
+      # Writes the coverage table to the run page, also when a threshold fails the tests. No file, no table.
+      - if: ${{ always() }}
+        run: |
+          [ -f coverage/coverage-summary.json ] || exit 0
+          jq -r '"### Coverage", "", "| Metric | Percent | Covered/Total |", "|:--|--:|--:|", (.total as $t | ("statements", "branches", "functions", "lines") as $m | $t[$m] | "| \($m) | \(.pct)% | \(.covered)/\(.total) |")' coverage/coverage-summary.json >> "$GITHUB_STEP_SUMMARY"
+
       - run: pnpm fallow
 
       # Logs the commit the growth gate compares with, next to the PR's base.sha, which matches it on a fresh PR
