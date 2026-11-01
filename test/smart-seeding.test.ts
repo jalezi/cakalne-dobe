@@ -24,8 +24,8 @@ const db = getTestDb();
 vi.mock('@/db', () => ({ db }));
 
 const jobData = {
-  start: '2026-04-01T00:00:00Z',
-  end: '2026-04-01T01:00:00Z',
+  start: '2026-04-01T06:00:00+02:00',
+  end: '2026-04-01T07:00:00+02:00',
   procedures: [
     {
       code: 'PROC-1',
@@ -57,7 +57,10 @@ describe('seedMissingJobsOnly', () => {
     await createTestSchema(db);
     jobsDir = await mkdtemp(join(tmpdir(), 'smart-seeding-'));
     await writeFile(join(jobsDir, FILE_1001), JSON.stringify(jobData));
-    await writeFile(join(jobsDir, FILE_1002), JSON.stringify(jobData));
+    await writeFile(
+      join(jobsDir, FILE_1002),
+      JSON.stringify({ ...jobData, start: '2026-04-02T06:00:00+02:00' })
+    );
     vi.spyOn(console, 'log').mockImplementation(() => {});
     vi.spyOn(console, 'error').mockImplementation(() => {});
   });
@@ -125,6 +128,20 @@ describe('seedMissingJobsOnly', () => {
     const result = await seedMissingJobsOnly([FILE_1001, FILE_1002], jobsDir);
 
     expect(result).toEqual({ seeded: 1, skipped: 1, errors: [] });
+  });
+
+  it('skips a job for a day that already has a Job, whatever its job ID', async () => {
+    const rerun = 'wp-2026-04-01-09-00-00-1009.json';
+    await writeFile(
+      join(jobsDir, rerun),
+      JSON.stringify({ ...jobData, start: '2026-04-01T09:00:00+02:00' })
+    );
+    await seedMissingJobsOnly([FILE_1001], jobsDir);
+
+    const result = await seedMissingJobsOnly([rerun], jobsDir);
+
+    expect(result).toEqual({ seeded: 0, skipped: 1, errors: [] });
+    await expect(countAllRows()).resolves.toEqual([1, 1, 1, 1, 1]);
   });
 
   it('reports files that fail to load and seeds the rest', async () => {

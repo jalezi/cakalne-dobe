@@ -25,8 +25,8 @@ const db = getTestDb();
 vi.mock('@/db', () => ({ db }));
 
 const snapshot: AllData = {
-  start: '2026-05-04T06:00:00Z',
-  end: '2026-05-04T07:30:00Z',
+  start: '2026-05-04T06:00:00+02:00',
+  end: '2026-05-04T07:30:00+02:00',
   procedures: [
     {
       code: 'SEED-1',
@@ -43,6 +43,8 @@ const snapshot: AllData = {
     },
   ],
 };
+
+const withStart = (start: string): AllData => ({ ...snapshot, start });
 
 describe('seedDBFromJobs', () => {
   let seedDBFromJobs: typeof import('../seed/seed-db-from-jobs').seedDBFromJobs;
@@ -62,10 +64,13 @@ describe('seedDBFromJobs', () => {
   beforeEach(async () => {
     await createTestSchema(db);
     jobsDir = await mkdtemp(join(tmpdir(), 'seed-db-from-jobs-'));
-    for (const jobId of ['2001', '2002']) {
+    for (const [jobId, day] of [
+      ['2001', '2026-05-04'],
+      ['2002', '2026-05-05'],
+    ]) {
       await writeFile(
-        join(jobsDir, `wp-2026-05-04-06-00-00-${jobId}.json`),
-        JSON.stringify(snapshot)
+        join(jobsDir, `wp-${day}-06-00-00-${jobId}.json`),
+        JSON.stringify(withStart(`${day}T06:00:00+02:00`))
       );
     }
     for (const method of ['log', 'info', 'warn', 'error'] as const) {
@@ -113,7 +118,7 @@ describe('seedDBFromJobs', () => {
   });
 
   it('reports an unreadable file and ingests nothing', async () => {
-    const fileName = 'wp-2026-05-05-06-00-00-2003.json';
+    const fileName = 'wp-2026-05-06-06-00-00-2003.json';
     await writeFile(join(jobsDir, fileName), '{"start":');
 
     const result = await seedDBFromJobs(false, jobsDir);
@@ -151,6 +156,19 @@ describe('seedDBFromJobs', () => {
     const result = await seedDBFromJobs(false, jobsDir);
 
     expect(result).toEqual({ seeded: 0, skipped: 2, errors: [] });
+    expect((await seededJobIds()).sort()).toEqual(['2001', '2002']);
+  });
+
+  it('skips a file for a day that already has a Job, whatever its job ID', async () => {
+    // A rerun later on 2026-05-04
+    await writeFile(
+      join(jobsDir, 'wp-2026-05-04-09-00-00-2009.json'),
+      JSON.stringify(withStart('2026-05-04T09:00:00+02:00'))
+    );
+
+    const result = await seedDBFromJobs(false, jobsDir);
+
+    expect(result).toEqual({ seeded: 2, skipped: 1, errors: [] });
     expect((await seededJobIds()).sort()).toEqual(['2001', '2002']);
   });
 });

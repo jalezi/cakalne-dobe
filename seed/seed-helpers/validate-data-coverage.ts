@@ -1,6 +1,6 @@
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { count, eq, max, min } from 'drizzle-orm';
+import { count, max, min } from 'drizzle-orm';
 import { db } from '@/db';
 import { jobs } from '@/db/schema';
 import {
@@ -179,25 +179,5 @@ export async function getDatabaseDateRange(): Promise<DatabaseDateRange> {
       latest: null,
       jobCount: 0,
     };
-  }
-}
-
-/**
- * Checks if a job with the given GitLab Job ID already exists in the database
- * @param gitLabJobId - The GitLab Job ID to check
- * @returns True if the job exists, false otherwise
- */
-export async function checkJobExists(gitLabJobId: string): Promise<boolean> {
-  try {
-    const result = await db
-      .select({ id: jobs.id })
-      .from(jobs)
-      .where(eq(jobs.gitLabJobId, gitLabJobId))
-      .limit(1);
-
-    return result.length > 0;
-  } catch (error) {
-    console.error('Error checking if job exists:', error);
-    return false;
   }
 }

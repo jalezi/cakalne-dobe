@@ -37,8 +37,12 @@ Insert one Job by hand with `curl` (keep the trailing slash):
 curl -X POST "$SITE_URL/api/v1/insert-job-data-by-git-lab-id/" \
   -H "Authorization: Bearer $INGEST_SECRET" \
   -H "Content-Type: application/json" \
-  -d '{"success":"ok","gitLabJobId":"<GitLab job ID>","date":"YYYY-MM-DD"}'
+  -d '{"success":"ok","gitLabJobId":"<GitLab job ID>","meta":{"note":"gap check"}}'
 ```
+
+- `meta` is optional: an object of at most 10 keys, each value a string of at most 200 characters. Anything else gets `422`. The route logs it with the request and echoes it back unchanged.
+- An older body that still sends `date` is accepted; the date is ignored.
+- On success, `data.job.day` is the Job's day (`YYYY-MM-DD`, the Ljubljana calendar day its Snapshot started on). The route answers `409` `JOB_EXISTS` when that GitLab job ID or that day is already stored ([ADR-0002](docs/adr/0002-one-job-per-day.md)).
 
 ## Database Operations
 

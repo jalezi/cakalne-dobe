@@ -3,13 +3,13 @@
 import { join } from 'node:path';
 import { db } from '@/db';
 import { ingestSnapshot } from '@/snapshot';
+import { INGEST_SNAPSHOT_ERRORS } from '@/snapshot/ingest';
 import {
   extractDateFromJobFilename,
   isWithinRange,
 } from './date-range-calculator';
 import { getDataFromFiles } from './get-data-from-file';
 import type { CustomError } from './types';
-import { checkJobExists } from './validate-data-coverage';
 
 /**
  * Result type for seeding operations
@@ -46,7 +46,7 @@ export function getJobsToSeed(
 
 /**
  * Seeds only missing jobs from the provided job files
- * Checks for existing jobs and skips them to avoid duplicates
+ * Skips a job whose GitLab job ID or day is already stored
  * @param jobFiles - Array of job filenames to process
  * @param jobsDir - Directory holding the job files (default: mock-data/jobs)
  * @returns Object containing seeding statistics (seeded, skipped, errors)
@@ -78,22 +78,22 @@ export async function seedMissingJobsOnly(
   // Process each job
   for (const [jobId, jobData] of dataMap.entries()) {
     try {
-      // Check if job already exists
-      const exists = await checkJobExists(jobId);
-
-      if (exists) {
+      // Seed the job with all related data in one transaction
+      const ingested = await ingestSnapshot(db, jobId, jobData);
+      // Its GitLab job ID or its day is already stored (ADR-0002)
+      if (
+        !ingested.success &&
+        ingested.error.code === INGEST_SNAPSHOT_ERRORS.JOB_EXISTS
+      ) {
         result.skipped++;
         console.log(`  ⏭️  Skipping existing job: ${jobId}`);
         continue;
       }
-
-      // Seed new job with all related data in one transaction
-      console.log(`  ✨ Seeding new job: ${jobId}`);
-      const ingested = await ingestSnapshot(db, jobId, jobData);
       if (!ingested.success) {
         throw new Error(ingested.error.message);
       }
 
+      console.log(`  ✨ Seeded new job: ${jobId}`);
       result.seeded++;
     } catch (error) {
       console.error(`  ❌ Error seeding job ${jobId}:`, error);
