@@ -131,6 +131,17 @@ function useInstFilter(): [number[], (x: number[]) => void] {
   return [sel, (x) => set(x.length ? x.join(',') : null)];
 }
 
+// Set by the artifact build (scripts/prototype-build-artifact.ts).
+const EMBED = (
+  globalThis as {
+    __PROTO__?: { snapshot: Snapshot; history: Record<string, History> };
+  }
+).__PROTO__;
+// In the artifact, C and D can only offer procedures with sampled history.
+const HISTORY_ONLY = EMBED
+  ? new Set(Object.keys(EMBED.history).map(Number))
+  : undefined;
+
 function useJson<T>(url: string | null): { data: T | null; bytes: number } {
   const [state, setState] = useState<{ data: T | null; bytes: number }>({
     data: null,
@@ -138,6 +149,13 @@ function useJson<T>(url: string | null): { data: T | null; bytes: number } {
   });
   useEffect(() => {
     if (!url) return;
+    if (EMBED) {
+      // Artifact build: sample data embedded in the page, no fetch.
+      const id = url.match(/(\d+)\.json$/)?.[1];
+      const d = (id ? EMBED.history[id] : EMBED.snapshot) ?? null;
+      setState({ data: d as T, bytes: d ? JSON.stringify(d).length : 0 });
+      return;
+    }
     let alive = true;
     setState({ data: null, bytes: 0 });
     fetch(url)
@@ -191,24 +209,32 @@ function ProcedureCombobox({
   s,
   value,
   onPick,
+  only,
 }: {
   s: Snapshot;
   value: number | null;
   onPick: (p: number | null) => void;
+  only?: Set<number>;
 }) {
   const items = useMemo<Item[]>(
     () =>
-      s.procedures.map((p, i) => ({
-        value: String(i),
-        label: `${p[1]} (${p[0]})`,
-      })),
-    [s]
+      s.procedures
+        .map((p, i) => ({
+          value: String(i),
+          label: `${p[1]} (${p[0]})`,
+        }))
+        .filter((it) => !only || only.has(Number(it.value))),
+    [s, only]
   );
   return (
     <Combobox
       items={items}
       limit={50}
-      value={value === null ? null : items[value]}
+      value={
+        value === null
+          ? null
+          : (items.find((it) => it.value === String(value)) ?? null)
+      }
       onValueChange={(v) => onPick(v ? Number((v as Item).value) : null)}
       isItemEqualToValue={(a: Item, b: Item) => a.value === b.value}
     >
@@ -730,6 +756,7 @@ function VariantC({ s, bytes }: { s: Snapshot; bytes: number }) {
   return (
     <div className="flex flex-col gap-4">
       <ProcedureCombobox
+        only={HISTORY_ONLY}
         s={s}
         value={p}
         onPick={(i) => setP(i === null ? null : String(i))}
@@ -845,6 +872,7 @@ function VariantD({ s, bytes }: { s: Snapshot; bytes: number }) {
   return (
     <div className="flex flex-col gap-4">
       <ProcedureCombobox
+        only={HISTORY_ONLY}
         s={s}
         value={p}
         onPick={(i) => setP(i === null ? null : String(i))}
@@ -947,9 +975,9 @@ function Switcher({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   });
-  if (process.env.NODE_ENV === 'production') return null;
+  // Shown in the artifact build too; this branch never ships to prod.
   return (
-    <div className="fixed bottom-4 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black px-3 py-1.5 text-sm text-white shadow-xl">
+    <div className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full bg-foreground px-3 py-1.5 text-sm text-background shadow-xl">
       <button type="button" onClick={() => go(-1)} aria-label="Prejšnja">
         <ChevronLeft />
       </button>
@@ -971,6 +999,14 @@ export function PrototypeHome() {
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-6 pb-24">
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold">Čakalne dobe</h1>
+        {EMBED && (
+          <p className="text-sm">
+            <Badge variant="outline">Prototip</Badge> Vzorčni podatki iz
+            razvojne baze, niso aktualni. Zgodovina (C, D) je na voljo za{' '}
+            {HISTORY_ONLY?.size} postopkov. Postavitve menjaš s puščicami
+            spodaj.
+          </p>
+        )}
         {data ? (
           <p className="text-sm text-muted-foreground">
             Stanje na dan {new Date(data.date).toLocaleDateString('sl-SI')} ·{' '}
