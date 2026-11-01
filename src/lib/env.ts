@@ -6,6 +6,8 @@ const envServerVarsSchema = z.object({
   SITE_URL: z.string().optional(),
   PORT: z.string().nullish().optional(),
   VERCEL_URL: z.string().nullish().optional(),
+  // Read at request time by src/lib/ingest-auth.ts; listed here for typing
+  INGEST_SECRET: z.string().optional(),
 });
 
 const envClientVarsSchema = z.object({
