@@ -18,159 +18,204 @@ vi.mock('@/db', () => ({ db }));
 
 vi.stubGlobal('fetch', vi.fn());
 
-describe('POST /api/v1/insert-job-data-by-git-lab-id', () => {
-  let POST: typeof import('../src/app/api/v1/insert-job-data-by-git-lab-id/route').POST;
+let POST: typeof import('../src/app/api/v1/insert-job-data-by-git-lab-id/route').POST;
 
-  beforeAll(async () => {
-    ({ POST } = await import(
-      '../src/app/api/v1/insert-job-data-by-git-lab-id/route'
-    ));
-  });
-
-  beforeEach(async () => {
-    vi.resetAllMocks();
-    await createTestSchema(db);
-  });
-
-  afterEach(async () => {
-    await cleanupTestDb(db);
-  });
-
-  function post(payload: unknown) {
-    return POST(
-      new Request('http://localhost', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      })
-    );
-  }
-
-  it('returns 422 INVALID_PAYLOAD for a malformed payload', async () => {
-    const response = await post({
-      success: 'ok',
-      gitLabJobId: 'gl-1001',
-      date: '2026/04/01',
-    });
-
-    expect(response.status).toBe(422);
-    expect(await response.json()).toMatchObject({
-      error: { code: 'INVALID_PAYLOAD' },
-    });
-  });
-
-  it('returns 422 WEBHOOK_ERROR with the reported message', async () => {
-    const response = await post({
-      success: 'error',
-      error: 'GitLab pipeline failed',
-    });
-
-    expect(response.status).toBe(422);
-    expect(await response.json()).toEqual({
-      success: false,
-      error: { code: 'WEBHOOK_ERROR', message: 'GitLab pipeline failed' },
-    });
-  });
-
-  it('returns 409 JOB_EXISTS when the GitLab job ID is already stored', async () => {
-    await storeJob('gl-1001', '2026-03-31T06:00:00Z');
-
-    const response = await post({
-      success: 'ok',
-      gitLabJobId: 'gl-1001',
-      date: '2026-04-01',
-    });
-
-    expect(response.status).toBe(409);
-    expect(await response.json()).toMatchObject({
-      error: { code: 'JOB_EXISTS' },
-    });
-  });
-
-  it('returns 409 JOB_EXISTS when another Job is stored for the date', async () => {
-    await storeJob('gl-1000', '2026-04-01T06:00:00Z');
-
-    const response = await post({
-      success: 'ok',
-      gitLabJobId: 'gl-1001',
-      date: '2026-04-01',
-    });
-
-    expect(response.status).toBe(409);
-    expect(await response.json()).toMatchObject({
-      error: { code: 'JOB_EXISTS' },
-    });
-  });
-
-  it('returns 409 JOB_EXISTS when a date with a time part falls on the day of a stored Job', async () => {
-    await storeJob('gl-1000', '2026-04-01T06:00:00Z');
-
-    const response = await post({
-      success: 'ok',
-      gitLabJobId: 'gl-1001',
-      date: '2026-04-01T23:30:00.000Z',
-    });
-
-    expect(response.status).toBe(409);
-    expect(await response.json()).toMatchObject({
-      error: { code: 'JOB_EXISTS' },
-    });
-  });
-
-  it('returns 400 with the fetch error and writes nothing when the Snapshot fetch fails', async () => {
-    vi.mocked(fetch).mockResolvedValueOnce(
-      new Response(null, { status: 404, statusText: 'Not Found' })
-    );
-
-    const response = await post({
-      success: 'ok',
-      gitLabJobId: 'gl-1001',
-      date: '2026-04-01',
-    });
-
-    expect(response.status).toBe(400);
-    expect(await response.json()).toEqual({
-      success: false,
-      error: {
-        code: 'FETCH_FAILED',
-        message: 'Failed to fetch snapshot for job gl-1001: 404 Not Found',
-      },
-    });
-    await expect(countAllRows()).resolves.toEqual({
-      jobs: 0,
-      procedures: 0,
-      institutions: 0,
-      maxAllowedDays: 0,
-      waitingPeriods: 0,
-    });
-  });
-
-  it('writes the Job and its Snapshot rows for a new job ID and date', async () => {
-    vi.mocked(fetch).mockResolvedValueOnce(
-      new Response(JSON.stringify(SNAPSHOT))
-    );
-
-    const response = await post({
-      success: 'ok',
-      gitLabJobId: 'gl-1001',
-      date: '2026-04-01',
-    });
-
-    expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({ success: true });
-    expect(fetch).toHaveBeenCalledWith(snapshotUrl('gl-1001'));
-    await expect(db.query.jobs.findFirst()).resolves.toMatchObject({
-      gitLabJobId: 'gl-1001',
-      startDate: '2026-04-01T06:00:00Z',
-    });
-    await expect(countAllRows()).resolves.toEqual({
-      jobs: 1,
-      procedures: 1,
-      institutions: 1,
-      maxAllowedDays: 1,
-      waitingPeriods: 1,
-    });
-  });
+beforeAll(async () => {
+  ({ POST } = await import(
+    '../src/app/api/v1/insert-job-data-by-git-lab-id/route'
+  ));
 });
+
+beforeEach(async () => {
+  vi.resetAllMocks();
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
+  await createTestSchema(db);
+});
+
+afterEach(async () => {
+  vi.unstubAllEnvs();
+  vi.restoreAllMocks();
+  await cleanupTestDb(db);
+});
+
+describe('POST /api/v1/insert-job-data-by-git-lab-id with INGEST_SECRET set', () => {
+  it.each([
+    ['no header', {}],
+    ['a wrong token', { authorization: 'Bearer wrong' }],
+    ['a non-Bearer scheme', { authorization: 'Basic s3cret' }],
+  ])(
+    'returns 401 for %s without parsing the body, reading the DB or calling GitLab',
+    async (_case, headers) => {
+      vi.stubEnv('INGEST_SECRET', 's3cret');
+      const findFirst = vi.spyOn(db.query.jobs, 'findFirst');
+
+      // Invalid JSON: a 401 (not a 500) shows request.json() never ran
+      const response = await POST(
+        new Request('http://localhost', {
+          method: 'POST',
+          body: 'not json',
+          headers,
+        })
+      );
+
+      expect(response.status).toBe(401);
+      expect(await response.json()).toMatchObject({
+        success: false,
+        error: { code: 'UNAUTHORIZED' },
+      });
+      expect(findFirst).not.toHaveBeenCalled();
+      expect(fetch).not.toHaveBeenCalled();
+    }
+  );
+});
+
+describe.each([
+  ['unset', undefined, {}],
+  ['set', 's3cret', { authorization: 'Bearer s3cret' }],
+])(
+  'POST /api/v1/insert-job-data-by-git-lab-id with INGEST_SECRET %s',
+  (_case, secret, headers) => {
+    beforeEach(() => {
+      vi.stubEnv('INGEST_SECRET', secret);
+    });
+
+    function post(payload: unknown) {
+      return POST(
+        new Request('http://localhost', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+          headers,
+        })
+      );
+    }
+
+    it('returns 422 INVALID_PAYLOAD for a malformed payload', async () => {
+      const response = await post({
+        success: 'ok',
+        gitLabJobId: 'gl-1001',
+        date: '2026/04/01',
+      });
+
+      expect(response.status).toBe(422);
+      expect(await response.json()).toMatchObject({
+        error: { code: 'INVALID_PAYLOAD' },
+      });
+    });
+
+    it('returns 422 WEBHOOK_ERROR with the reported message', async () => {
+      const response = await post({
+        success: 'error',
+        error: 'GitLab pipeline failed',
+      });
+
+      expect(response.status).toBe(422);
+      expect(await response.json()).toEqual({
+        success: false,
+        error: { code: 'WEBHOOK_ERROR', message: 'GitLab pipeline failed' },
+      });
+    });
+
+    it('returns 409 JOB_EXISTS when the GitLab job ID is already stored', async () => {
+      await storeJob('gl-1001', '2026-03-31T06:00:00Z');
+
+      const response = await post({
+        success: 'ok',
+        gitLabJobId: 'gl-1001',
+        date: '2026-04-01',
+      });
+
+      expect(response.status).toBe(409);
+      expect(await response.json()).toMatchObject({
+        error: { code: 'JOB_EXISTS' },
+      });
+    });
+
+    it('returns 409 JOB_EXISTS when another Job is stored for the date', async () => {
+      await storeJob('gl-1000', '2026-04-01T06:00:00Z');
+
+      const response = await post({
+        success: 'ok',
+        gitLabJobId: 'gl-1001',
+        date: '2026-04-01',
+      });
+
+      expect(response.status).toBe(409);
+      expect(await response.json()).toMatchObject({
+        error: { code: 'JOB_EXISTS' },
+      });
+    });
+
+    it('returns 409 JOB_EXISTS when a date with a time part falls on the day of a stored Job', async () => {
+      await storeJob('gl-1000', '2026-04-01T06:00:00Z');
+
+      const response = await post({
+        success: 'ok',
+        gitLabJobId: 'gl-1001',
+        date: '2026-04-01T23:30:00.000Z',
+      });
+
+      expect(response.status).toBe(409);
+      expect(await response.json()).toMatchObject({
+        error: { code: 'JOB_EXISTS' },
+      });
+    });
+
+    it('returns 400 with the fetch error and writes nothing when the Snapshot fetch fails', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce(
+        new Response(null, { status: 404, statusText: 'Not Found' })
+      );
+
+      const response = await post({
+        success: 'ok',
+        gitLabJobId: 'gl-1001',
+        date: '2026-04-01',
+      });
+
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({
+        success: false,
+        error: {
+          code: 'FETCH_FAILED',
+          message: 'Failed to fetch snapshot for job gl-1001: 404 Not Found',
+        },
+      });
+      await expect(countAllRows()).resolves.toEqual({
+        jobs: 0,
+        procedures: 0,
+        institutions: 0,
+        maxAllowedDays: 0,
+        waitingPeriods: 0,
+      });
+    });
+
+    it('writes the Job and its Snapshot rows for a new job ID and date', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce(
+        new Response(JSON.stringify(SNAPSHOT))
+      );
+
+      const response = await post({
+        success: 'ok',
+        gitLabJobId: 'gl-1001',
+        date: '2026-04-01',
+      });
+
+      expect(response.status).toBe(200);
+      expect(await response.json()).toMatchObject({ success: true });
+      expect(fetch).toHaveBeenCalledWith(snapshotUrl('gl-1001'));
+      await expect(db.query.jobs.findFirst()).resolves.toMatchObject({
+        gitLabJobId: 'gl-1001',
+        startDate: '2026-04-01T06:00:00Z',
+      });
+      await expect(countAllRows()).resolves.toEqual({
+        jobs: 1,
+        procedures: 1,
+        institutions: 1,
+        maxAllowedDays: 1,
+        waitingPeriods: 1,
+      });
+    });
+  }
+);
 
 const SNAPSHOT: AllData = {
   start: '2026-04-01T06:00:00Z',

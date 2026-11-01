@@ -106,6 +106,7 @@ Three urgency types tracked throughout codebase:
 - **Local**: `.env.development.local` with `DATABASE_URL` pointing to local file
 - **Production**: `.env.production.local` with Turso credentials
 - **Validation**: Zod schemas in `src/lib/env.ts` for type-safe env vars
+- **`INGEST_SECRET`** (optional): when set, both ingest routes require `Authorization: Bearer <secret>` (see README)
 
 ### Testing Patterns
 

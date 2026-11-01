@@ -11,6 +11,7 @@ import { sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/db';
 import { jobs as jobsTable } from '@/db/schema';
+import { requireIngestAuth } from '@/lib/ingest-auth';
 import type { Result } from '@/types';
 import { handleError } from '@/utils/handle-error';
 import { processJobData } from '../insert-new-job-data/db-operations';
@@ -113,6 +114,11 @@ async function isGitLabJobIDInDB(
 }
 
 export async function POST(request: Request) {
+  const unauthorized = requireIngestAuth(request);
+  if (unauthorized) {
+    return unauthorized;
+  }
+
   try {
     const webhookJson = await request.json();
 

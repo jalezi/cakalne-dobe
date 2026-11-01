@@ -20,6 +20,26 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
 
+## Environment variables
+
+### `INGEST_SECRET`
+
+Optional, server-only shared secret for the two ingest routes, `POST /api/v1/insert-new-job-data/` (daily webhook) and `POST /api/v1/insert-job-data-by-git-lab-id/` (manual insert of one **Job** by its GitLab job ID).
+
+- **Set:** both routes require the header `Authorization: Bearer <INGEST_SECRET>`. A missing header, a wrong token or another scheme gets `401` with `{ "success": false, "error": { "code": "UNAUTHORIZED", … } }`, before the body is read.
+- **Unset or empty:** both routes accept any request, and the server logs one warning per cold start.
+
+`/api/v1/healthcheck` stays public either way.
+
+Insert one Job by hand with `curl` (keep the trailing slash):
+
+```bash
+curl -X POST "$SITE_URL/api/v1/insert-job-data-by-git-lab-id/" \
+  -H "Authorization: Bearer $INGEST_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"success":"ok","gitLabJobId":"<GitLab job ID>","date":"YYYY-MM-DD"}'
+```
+
 ## Database Operations
 
 This project uses LibSQL/Turso for the database with Drizzle ORM. The database stores medical procedure waiting period data for institutions in Slovenia.

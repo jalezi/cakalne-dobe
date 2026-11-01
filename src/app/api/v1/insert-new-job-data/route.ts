@@ -1,6 +1,12 @@
+import { requireIngestAuth } from '@/lib/ingest-auth';
 import { handleJobIngestionRequest } from './handle-job-ingestion-request';
 
 export async function POST(request: Request) {
+  const unauthorized = requireIngestAuth(request);
+  if (unauthorized) {
+    return unauthorized;
+  }
+
   const rawBody = await request.json();
   const result = await handleJobIngestionRequest(rawBody);
 
