@@ -1,3 +1,4 @@
+// fallow-ignore-file unused-file
 // PROTOTYPE (throwaway). Entry for the single-page artifact build.
 import { createRoot } from 'react-dom/client';
 import { PrototypeHome } from './variants';

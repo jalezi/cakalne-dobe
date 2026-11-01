@@ -1,3 +1,4 @@
+// fallow-ignore-file unused-file
 // PROTOTYPE (throwaway): bundle the prototype variants plus a data sample into
 // one self-contained HTML page for a Claude artifact.
 // Usage: node -r esbuild-register scripts/prototype-build-artifact.ts <out.html>

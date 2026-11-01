@@ -1,3 +1,4 @@
+// fallow-ignore-file unused-file
 // PROTOTYPE (throwaway). Stand-ins for next/navigation and next/dynamic so the
 // variants can run as a single self-contained page (Claude artifact).
 import {
