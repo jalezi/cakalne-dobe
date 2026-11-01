@@ -38,7 +38,8 @@
     "worktree:new": "bash scripts/worktree.sh new",
     "worktree:agent": "bash scripts/worktree.sh agent",
     "worktree:remove": "bash scripts/worktree.sh remove",
-    "worktree:wait": "bash scripts/worktree.sh wait"
+    "worktree:wait": "bash scripts/worktree.sh wait",
+    "prototype": "node -r esbuild-register scripts/prototype-export-snapshot.ts && next dev --turbopack --port 3100"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
