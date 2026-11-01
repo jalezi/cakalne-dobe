@@ -1,11 +1,88 @@
 'use client';
 // PROTOTYPE (throwaway, branch prototype/ui-current-state). Not production code.
-// Three variants of the home page, switchable via ?variant=A|B|C.
-// Data: static files in public/prototype/ exported from dev.db by
-// scripts/prototype-export-snapshot.ts. No server work per viewer.
+// Four variants of the home page, switchable via ?variant=A|B|C|D, built from
+// shadcn/ui components. Data: static files in public/prototype/ exported from
+// dev.db by scripts/prototype-export-snapshot.ts. No server work per viewer.
 
+import {
+  type ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
+  type SortingState,
+  useReactTable,
+} from '@tanstack/react-table';
+import { ArrowUpDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Combobox,
+  ComboboxChip,
+  ComboboxChips,
+  ComboboxChipsInput,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+  ComboboxValue,
+  useComboboxAnchor,
+} from '@/components/ui/combobox';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
+} from '@/components/ui/empty';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+
+const chartFallback = () => <Skeleton className="h-56 w-full" />;
+const InstitutionBars = dynamic(
+  () => import('./charts').then((m) => m.InstitutionBars),
+  { ssr: false, loading: chartFallback }
+);
+const Sparkline = dynamic(() => import('./charts').then((m) => m.Sparkline), {
+  ssr: false,
+  loading: () => <Skeleton className="h-8 w-56" />,
+});
+const WeekdayBars = dynamic(
+  () => import('./charts').then((m) => m.WeekdayBars),
+  { ssr: false, loading: chartFallback }
+);
+const Timeline = dynamic(() => import('./charts').then((m) => m.Timeline), {
+  ssr: false,
+  loading: chartFallback,
+});
 
 type Snapshot = {
   date: string;
@@ -48,6 +125,12 @@ function useUrgency(): [Urgency, (u: Urgency) => void] {
   return [idx, (n) => setU(n === 0 ? null : U_KEY[n])];
 }
 
+function useInstFilter(): [number[], (x: number[]) => void] {
+  const [raw, set] = useParam('i');
+  const sel = raw ? raw.split(',').map(Number) : [];
+  return [sel, (x) => set(x.length ? x.join(',') : null)];
+}
+
 function useJson<T>(url: string | null): { data: T | null; bytes: number } {
   const [state, setState] = useState<{ data: T | null; bytes: number }>({
     data: null,
@@ -56,6 +139,7 @@ function useJson<T>(url: string | null): { data: T | null; bytes: number } {
   useEffect(() => {
     if (!url) return;
     let alive = true;
+    setState({ data: null, bytes: 0 });
     fetch(url)
       .then((r) => r.text())
       .then(
@@ -68,621 +152,765 @@ function useJson<T>(url: string | null): { data: T | null; bytes: number } {
   return state;
 }
 
-function kb(n: number) {
-  return `${(n / 1024).toFixed(0)} KB`;
-}
+const kb = (n: number) => `${(n / 1024).toFixed(0)} KB`;
+const maxOf = (s: Snapshot, p: number, u: number) =>
+  s.procedures[p][2 + u] as number;
 
-function maxOf(s: Snapshot, p: number, u: number): number {
-  return s.procedures[p][2 + u] as number;
-}
-
-function rowsFor(s: Snapshot, p: number) {
-  return s.rows.filter((r) => r[0] === p);
-}
-
-function sortByUrgency<T extends { v: (number | null)[] }>(
-  xs: T[],
-  u: Urgency
-) {
-  return [...xs].sort((a, b) => (a.v[u] ?? 1e9) - (b.v[u] ?? 1e9));
-}
-
-function Cell({ v, max }: { v: number | null; max: number }) {
+function Days({ v, max }: { v: number | null; max: number }) {
   if (v === null) return <span className="text-muted-foreground">—</span>;
-  const over = v > max;
-  return (
-    <span className={over ? 'font-semibold text-destructive' : ''}>
-      {v}
-      {over && ' ⚠'}
-    </span>
-  );
+  if (v > max) return <Badge variant="destructive">{v}</Badge>;
+  return <span className="tabular-nums">{v}</span>;
 }
 
-function UrgencyTabs({ u, setU }: { u: Urgency; setU: (u: Urgency) => void }) {
+function UrgencyToggle({
+  u,
+  setU,
+}: {
+  u: Urgency;
+  setU: (u: Urgency) => void;
+}) {
   return (
-    <div className="inline-flex rounded-md border p-0.5 text-sm">
+    <ToggleGroup
+      variant="outline"
+      spacing={0}
+      value={[String(u)]}
+      onValueChange={(v) => v.length && setU(Number(v[0]) as Urgency)}
+    >
       {U_LABEL.map((l, i) => (
-        <button
-          type="button"
-          key={l}
-          onClick={() => setU(i as Urgency)}
-          className={`rounded px-3 py-1 ${u === i ? 'bg-primary text-primary-foreground' : ''}`}
-        >
+        <ToggleGroupItem key={l} value={String(i)}>
           {l}
-        </button>
+        </ToggleGroupItem>
       ))}
-    </div>
+    </ToggleGroup>
   );
 }
 
-function ProcedurePicker({
+type Item = { value: string; label: string };
+
+function ProcedureCombobox({
   s,
   value,
   onPick,
 }: {
   s: Snapshot;
   value: number | null;
-  onPick: (p: number) => void;
+  onPick: (p: number | null) => void;
 }) {
-  const [q, setQ] = useState('');
-  const [open, setOpen] = useState(false);
-  const matches = useMemo(() => {
-    const t = q.toLowerCase();
-    return s.procedures
-      .map((p, i) => ({ p, i }))
-      .filter(
-        ({ p }) =>
-          !t || p[1].toLowerCase().includes(t) || p[0].toLowerCase().includes(t)
-      )
-      .slice(0, 30);
-  }, [q, s]);
+  const items = useMemo<Item[]>(
+    () =>
+      s.procedures.map((p, i) => ({
+        value: String(i),
+        label: `${p[1]} (${p[0]})`,
+      })),
+    [s]
+  );
   return (
-    <div className="relative">
-      <input
-        className="w-full rounded-md border bg-background px-3 py-2"
-        placeholder={
-          value === null
-            ? 'Poišči postopek (ime ali šifra)…'
-            : s.procedures[value][1]
-        }
-        value={q}
-        onFocus={() => setOpen(true)}
-        onBlur={() => setTimeout(() => setOpen(false), 150)}
-        onChange={(e) => setQ(e.target.value)}
-      />
-      {open && (
-        <ul className="absolute z-20 mt-1 max-h-80 w-full overflow-auto rounded-md border bg-background shadow-lg">
-          {matches.map(({ p, i }) => (
-            <li key={p[0]}>
-              <button
-                type="button"
-                className="w-full px-3 py-1.5 text-left text-sm hover:bg-muted"
-                onMouseDown={() => {
-                  onPick(i);
-                  setQ('');
-                }}
-              >
-                <span className="text-muted-foreground">{p[0]}</span> {p[1]}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+    <Combobox
+      items={items}
+      limit={50}
+      value={value === null ? null : items[value]}
+      onValueChange={(v) => onPick(v ? Number((v as Item).value) : null)}
+      isItemEqualToValue={(a: Item, b: Item) => a.value === b.value}
+    >
+      <ComboboxInput placeholder="Poišči postopek (ime ali šifra)…" showClear />
+      <ComboboxContent>
+        <ComboboxEmpty>Ni zadetkov.</ComboboxEmpty>
+        <ComboboxList>
+          {(item: Item) => (
+            <ComboboxItem key={item.value} value={item}>
+              {item.label}
+            </ComboboxItem>
+          )}
+        </ComboboxList>
+      </ComboboxContent>
+    </Combobox>
   );
 }
 
-function InstitutionFilter({
-  names,
+function InstitutionCombobox({
+  options,
   selected,
   setSelected,
 }: {
-  names: { i: number; name: string }[];
+  options: { i: number; name: string }[];
   selected: number[];
   setSelected: (x: number[]) => void;
 }) {
-  const [q, setQ] = useState('');
-  const t = q.toLowerCase();
-  const hits = t
-    ? names
-        .filter(
-          (n) => n.name.toLowerCase().includes(t) && !selected.includes(n.i)
-        )
-        .slice(0, 8)
-    : [];
-  return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap gap-1.5">
-        {selected.map((i) => (
-          <button
-            type="button"
-            key={i}
-            onClick={() => setSelected(selected.filter((x) => x !== i))}
-            className="rounded-full bg-muted px-2.5 py-0.5 text-xs"
-          >
-            {names.find((n) => n.i === i)?.name ?? i} ✕
-          </button>
-        ))}
-      </div>
-      <input
-        className="w-full rounded-md border bg-background px-3 py-1.5 text-sm"
-        placeholder="Filtriraj ustanove (#2)…"
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-      />
-      {hits.length > 0 && (
-        <ul className="rounded-md border text-sm">
-          {hits.map((h) => (
-            <li key={h.i}>
-              <button
-                type="button"
-                className="w-full px-3 py-1 text-left hover:bg-muted"
-                onClick={() => {
-                  setSelected([...selected, h.i]);
-                  setQ('');
-                }}
-              >
-                {h.name}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+  const anchor = useComboboxAnchor();
+  const items = useMemo<Item[]>(
+    () => options.map((o) => ({ value: String(o.i), label: o.name })),
+    [options]
   );
-}
-
-function useInstFilter(): [number[], (x: number[]) => void] {
-  const [raw, set] = useParam('i');
-  const sel = raw ? raw.split(',').map(Number) : [];
-  return [sel, (x) => set(x.length ? x.join(',') : null)];
+  const value = items.filter((it) => selected.includes(Number(it.value)));
+  return (
+    <Combobox
+      multiple
+      autoHighlight
+      items={items}
+      value={value}
+      onValueChange={(v) =>
+        setSelected((v as Item[]).map((x) => Number(x.value)))
+      }
+      isItemEqualToValue={(a: Item, b: Item) => a.value === b.value}
+    >
+      <ComboboxChips ref={anchor}>
+        <ComboboxValue>
+          {(values: Item[]) => (
+            <Fragment>
+              {values.map((x) => (
+                <ComboboxChip key={x.value}>{x.label}</ComboboxChip>
+              ))}
+              <ComboboxChipsInput placeholder="Filtriraj ustanove (#2)…" />
+            </Fragment>
+          )}
+        </ComboboxValue>
+      </ComboboxChips>
+      <ComboboxContent anchor={anchor}>
+        <ComboboxEmpty>Ni zadetkov.</ComboboxEmpty>
+        <ComboboxList>
+          {(item: Item) => (
+            <ComboboxItem key={item.value} value={item}>
+              {item.label}
+            </ComboboxItem>
+          )}
+        </ComboboxList>
+      </ComboboxContent>
+    </Combobox>
+  );
 }
 
 function CostNote({ items }: { items: [string, number][] }) {
   return (
-    <p className="mt-6 text-xs text-muted-foreground">
+    <p className="text-xs text-muted-foreground">
       Naloženo v brskalnik: {items.map(([l, b]) => `${l} ${kb(b)}`).join(' + ')}{' '}
       (gzip ≈ 4–5× manj). Strežnik ne izvaja ničesar.
     </p>
   );
 }
 
-function ProcedureHeader({ s, p }: { s: Snapshot; p: number }) {
+function PickPrompt({ text }: { text: string }) {
+  return (
+    <Empty className="border">
+      <EmptyHeader>
+        <EmptyTitle>Izberi postopek</EmptyTitle>
+        <EmptyDescription>{text}</EmptyDescription>
+      </EmptyHeader>
+    </Empty>
+  );
+}
+
+function ProcedureCardHeader({ s, p }: { s: Snapshot; p: number }) {
   const [code, name, mr, mf, mv] = s.procedures[p];
   return (
-    <div>
-      <h2 className="text-xl font-semibold">{name}</h2>
-      <p className="text-sm text-muted-foreground">
+    <CardHeader>
+      <CardTitle>{name}</CardTitle>
+      <CardDescription>
         Šifra {code} · Najdaljša dovoljena čakalna doba: redno {mr} d, hitro{' '}
         {mf} d, zelo hitro {mv} d
-      </p>
+      </CardDescription>
+    </CardHeader>
+  );
+}
+
+function SortHeader({
+  label,
+  onClick,
+}: {
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <Button variant="ghost" size="sm" onClick={onClick}>
+      {label}
+      <ArrowUpDown data-icon="inline-end" />
+    </Button>
+  );
+}
+
+// Generic data table (shadcn Data Table pattern on TanStack v8).
+function DataTable<T>({
+  data,
+  columns,
+  sorting,
+  setSorting,
+  globalFilter,
+  onRowClick,
+  renderExpanded,
+  limit,
+}: {
+  data: T[];
+  columns: ColumnDef<T>[];
+  sorting: SortingState;
+  setSorting: (s: SortingState) => void;
+  globalFilter?: string;
+  onRowClick?: (row: T) => void;
+  renderExpanded?: (row: T) => React.ReactNode;
+  limit?: number;
+}) {
+  const table = useReactTable({
+    data,
+    columns,
+    state: { sorting, globalFilter },
+    onSortingChange: (u) =>
+      setSorting(typeof u === 'function' ? u(sorting) : u),
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    defaultColumn: { sortUndefined: 'last' },
+  });
+  const rows = table.getRowModel().rows;
+  return (
+    <>
+      <Table>
+        <TableHeader>
+          {table.getHeaderGroups().map((hg) => (
+            <TableRow key={hg.id}>
+              {hg.headers.map((h) => (
+                <TableHead key={h.id}>
+                  {flexRender(h.column.columnDef.header, h.getContext())}
+                </TableHead>
+              ))}
+            </TableRow>
+          ))}
+        </TableHeader>
+        <TableBody>
+          {rows.slice(0, limit ?? rows.length).map((r) => {
+            const expanded = renderExpanded?.(r.original);
+            return (
+              <Fragment key={r.id}>
+                <TableRow
+                  className={onRowClick ? 'cursor-pointer' : undefined}
+                  onClick={() => onRowClick?.(r.original)}
+                >
+                  {r.getVisibleCells().map((c) => (
+                    <TableCell key={c.id}>
+                      {flexRender(c.column.columnDef.cell, c.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
+                {expanded && (
+                  <TableRow>
+                    <TableCell colSpan={columns.length}>{expanded}</TableCell>
+                  </TableRow>
+                )}
+              </Fragment>
+            );
+          })}
+        </TableBody>
+      </Table>
+      {limit && rows.length > limit && (
+        <p className="text-xs text-muted-foreground">
+          Prikazanih prvih {limit} od {rows.length} — zoži iskanje.
+        </p>
+      )}
+    </>
+  );
+}
+
+// ---------- Variant A: picker + data table ----------
+
+type InstRow = {
+  i: number;
+  name: string;
+  regular: number | undefined;
+  fast: number | undefined;
+  veryFast: number | undefined;
+};
+
+function VariantA({ s, bytes }: { s: Snapshot; bytes: number }) {
+  const [pRaw, setP] = useParam('p');
+  const [sel, setSel] = useInstFilter();
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: 'regular', desc: false },
+  ]);
+  const p = pRaw === null ? null : Number(pRaw);
+  const rows = useMemo<InstRow[]>(() => {
+    if (p === null) return [];
+    return s.rows
+      .filter((r) => r[0] === p)
+      .map((r) => ({
+        i: r[1],
+        name: s.institutions[r[1]],
+        regular: r[2] ?? undefined,
+        fast: r[3] ?? undefined,
+        veryFast: r[4] ?? undefined,
+      }));
+  }, [s, p]);
+  const shown = sel.length ? rows.filter((r) => sel.includes(r.i)) : rows;
+  const columns = useMemo<ColumnDef<InstRow>[]>(
+    () => [
+      {
+        accessorKey: 'name',
+        header: ({ column }) => (
+          <SortHeader label="Ustanova" onClick={() => column.toggleSorting()} />
+        ),
+        cell: ({ row }) => (
+          <span className="whitespace-normal">{row.original.name}</span>
+        ),
+      },
+      ...(['regular', 'fast', 'veryFast'] as const).map(
+        (k, x): ColumnDef<InstRow> => ({
+          accessorKey: k,
+          header: ({ column }) => (
+            <SortHeader
+              label={U_LABEL[x]}
+              onClick={() => column.toggleSorting()}
+            />
+          ),
+          cell: ({ row }) => (
+            <Days
+              v={row.original[k] ?? null}
+              max={p === null ? 0 : maxOf(s, p, x)}
+            />
+          ),
+        })
+      ),
+    ],
+    [s, p]
+  );
+  return (
+    <div className="flex flex-col gap-4">
+      <ProcedureCombobox
+        s={s}
+        value={p}
+        onPick={(i) => setP(i === null ? null : String(i))}
+      />
+      {p === null ? (
+        <PickPrompt text="Izberi postopek, da vidiš čakalne dobe po ustanovah." />
+      ) : (
+        <Card>
+          <ProcedureCardHeader s={s} p={p} />
+          <CardContent className="flex flex-col gap-4">
+            <InstitutionCombobox
+              options={rows.map((r) => ({ i: r.i, name: r.name }))}
+              selected={sel}
+              setSelected={setSel}
+            />
+            <DataTable
+              data={shown}
+              columns={columns}
+              sorting={sorting}
+              setSorting={setSorting}
+            />
+          </CardContent>
+          <CardFooter>
+            <CostNote items={[['snapshot.json', bytes]]} />
+          </CardFooter>
+        </Card>
+      )}
     </div>
   );
 }
 
-// ---------- Variant A: picker + table ----------
+// ---------- Variant B: all procedures, expand for bar chart ----------
 
-function VariantA({ s, bytes }: { s: Snapshot; bytes: number }) {
-  const [pRaw, setP] = useParam('p');
-  const [u, setU] = useUrgency();
-  const [sel, setSel] = useInstFilter();
-  const p = pRaw === null ? null : Number(pRaw);
-  const rows = useMemo(() => {
-    if (p === null) return [];
-    const r = rowsFor(s, p).map((r) => ({
-      i: r[1],
-      name: s.institutions[r[1]],
-      v: [r[2], r[3], r[4]],
-    }));
-    return sortByUrgency(r, u);
-  }, [s, p, u]);
-  const shown = sel.length ? rows.filter((r) => sel.includes(r.i)) : rows;
-  return (
-    <section className="space-y-4">
-      <ProcedurePicker s={s} value={p} onPick={(i) => setP(String(i))} />
-      {p === null ? (
-        <p className="text-muted-foreground">
-          Izberi postopek, da vidiš čakalne dobe po ustanovah.
-        </p>
-      ) : (
-        <>
-          <ProcedureHeader s={s} p={p} />
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="text-sm">Razvrsti po:</span>
-            <UrgencyTabs u={u} setU={setU} />
-          </div>
-          <InstitutionFilter
-            names={rows.map((r) => ({ i: r.i, name: r.name }))}
-            selected={sel}
-            setSelected={setSel}
-          />
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-left">
-                  <th className="py-2 pr-2">#</th>
-                  <th className="py-2 pr-2">Ustanova</th>
-                  {U_LABEL.map((l, i) => (
-                    <th
-                      key={l}
-                      className={`py-2 pr-2 text-right ${u === i ? 'underline' : ''}`}
-                    >
-                      {l}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {shown.map((r, k) => (
-                  <tr key={r.i} className="border-b last:border-0">
-                    <td className="py-1.5 pr-2 text-muted-foreground">
-                      {k + 1}
-                    </td>
-                    <td className="py-1.5 pr-2">{r.name}</td>
-                    {[0, 1, 2].map((x) => (
-                      <td
-                        key={x}
-                        className="py-1.5 pr-2 text-right tabular-nums"
-                      >
-                        <Cell v={r.v[x]} max={maxOf(s, p, x)} />
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
-      <CostNote items={[['snapshot.json', bytes]]} />
-    </section>
-  );
-}
-
-// ---------- Variant B: overview of all procedures, expand for bars ----------
+type ProcRow = {
+  i: number;
+  code: string;
+  name: string;
+  n: number;
+  min: number | undefined;
+  overN: number;
+  over: number;
+};
 
 function VariantB({ s, bytes }: { s: Snapshot; bytes: number }) {
   const [u, setU] = useUrgency();
   const [pRaw, setP] = useParam('p');
   const [q, setQ] = useState('');
-  const [sort, setSort] = useState<'over' | 'name' | 'min'>('over');
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: 'overN', desc: true },
+  ]);
   const open = pRaw === null ? null : Number(pRaw);
-  const summary = useMemo(() => {
-    const by = new Map<number, (number | null)[][]>();
+  const data = useMemo<ProcRow[]>(() => {
+    const by = new Map<number, number[]>();
     for (const r of s.rows) {
+      const v = r[2 + u];
+      if (v === null) continue;
       const a = by.get(r[0]) ?? [];
-      a.push([r[2], r[3], r[4]]);
+      a.push(v);
       by.set(r[0], a);
     }
-    return s.procedures.map((p, i) => {
-      const vals = (by.get(i) ?? [])
-        .map((v) => v[u])
-        .filter((v): v is number => v !== null);
-      const max = p[2 + u] as number;
-      return {
-        i,
-        code: p[0],
-        name: p[1],
-        n: vals.length,
-        min: vals.length ? Math.min(...vals) : null,
-        over: vals.length
-          ? vals.filter((v) => v > max).length / vals.length
-          : 0,
-      };
-    });
+    return s.procedures
+      .map((p, i) => {
+        const vals = by.get(i) ?? [];
+        const max = p[2 + u] as number;
+        const overN = vals.filter((v) => v > max).length;
+        return {
+          i,
+          code: p[0],
+          name: p[1],
+          n: vals.length,
+          min: vals.length ? Math.min(...vals) : undefined,
+          overN,
+          over: vals.length ? overN / vals.length : 0,
+        };
+      })
+      .filter((x) => x.n > 0);
   }, [s, u]);
-  const t = q.toLowerCase();
-  const list = summary
-    .filter(
-      (x) =>
-        x.n > 0 &&
-        (!t ||
-          x.name.toLowerCase().includes(t) ||
-          x.code.toLowerCase().includes(t))
-    )
-    .sort((a, b) =>
-      sort === 'over'
-        ? b.over * b.n - a.over * a.n
-        : sort === 'min'
-          ? (a.min ?? 1e9) - (b.min ?? 1e9)
-          : a.name.localeCompare(b.name)
-    );
-  return (
-    <section className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <UrgencyTabs u={u} setU={setU} />
-        <select
-          className="rounded-md border bg-background px-2 py-1 text-sm"
-          value={sort}
-          onChange={(e) => setSort(e.target.value as typeof sort)}
-        >
-          <option value="over">Največ ustanov nad mejo (število)</option>
-          <option value="min">Najkrajša čakalna doba</option>
-          <option value="name">Po abecedi</option>
-        </select>
-        <input
-          className="min-w-48 flex-1 rounded-md border bg-background px-3 py-1.5 text-sm"
-          placeholder="Išči postopek…"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
-      </div>
-      <p className="text-xs text-muted-foreground">
-        {list.length} postopkov · {U_LABEL[u].toLowerCase()} · stanje{' '}
-        {s.date.slice(0, 10)}
-      </p>
-      <ul className="divide-y rounded-md border">
-        {list.slice(0, 200).map((x) => (
-          <li key={x.i}>
-            <button
-              type="button"
-              className="flex w-full items-center gap-3 px-3 py-2 text-left text-sm hover:bg-muted"
-              onClick={() => setP(open === x.i ? null : String(x.i))}
-            >
-              <span className="flex-1">
-                {x.name}{' '}
-                <span className="text-muted-foreground">({x.code})</span>
-              </span>
-              <span className="w-20 text-right tabular-nums">{x.n} ust.</span>
-              <span className="w-24 text-right tabular-nums">
-                min {x.min ?? '—'} d
-              </span>
-              <span className="w-28">
-                <span className="block h-2 rounded bg-muted">
-                  <span
-                    className="block h-2 rounded bg-destructive"
-                    style={{ width: `${x.over * 100}%` }}
-                  />
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {Math.round(x.over * 100)} % nad mejo
-                </span>
-              </span>
-            </button>
-            {open === x.i && <Bars s={s} p={x.i} u={u} />}
-          </li>
-        ))}
-      </ul>
-      {list.length > 200 && (
-        <p className="text-xs text-muted-foreground">
-          Prikazanih prvih 200 — zoži iskanje.
-        </p>
-      )}
-      <CostNote items={[['snapshot.json', bytes]]} />
-    </section>
-  );
-}
-
-function Bars({ s, p, u }: { s: Snapshot; p: number; u: Urgency }) {
-  const max = maxOf(s, p, u);
-  const rows = sortByUrgency(
-    rowsFor(s, p).map((r) => ({
-      name: s.institutions[r[1]],
-      v: [r[2], r[3], r[4]],
-    })),
-    u
-  ).filter((r) => r.v[u] !== null);
-  const top = Math.max(max, ...rows.map((r) => r.v[u] as number)) || 1;
-  return (
-    <div className="space-y-1 bg-muted/40 px-3 py-3">
-      {rows.map((r) => {
-        const v = r.v[u] as number;
-        return (
-          <div key={r.name} className="flex items-center gap-2 text-xs">
-            <span className="w-56 shrink-0 truncate" title={r.name}>
-              {r.name}
-            </span>
-            <span className="relative h-3 flex-1">
-              <span
-                className={`absolute inset-y-0 left-0 rounded ${v > max ? 'bg-destructive' : 'bg-primary/70'}`}
-                style={{ width: `${(v / top) * 100}%` }}
-              />
-              <span
-                className="absolute inset-y-[-2px] w-px bg-foreground"
-                style={{ left: `${(max / top) * 100}%` }}
-                title={`meja ${max} d`}
-              />
-            </span>
-            <span className="w-12 text-right tabular-nums">{v} d</span>
+  const columns = useMemo<ColumnDef<ProcRow>[]>(
+    () => [
+      {
+        accessorKey: 'name',
+        header: ({ column }) => (
+          <SortHeader label="Postopek" onClick={() => column.toggleSorting()} />
+        ),
+        cell: ({ row }) => (
+          <div className="max-w-md whitespace-normal">
+            {row.original.name}{' '}
+            <span className="text-muted-foreground">({row.original.code})</span>
           </div>
-        );
-      })}
-      <p className="pt-1 text-xs text-muted-foreground">
-        Navpična črta = najdaljša dovoljena doba ({max} d).
-      </p>
-    </div>
+        ),
+      },
+      {
+        accessorKey: 'n',
+        header: ({ column }) => (
+          <SortHeader label="Ustanov" onClick={() => column.toggleSorting()} />
+        ),
+      },
+      {
+        accessorKey: 'min',
+        header: ({ column }) => (
+          <SortHeader
+            label="Najkrajša"
+            onClick={() => column.toggleSorting()}
+          />
+        ),
+        cell: ({ row }) => `${row.original.min ?? '—'} d`,
+      },
+      {
+        accessorKey: 'overN',
+        header: ({ column }) => (
+          <SortHeader label="Nad mejo" onClick={() => column.toggleSorting()} />
+        ),
+        cell: ({ row }) =>
+          row.original.overN ? (
+            <Badge variant="destructive">
+              {row.original.overN} ({Math.round(row.original.over * 100)} %)
+            </Badge>
+          ) : (
+            <Badge variant="secondary">0</Badge>
+          ),
+      },
+    ],
+    []
+  );
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Vsi postopki</CardTitle>
+        <CardDescription>
+          {data.length} postopkov · {U_LABEL[u].toLowerCase()} · klikni vrstico
+          za graf po ustanovah
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <UrgencyToggle u={u} setU={setU} />
+          <Input
+            className="max-w-sm"
+            placeholder="Išči postopek…"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
+        </div>
+        <DataTable
+          data={data}
+          columns={columns}
+          sorting={sorting}
+          setSorting={setSorting}
+          globalFilter={q}
+          limit={100}
+          onRowClick={(r) => setP(open === r.i ? null : String(r.i))}
+          renderExpanded={(r) =>
+            open === r.i ? <BarsFor s={s} p={r.i} u={u} /> : null
+          }
+        />
+      </CardContent>
+      <CardFooter>
+        <CostNote items={[['snapshot.json', bytes]]} />
+      </CardFooter>
+    </Card>
   );
 }
 
-// ---------- Variant C: procedure + history (sparklines, weekday view #1) ----------
+// recharts loops if `data` is a new array on every render, so memoize it.
+function BarsFor({ s, p, u }: { s: Snapshot; p: number; u: Urgency }) {
+  const data = useMemo(
+    () =>
+      s.rows
+        .filter((x) => x[0] === p && x[2 + u] !== null)
+        .map((x) => ({ name: s.institutions[x[1]], days: x[2 + u] as number }))
+        .sort((a, b) => a.days - b.days),
+    [s, p, u]
+  );
+  return <InstitutionBars max={maxOf(s, p, u)} data={data} />;
+}
+
+// ---------- history helpers (C, D) ----------
+
+function useHistory(p: number | null) {
+  return useJson<History>(p === null ? null : `/prototype/history/${p}.json`);
+}
+
+function seriesFor(hist: History, u: Urgency) {
+  return Object.entries(hist.series).map(([i, ser]) => ({
+    i: Number(i),
+    vals: ser.map((x) => (x ? x[u] : null)),
+  }));
+}
+
+function averageByDate(
+  hist: History,
+  series: { vals: (number | null)[] }[]
+): (number | null)[] {
+  return hist.dates.map((_, d) => {
+    const v = series
+      .map((r) => r.vals[d])
+      .filter((x): x is number => x !== null);
+    return v.length
+      ? Math.round((v.reduce((a, b) => a + b, 0) / v.length) * 10) / 10
+      : null;
+  });
+}
+
+// ---------- Variant C: procedure + history (sparklines, weekday #1) ----------
 
 const WEEKDAYS = ['Pon', 'Tor', 'Sre', 'Čet', 'Pet', 'Sob', 'Ned'];
+type WeekRow = {
+  day: string;
+  w1: number | null;
+  w2: number | null;
+  w3: number | null;
+  w4: number | null;
+};
 
 function VariantC({ s, bytes }: { s: Snapshot; bytes: number }) {
   const [pRaw, setP] = useParam('p');
   const [u, setU] = useUrgency();
   const [sel, setSel] = useInstFilter();
   const p = pRaw === null ? null : Number(pRaw);
-  const h = useJson<History>(
-    p === null ? null : `/prototype/history/${p}.json`
-  );
+  const h = useHistory(p);
   const hist = h.data;
   const insts = useMemo(() => {
-    if (!hist || p === null) return [];
-    const r = Object.entries(hist.series).map(([i, ser]) => {
-      const vals = ser.map((x) => (x ? x[u] : null));
-      const cur = vals.at(-1) ?? null;
-      const ago = vals.at(-31) ?? null;
-      return {
-        i: Number(i),
-        name: s.institutions[Number(i)],
-        vals,
-        cur,
-        delta: cur !== null && ago !== null ? cur - ago : null,
-      };
-    });
-    return r.sort((a, b) => (a.cur ?? 1e9) - (b.cur ?? 1e9));
-  }, [hist, p, u, s]);
+    if (!hist) return [];
+    return seriesFor(hist, u)
+      .map((r) => {
+        const cur = r.vals.at(-1) ?? null;
+        const ago = r.vals.at(-31) ?? null;
+        return {
+          ...r,
+          spark: r.vals.map((v, k) => ({ d: hist.dates[k], v })),
+          name: s.institutions[r.i],
+          cur,
+          delta: cur !== null && ago !== null ? cur - ago : null,
+        };
+      })
+      .sort((a, b) => (a.cur ?? 1e9) - (b.cur ?? 1e9));
+  }, [hist, u, s]);
   const shown = sel.length ? insts.filter((r) => sel.includes(r.i)) : insts;
-  const weekday = useMemo(() => {
-    // average across (filtered) institutions, per date, last 4 weeks grouped by weekday
-    if (!hist) return null;
+  const weekday = useMemo<WeekRow[]>(() => {
+    if (!hist) return [];
+    const avg = averageByDate(hist, shown);
     const n = hist.dates.length;
-    const avg = hist.dates.map((_, d) => {
-      const v = shown
-        .map((r) => r.vals[d])
-        .filter((x): x is number => x !== null);
-      return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
-    });
-    const weeks: (number | null)[][] = [[], [], [], []].map(() =>
-      Array(7).fill(null)
-    );
+    const out: WeekRow[] = WEEKDAYS.map((day) => ({
+      day,
+      w1: null,
+      w2: null,
+      w3: null,
+      w4: null,
+    }));
     for (let d = Math.max(0, n - 28); d < n; d++) {
-      const date = new Date(hist.dates[d]);
-      const wd = (date.getUTCDay() + 6) % 7;
-      const w = 3 - Math.floor((n - 1 - d) / 7);
-      if (w >= 0) weeks[w][wd] = avg[d];
+      const wd = (new Date(hist.dates[d]).getUTCDay() + 6) % 7;
+      const w = 4 - Math.floor((n - 1 - d) / 7);
+      out[wd][`w${w}` as 'w1' | 'w2' | 'w3' | 'w4'] = avg[d];
     }
-    return weeks;
+    return out;
   }, [hist, shown]);
   return (
-    <section className="space-y-4">
-      <ProcedurePicker s={s} value={p} onPick={(i) => setP(String(i))} />
+    <div className="flex flex-col gap-4">
+      <ProcedureCombobox
+        s={s}
+        value={p}
+        onPick={(i) => setP(i === null ? null : String(i))}
+      />
       {p === null ? (
-        <p className="text-muted-foreground">
-          Izberi postopek za trenutno stanje in zgodovino zadnjih ~5 mesecev.
-        </p>
-      ) : !hist ? (
-        <p>Nalagam zgodovino…</p>
+        <PickPrompt text="Trenutno stanje in zgodovina zadnjih ~5 mesecev." />
       ) : (
-        <>
-          <ProcedureHeader s={s} p={p} />
-          <UrgencyTabs u={u} setU={setU} />
-          <InstitutionFilter
-            names={insts.map((r) => ({ i: r.i, name: r.name }))}
-            selected={sel}
-            setSelected={setSel}
-          />
-          {weekday && <WeekdayChart weeks={weekday} max={maxOf(s, p, u)} />}
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b text-left">
-                <th className="py-2">Ustanova</th>
-                <th className="py-2">
-                  {hist.dates[0]} → {hist.dates.at(-1)}
-                </th>
-                <th className="py-2 text-right">Zdaj</th>
-                <th className="py-2 text-right">Δ 30 d</th>
-              </tr>
-            </thead>
-            <tbody>
-              {shown.map((r) => (
-                <tr key={r.i} className="border-b last:border-0">
-                  <td className="py-1.5 pr-2">{r.name}</td>
-                  <td className="py-1.5 pr-2">
-                    <Spark vals={r.vals} max={maxOf(s, p, u)} />
-                  </td>
-                  <td className="py-1.5 text-right tabular-nums">
-                    <Cell v={r.cur} max={maxOf(s, p, u)} />
-                  </td>
-                  <td
-                    className={`py-1.5 text-right tabular-nums ${r.delta && r.delta > 0 ? 'text-destructive' : ''}`}
-                  >
-                    {r.delta === null
-                      ? '—'
-                      : r.delta > 0
-                        ? `+${r.delta}`
-                        : r.delta}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </>
-      )}
-      <CostNote
-        items={[
-          ['snapshot.json', bytes],
-          ...(h.bytes
-            ? [[`history/${p}.json`, h.bytes] as [string, number]]
-            : []),
-        ]}
-      />
-    </section>
-  );
-}
-
-function Spark({ vals, max }: { vals: (number | null)[]; max: number }) {
-  const W = 220;
-  const H = 28;
-  const nums = vals.filter((v): v is number => v !== null);
-  if (!nums.length) return <span className="text-muted-foreground">—</span>;
-  const top = Math.max(max, ...nums) || 1;
-  const pts = vals
-    .map((v, i) =>
-      v === null ? null : `${(i / (vals.length - 1)) * W},${H - (v / top) * H}`
-    )
-    .filter(Boolean)
-    .join(' ');
-  const my = H - (max / top) * H;
-  return (
-    <svg width={W} height={H} className="overflow-visible">
-      <line
-        x1={0}
-        x2={W}
-        y1={my}
-        y2={my}
-        className="stroke-destructive"
-        strokeDasharray="3 3"
-        strokeWidth={1}
-      />
-      <polyline
-        points={pts}
-        fill="none"
-        className="stroke-foreground"
-        strokeWidth={1.25}
-      />
-    </svg>
-  );
-}
-
-function WeekdayChart({
-  weeks,
-  max,
-}: {
-  weeks: (number | null)[][];
-  max: number;
-}) {
-  const all = weeks.flat().filter((v): v is number => v !== null);
-  const top = Math.max(max, ...all) || 1;
-  const H = 120;
-  const shades = ['opacity-25', 'opacity-50', 'opacity-75', 'opacity-100'];
-  return (
-    <div className="rounded-md border p-3">
-      <p className="mb-2 text-sm font-medium">
-        Povprečje po dnevih v tednu, zadnji 4 tedni (#1) — svetlo = starejši
-        teden
-      </p>
-      <div className="flex items-end gap-3" style={{ height: H }}>
-        {WEEKDAYS.map((d, wd) => (
-          <div key={d} className="flex flex-1 flex-col items-center gap-1">
-            <div
-              className="flex w-full items-end justify-center gap-0.5"
-              style={{ height: H - 18 }}
-            >
-              {weeks.map((w, k) => (
-                <div
-                  key={k}
-                  className={`w-2 rounded-t bg-primary ${shades[k]}`}
-                  style={{ height: `${((w[wd] ?? 0) / top) * 100}%` }}
-                  title={w[wd] === null ? '—' : `${w[wd]?.toFixed(1)} d`}
+        <Card>
+          <ProcedureCardHeader s={s} p={p} />
+          <CardContent className="flex flex-col gap-4">
+            {!hist ? (
+              <Skeleton className="h-64 w-full" />
+            ) : (
+              <>
+                <UrgencyToggle u={u} setU={setU} />
+                <InstitutionCombobox
+                  options={insts.map((r) => ({ i: r.i, name: r.name }))}
+                  selected={sel}
+                  setSelected={setSel}
                 />
-              ))}
-            </div>
-            <span className="text-xs">{d}</span>
-          </div>
-        ))}
-      </div>
+                <Card size="sm">
+                  <CardHeader>
+                    <CardTitle>
+                      Po dnevih v tednu, zadnji 4 tedni (#1)
+                    </CardTitle>
+                    <CardDescription>
+                      Povprečje {sel.length ? 'izbranih' : 'vseh'} ustanov
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <WeekdayBars data={weekday} />
+                  </CardContent>
+                </Card>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Ustanova</TableHead>
+                      <TableHead>
+                        {hist.dates[0]} → {hist.dates.at(-1)}
+                      </TableHead>
+                      <TableHead className="text-right">Zdaj</TableHead>
+                      <TableHead className="text-right">Δ 30 d</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {shown.map((r) => (
+                      <TableRow key={r.i}>
+                        <TableCell className="whitespace-normal">
+                          {r.name}
+                        </TableCell>
+                        <TableCell>
+                          <Sparkline max={maxOf(s, p, u)} data={r.spark} />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Days v={r.cur} max={maxOf(s, p, u)} />
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {r.delta === null ? (
+                            '—'
+                          ) : r.delta > 0 ? (
+                            <Badge variant="outline">+{r.delta}</Badge>
+                          ) : (
+                            r.delta
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </>
+            )}
+          </CardContent>
+          <CardFooter>
+            <CostNote
+              items={[
+                ['snapshot.json', bytes],
+                [`history/${p}.json`, h.bytes],
+              ]}
+            />
+          </CardFooter>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// ---------- Variant D: timeline ----------
+
+function VariantD({ s, bytes }: { s: Snapshot; bytes: number }) {
+  const [pRaw, setP] = useParam('p');
+  const [u, setU] = useUrgency();
+  const [sel, setSel] = useInstFilter();
+  const [range, setRange] = useState('all');
+  const p = pRaw === null ? null : Number(pRaw);
+  const h = useHistory(p);
+  const hist = h.data;
+  const series = useMemo(() => (hist ? seriesFor(hist, u) : []), [hist, u]);
+  const data = useMemo(() => {
+    if (!hist) return [];
+    const avg = averageByDate(hist, series);
+    const chosen = series.filter((r) => sel.includes(r.i)).slice(0, 5);
+    const rows = hist.dates.map((d, k) => {
+      const row: Record<string, string | number | null> = { d, avg: avg[k] };
+      for (const c of chosen) row[`i${c.i}`] = c.vals[k];
+      return row;
+    });
+    const days = range === 'all' ? rows.length : Number(range);
+    return rows.slice(-days);
+  }, [hist, series, sel, range]);
+  const lines = sel
+    .slice(0, 5)
+    .map((i) => ({ key: `i${i}`, label: s.institutions[i] }));
+  return (
+    <div className="flex flex-col gap-4">
+      <ProcedureCombobox
+        s={s}
+        value={p}
+        onPick={(i) => setP(i === null ? null : String(i))}
+      />
+      {p === null ? (
+        <PickPrompt text="Časovnica čakalne dobe za izbrani postopek." />
+      ) : (
+        <Card>
+          <ProcedureCardHeader s={s} p={p} />
+          <CardContent className="flex flex-col gap-4">
+            {!hist ? (
+              <Skeleton className="h-96 w-full" />
+            ) : (
+              <>
+                <div className="flex flex-wrap items-center gap-3">
+                  <UrgencyToggle u={u} setU={setU} />
+                  <Select
+                    items={[
+                      { value: '30', label: 'Zadnjih 30 dni' },
+                      { value: '90', label: 'Zadnjih 90 dni' },
+                      { value: 'all', label: `Vse (${hist.dates.length} dni)` },
+                    ]}
+                    value={range}
+                    onValueChange={(v) => setRange(v ?? 'all')}
+                  >
+                    <SelectTrigger className="w-44">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectItem value="30">Zadnjih 30 dni</SelectItem>
+                        <SelectItem value="90">Zadnjih 90 dni</SelectItem>
+                        <SelectItem value="all">
+                          Vse ({hist.dates.length} dni)
+                        </SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <InstitutionCombobox
+                  options={series.map((r) => ({
+                    i: r.i,
+                    name: s.institutions[r.i],
+                  }))}
+                  selected={sel}
+                  setSelected={setSel}
+                />
+                {sel.length > 5 && (
+                  <p className="text-xs text-muted-foreground">
+                    Na grafu je prvih 5 izbranih ustanov.
+                  </p>
+                )}
+                <Timeline data={data} lines={lines} max={maxOf(s, p, u)} />
+              </>
+            )}
+          </CardContent>
+          <CardFooter>
+            <CostNote
+              items={[
+                ['snapshot.json', bytes],
+                [`history/${p}.json`, h.bytes],
+              ]}
+            />
+          </CardFooter>
+        </Card>
+      )}
     </div>
   );
 }
@@ -693,6 +921,7 @@ const VARIANTS = [
   ['A', 'Iskalnik + tabela'],
   ['B', 'Pregled vseh postopkov'],
   ['C', 'Postopek + zgodovina'],
+  ['D', 'Časovnica'],
 ] as const;
 
 function Switcher({
@@ -720,15 +949,15 @@ function Switcher({
   });
   if (process.env.NODE_ENV === 'production') return null;
   return (
-    <div className="fixed bottom-4 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-full bg-black px-4 py-2 text-sm text-white shadow-xl">
-      <button type="button" onClick={() => go(-1)}>
-        ←
+    <div className="fixed bottom-4 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black px-3 py-1.5 text-sm text-white shadow-xl">
+      <button type="button" onClick={() => go(-1)} aria-label="Prejšnja">
+        <ChevronLeft />
       </button>
       <span>
         PROTOTIP {VARIANTS[idx][0]} ({VARIANTS[idx][1]})
       </span>
-      <button type="button" onClick={() => go(1)}>
-        →
+      <button type="button" onClick={() => go(1)} aria-label="Naslednja">
+        <ChevronRight />
       </button>
     </div>
   );
@@ -739,21 +968,27 @@ export function PrototypeHome() {
   const { data, bytes } = useJson<Snapshot>('/prototype/snapshot.json');
   const v = variant ?? 'A';
   return (
-    <main className="mx-auto w-full max-w-4xl px-4 py-6 pb-24">
-      <h1 className="mb-1 text-2xl font-semibold">Čakalne dobe</h1>
-      {data && (
-        <p className="mb-6 text-sm text-muted-foreground">
-          Stanje na dan {new Date(data.date).toLocaleDateString('sl-SI')} ·{' '}
-          {data.procedures.length} postopkov · {data.institutions.length}{' '}
-          ustanov
-        </p>
-      )}
+    <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-6 pb-24">
+      <div className="flex flex-col gap-1">
+        <h1 className="text-2xl font-semibold">Čakalne dobe</h1>
+        {data ? (
+          <p className="text-sm text-muted-foreground">
+            Stanje na dan {new Date(data.date).toLocaleDateString('sl-SI')} ·{' '}
+            {data.procedures.length} postopkov · {data.institutions.length}{' '}
+            ustanov
+          </p>
+        ) : (
+          <Skeleton className="h-4 w-72" />
+        )}
+      </div>
       {!data ? (
-        <p>Nalagam…</p>
+        <Skeleton className="h-96 w-full" />
       ) : v === 'B' ? (
         <VariantB s={data} bytes={bytes} />
       ) : v === 'C' ? (
         <VariantC s={data} bytes={bytes} />
+      ) : v === 'D' ? (
+        <VariantD s={data} bytes={bytes} />
       ) : (
         <VariantA s={data} bytes={bytes} />
       )}
