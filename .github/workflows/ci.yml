@@ -48,9 +48,8 @@ jobs:
           [ -f coverage/coverage-summary.json ] || exit 0
           jq -r '"### Coverage", "", "| Metric | Percent | Covered/Total |", "|:--|--:|--:|", (.total as $t | ("statements", "branches", "functions", "lines") as $m | $t[$m] | "| \($m) | \(.pct)% | \(.covered)/\(.total) |")' coverage/coverage-summary.json >> "$GITHUB_STEP_SUMMARY"
 
-      # Report-only for now: a fail verdict exits 1, which continue-on-error keeps from failing verify
+      # Gate: a fail verdict exits 1 and fails verify; the output still goes to the summary page
       - if: ${{ github.event_name == 'pull_request' }}
-        continue-on-error: true
         run: pnpm exec fallow audit --base HEAD^1 --coverage coverage/coverage-final.json --format github-summary >> "$GITHUB_STEP_SUMMARY"
 
       - run: pnpm fallow
