@@ -1,3 +1,1 @@
-export function throwawayAuditGate(n: number): number {
-  return n + 1;
-}
+export const throwawayAuditGate = 1;
