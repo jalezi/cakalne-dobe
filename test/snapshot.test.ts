@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AllData } from '@/lib/zod-schemas/data-schemas';
-import { fetchAndPrepareSnapshot, fetchSnapshot } from '../src/snapshot';
+import { fetchSnapshot } from '../src/snapshot';
 
 vi.stubGlobal('fetch', vi.fn());
 
@@ -39,6 +39,19 @@ describe('fetchSnapshot', () => {
     }
   });
 
+  it('returns error when the server fails', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response(null, { status: 500, statusText: 'Internal Server Error' })
+    );
+
+    const result = await fetchSnapshot('gl-999');
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.message).toContain('gl-999');
+    }
+  });
+
   it('returns error when response body fails schema validation', async () => {
     vi.mocked(fetch).mockResolvedValueOnce(
       new Response(JSON.stringify({ invalid: true }), { status: 200 })
@@ -62,46 +75,6 @@ describe('fetchSnapshot', () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data).toEqual(VALID_SNAPSHOT);
-    }
-  });
-});
-
-describe('fetchAndPrepareSnapshot', () => {
-  beforeEach(() => {
-    vi.resetAllMocks();
-  });
-
-  it('propagates fetch error from fetchSnapshot', async () => {
-    vi.mocked(fetch).mockResolvedValueOnce(
-      new Response(null, { status: 500, statusText: 'Internal Server Error' })
-    );
-
-    const result = await fetchAndPrepareSnapshot('gl-999');
-
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toContain('gl-999');
-    }
-  });
-
-  it('returns jobData and snapshotInsertPayload on success', async () => {
-    vi.mocked(fetch).mockResolvedValueOnce(
-      new Response(JSON.stringify(VALID_SNAPSHOT), { status: 200 })
-    );
-
-    const result = await fetchAndPrepareSnapshot('gl-123');
-
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.jobData).toMatchObject({
-        gitLabJobId: 'gl-123',
-        startDate: VALID_SNAPSHOT.start,
-        endDate: VALID_SNAPSHOT.end,
-      });
-      expect(result.data.snapshotInsertPayload.procedures).toHaveLength(1);
-      expect(result.data.snapshotInsertPayload.procedures[0].code).toBe('P1');
-      expect(result.data.snapshotInsertPayload.institutions.size).toBe(1);
-      expect(result.data.snapshotInsertPayload.maxAllowedDays).toHaveLength(1);
     }
   });
 });

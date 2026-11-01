@@ -1,156 +1,230 @@
-import { sql } from 'drizzle-orm';
-import {
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import type { AllData } from '@/lib/zod-schemas/data-schemas';
 import * as schema from '../src/db/schema';
-import { cleanupTestDb, createTestSchema, getTestDb } from '../src/db/test';
+import {
+  cleanupTestDb,
+  createTestSchema,
+  failWritesTo,
+  getTestDb,
+} from '../src/db/test';
+import { ingestSnapshot } from '../src/snapshot';
 
 const db = getTestDb();
 
-vi.mock('@/db', () => ({ db }));
+type ProcedureFixture = {
+  code: string;
+  name: string;
+  institutions: string[];
+};
 
-const snapshotData = {
-  start: '2026-04-01T00:00:00Z',
-  end: '2026-04-01T01:00:00Z',
-  procedures: [
-    {
-      code: 'PROC-1',
-      name: 'Procedure 1',
-      maxAllowedDays: { regular: 30, fast: 10, veryFast: 5 },
+function buildSnapshot(procedures: ProcedureFixture[]): AllData {
+  return {
+    start: '2026-10-01T00:00:00Z',
+    end: '2026-10-01T01:00:00Z',
+    procedures: procedures.map(({ code, name, institutions }) => ({
+      code,
+      name,
+      maxAllowedDays: { regular: 90, fast: 30, veryFast: 14 },
       waitingPeriods: {
-        regular: [{ facility: 'Facility 1', days: 20 }],
-        fast: [{ facility: 'Facility 1', days: 8 }],
-        veryFast: [{ facility: 'Facility 1', days: 3 }],
+        regular: institutions.map((facility) => ({ facility, days: 60 })),
+        fast: institutions.map((facility) => ({ facility, days: 20 })),
+        veryFast: null,
       },
-    },
-  ],
+    })),
+  };
+}
+
+// 3 Procedures, 2 Institutions, 3 Max Allowed Days, 4 Waiting Periods
+const FIRST_SNAPSHOT = buildSnapshot([
+  {
+    code: '1001',
+    name: 'Procedure 1',
+    institutions: ['Institution A', 'Institution B'],
+  },
+  { code: '1002', name: 'Procedure 2', institutions: ['Institution A'] },
+  { code: '1003', name: 'Procedure 3', institutions: ['Institution B'] },
+]);
+
+// Shares Procedures 1001 and 1002 and Institution A with the first Snapshot
+// 3 Procedures (1 new), 3 Institutions (2 new), 3 Max Allowed Days, 5 Waiting Periods
+const SECOND_SNAPSHOT = buildSnapshot([
+  {
+    code: '1001',
+    name: 'Procedure 1',
+    institutions: ['Institution A', 'Institution C', 'Institution D'],
+  },
+  { code: '1002', name: 'Procedure 2', institutions: ['Institution C'] },
+  { code: '1004', name: 'Procedure 4', institutions: ['Institution D'] },
+]);
+
+const NO_ROWS = {
+  jobs: 0,
+  procedures: 0,
+  institutions: 0,
+  maxAllowedDays: 0,
+  waitingPeriods: 0,
 };
 
 describe('ingestSnapshot', () => {
-  let ingestSnapshot: typeof import('../seed/ingest-snapshot').ingestSnapshot;
-  let jobsHelpers: typeof import('../seed/seed-helpers/seed-jobs');
-  let proceduresHelpers: typeof import('../seed/seed-helpers/seed-procedures');
-  let maxAllowedDaysHelpers: typeof import('../seed/seed-helpers/seed-max-allowed-days');
-  let institutionsHelpers: typeof import('../seed/seed-helpers/seed-institutions');
-  let waitingTimesHelpers: typeof import('../seed/seed-helpers/seed-waiting-times');
-
-  beforeAll(async () => {
-    ({ ingestSnapshot } = await import('../seed/ingest-snapshot'));
-    jobsHelpers = await import('../seed/seed-helpers/seed-jobs');
-    proceduresHelpers = await import('../seed/seed-helpers/seed-procedures');
-    maxAllowedDaysHelpers = await import(
-      '../seed/seed-helpers/seed-max-allowed-days'
-    );
-    institutionsHelpers = await import(
-      '../seed/seed-helpers/seed-institutions'
-    );
-    waitingTimesHelpers = await import(
-      '../seed/seed-helpers/seed-waiting-times'
-    );
-  });
-
   beforeEach(async () => {
     await createTestSchema(db);
   });
 
   afterEach(async () => {
-    vi.restoreAllMocks();
     await cleanupTestDb(db);
   });
 
-  it('writes all snapshot rows when ingestion succeeds', async () => {
-    await ingestSnapshot(snapshotData, 'gitlab-job-1', { db });
+  it('stores the Job and all of its rows, and reports what it inserted', async () => {
+    const result = await ingestSnapshot(db, 'gitlab-job-1', FIRST_SNAPSHOT);
 
-    await expect(countRows(db, schema.jobs)).resolves.toBe(1);
-    await expect(countRows(db, schema.procedures)).resolves.toBe(1);
-    await expect(countRows(db, schema.maxAllowedDays)).resolves.toBe(1);
-    await expect(countRows(db, schema.institutions)).resolves.toBe(1);
-    await expect(countRows(db, schema.waitingPeriods)).resolves.toBe(1);
+    expect(result).toEqual({
+      success: true,
+      data: {
+        job: { id: expect.any(String), gitLabJobId: 'gitlab-job-1' },
+        inserted: {
+          procedures: 3,
+          institutions: 2,
+          maxAllowedDays: 3,
+          waitingPeriods: 4,
+        },
+      },
+    });
+    await expect(countAllRows()).resolves.toEqual({
+      jobs: 1,
+      procedures: 3,
+      institutions: 2,
+      maxAllowedDays: 3,
+      waitingPeriods: 4,
+    });
+    await expect(db.query.jobs.findFirst()).resolves.toMatchObject({
+      gitLabJobId: 'gitlab-job-1',
+      startDate: '2026-10-01T00:00:00Z',
+      endDate: '2026-10-01T01:00:00Z',
+    });
   });
 
-  // Steps 1–2 catch DB errors and return them; the pipeline rethrows the first.
-  // Steps 3–5 throw directly.
-  it.each([
-    {
-      step: 1,
-      helper: 'insertJobs',
-      fail: () =>
-        vi.spyOn(jobsHelpers, 'insertJobs').mockResolvedValueOnce({
-          errors: [{ error: new Error('step 1 failure') }],
-          existing: [],
-          unique: [],
-        }),
-    },
-    {
-      step: 2,
-      helper: 'insertProcedures',
-      fail: () =>
-        vi.spyOn(proceduresHelpers, 'insertProcedures').mockResolvedValueOnce({
-          errors: [{ error: new Error('step 2 failure') }],
-          existing: [],
-          unique: [],
-          renamed: [],
-        }),
-    },
-    {
-      step: 3,
-      helper: 'insertMaxAllowedDays',
-      fail: () =>
-        vi
-          .spyOn(maxAllowedDaysHelpers, 'insertMaxAllowedDays')
-          .mockRejectedValueOnce(new Error('step 3 failure')),
-    },
-    {
-      step: 4,
-      helper: 'insertInstitutions',
-      fail: () =>
-        vi
-          .spyOn(institutionsHelpers, 'insertInstitutions')
-          .mockRejectedValueOnce(new Error('step 4 failure')),
-    },
-    {
-      step: 5,
-      helper: 'insertWaitingTimes',
-      fail: () =>
-        vi
-          .spyOn(waitingTimesHelpers, 'insertWaitingTimes')
-          .mockRejectedValueOnce(new Error('step 5 failure')),
-    },
-  ])(
-    'rolls back all writes when step $step ($helper) fails',
-    async ({ step, fail }) => {
-      fail();
+  it('reuses Procedures and Institutions stored by an earlier Job', async () => {
+    await ingestSnapshot(db, 'gitlab-job-1', FIRST_SNAPSHOT);
 
-      await expect(
-        ingestSnapshot(snapshotData, 'gitlab-job-1', { db })
-      ).rejects.toThrow(`step ${step} failure`);
+    const result = await ingestSnapshot(db, 'gitlab-job-2', SECOND_SNAPSHOT);
 
-      await expect(countRows(db, schema.jobs)).resolves.toBe(0);
-      await expect(countRows(db, schema.procedures)).resolves.toBe(0);
-      await expect(countRows(db, schema.maxAllowedDays)).resolves.toBe(0);
-      await expect(countRows(db, schema.institutions)).resolves.toBe(0);
-      await expect(countRows(db, schema.waitingPeriods)).resolves.toBe(0);
-    }
-  );
+    expect(result.success && result.data.inserted).toEqual({
+      procedures: 1,
+      institutions: 2,
+      maxAllowedDays: 3,
+      waitingPeriods: 5,
+    });
+    await expect(countAllRows()).resolves.toEqual({
+      jobs: 2,
+      procedures: 4,
+      institutions: 4,
+      maxAllowedDays: 6,
+      waitingPeriods: 9,
+    });
+  });
+
+  it('returns TRANSFORM_FAILED and writes nothing when the Snapshot cannot be transformed', async () => {
+    const badSnapshot = buildSnapshot([
+      { code: '1001', name: 'Procedure 1', institutions: [] },
+    ]);
+    badSnapshot.procedures[0].waitingPeriods.regular = [
+      { facility: 123 as unknown as string, days: 5 },
+    ];
+
+    const result = await ingestSnapshot(db, 'gitlab-job-1', badSnapshot);
+
+    expect(result).toMatchObject({
+      success: false,
+      error: { code: 'TRANSFORM_FAILED' },
+    });
+    await expect(countAllRows()).resolves.toEqual(NO_ROWS);
+  });
+
+  it('returns JOB_EXISTS and changes no rows when the Job is already stored', async () => {
+    await db
+      .insert(schema.procedures)
+      .values({ code: '1001', name: 'Procedure-1' });
+    await ingestSnapshot(
+      db,
+      'gitlab-job-1',
+      buildSnapshot([
+        { code: '1002', name: 'Procedure 2', institutions: ['Institution A'] },
+      ])
+    );
+    const rowsBefore = await countAllRows();
+
+    // Same GitLab Job, with a rename and a new Procedure and Institution
+    const result = await ingestSnapshot(
+      db,
+      'gitlab-job-1',
+      buildSnapshot([
+        { code: '1001', name: 'Procedure 1', institutions: ['Institution E'] },
+        { code: '1005', name: 'Procedure 5', institutions: ['Institution E'] },
+      ])
+    );
+
+    expect(result).toEqual({
+      success: false,
+      error: {
+        code: 'JOB_EXISTS',
+        message:
+          'Job with GitLab job ID gitlab-job-1 already exists in the database',
+      },
+    });
+    await expect(countAllRows()).resolves.toEqual(rowsBefore);
+    await expect(
+      db.query.procedures.findFirst({
+        where: (procedures, { eq }) => eq(procedures.code, '1001'),
+      })
+    ).resolves.toMatchObject({ name: 'Procedure-1' });
+  });
+
+  it('returns WRITE_FAILED with the database reason and leaves no rows when a write fails', async () => {
+    const restore = await failWritesTo(db, 'waiting_periods');
+
+    const result = await ingestSnapshot(db, 'gitlab-job-1', FIRST_SNAPSHOT);
+    await restore();
+
+    expect(result).toMatchObject({
+      success: false,
+      error: {
+        code: 'WRITE_FAILED',
+        message: expect.stringMatching(
+          /^Failed query: insert into "waiting_periods"[\s\S]*\ncause: [\s\S]*writes to waiting_periods fail/
+        ),
+      },
+    });
+    await expect(countAllRows()).resolves.toEqual(NO_ROWS);
+
+    await expect(
+      ingestSnapshot(db, 'gitlab-job-1', FIRST_SNAPSHOT)
+    ).resolves.toMatchObject({ success: true });
+  });
+
+  it('returns WRITE_FAILED when one Snapshot lists a Procedure code twice', async () => {
+    const result = await ingestSnapshot(
+      db,
+      'gitlab-job-1',
+      buildSnapshot([
+        { code: '1001', name: 'Procedure 1', institutions: [] },
+        { code: '1001', name: 'Procedure 1', institutions: [] },
+      ])
+    );
+
+    expect(result).toMatchObject({
+      success: false,
+      error: { code: 'WRITE_FAILED' },
+    });
+    await expect(countAllRows()).resolves.toEqual(NO_ROWS);
+  });
 });
 
-type CountableTable =
-  | typeof schema.jobs
-  | typeof schema.procedures
-  | typeof schema.maxAllowedDays
-  | typeof schema.institutions
-  | typeof schema.waitingPeriods;
-
-async function countRows(
-  db: ReturnType<typeof getTestDb>,
-  table: CountableTable
-) {
-  const result = await db.select({ count: sql<number>`count(*)` }).from(table);
-  return result[0]?.count ?? 0;
+async function countAllRows() {
+  return {
+    jobs: await db.$count(schema.jobs),
+    procedures: await db.$count(schema.procedures),
+    institutions: await db.$count(schema.institutions),
+    maxAllowedDays: await db.$count(schema.maxAllowedDays),
+    waitingPeriods: await db.$count(schema.waitingPeriods),
+  };
 }

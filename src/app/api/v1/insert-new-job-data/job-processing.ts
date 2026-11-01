@@ -3,11 +3,9 @@ import { sql } from 'drizzle-orm';
 import { db } from '@/db';
 import type * as schema from '@/db/schema';
 import { jobs as jobsTable } from '@/db/schema';
-import { fetchAndPrepareSnapshot } from '@/snapshot';
-import type { Result } from '@/types';
 import { getLastJobId } from '@/utils/get-last-job-id';
 import { handleError } from '@/utils/handle-error';
-import type { ReturnType, SnapshotInsertPayload } from './types';
+import type { ReturnType } from './types';
 
 export const JOB_PROCESSING_ERRORS = {
   LATEST_JOB_CHECK_FAILED: 'LATEST_JOB_CHECK_FAILED',
@@ -44,30 +42,6 @@ export async function shouldInsertLatestJob(): Promise<ReturnType<'ok'>> {
   }
 
   return { success: true, data: 'ok' };
-}
-
-/**
- * Prepares job data for insertion into the database.
- * @param gitLabJobId The GitLab job ID
- * @returns Prepared job data and additional information
- */
-export async function prepareJobData(gitLabJobId: string): Promise<
-  Result<{
-    jobData: schema.InsertJob;
-    snapshotInsertPayload: SnapshotInsertPayload;
-  }>
-> {
-  const result = await fetchAndPrepareSnapshot(gitLabJobId);
-  if (!result.success) {
-    return { success: false, error: result.error };
-  }
-  return {
-    success: true,
-    data: {
-      jobData: result.data.jobData,
-      snapshotInsertPayload: result.data.snapshotInsertPayload,
-    },
-  };
 }
 
 /**

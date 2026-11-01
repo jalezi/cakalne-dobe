@@ -37,13 +37,52 @@ describe.each([
       vi.spyOn(console, 'error').mockImplementation(() => {});
       mocks.handleJobIngestionRequest.mockResolvedValue({
         success: false,
-        error: { code: 'TRANSACTION_FAILED', message: 'Transaction failed' },
+        error: { code: 'WRITE_FAILED', message: 'Transaction failed' },
       });
 
       const response = await post('{}', headers);
 
       expect(response.status).toBe(202);
       expect(await response.text()).toBe('Webhook error: Transaction failed');
+    });
+
+    it.each(['TRANSFORM_FAILED', 'JOB_EXISTS', 'WRITE_FAILED'])(
+      'answers 202 when the ingest returns %s',
+      async (code) => {
+        vi.stubEnv('INGEST_SECRET', secret);
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+        mocks.handleJobIngestionRequest.mockResolvedValue({
+          success: false,
+          error: { code, message: `${code} message` },
+        });
+
+        const response = await post('{}', headers);
+
+        expect(response.status).toBe(202);
+        expect(await response.text()).toBe(`Webhook error: ${code} message`);
+      }
+    );
+
+    it('returns the stored Job and inserted counts on success', async () => {
+      vi.stubEnv('INGEST_SECRET', secret);
+      const data = {
+        job: { id: 'job-1', gitLabJobId: 'gl-42' },
+        inserted: {
+          procedures: 1,
+          institutions: 2,
+          maxAllowedDays: 1,
+          waitingPeriods: 2,
+        },
+      };
+      mocks.handleJobIngestionRequest.mockResolvedValue({
+        success: true,
+        data,
+      });
+
+      const response = await post('{}', headers);
+
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({ success: true, data });
     });
   }
 );

@@ -12,7 +12,12 @@ import {
   vi,
 } from 'vitest';
 import * as schema from '../src/db/schema';
-import { cleanupTestDb, createTestSchema, getTestDb } from '../src/db/test';
+import {
+  cleanupTestDb,
+  createTestSchema,
+  failWritesTo,
+  getTestDb,
+} from '../src/db/test';
 
 const db = getTestDb();
 
@@ -40,16 +45,12 @@ const FILE_1002 = 'wp-2026-04-02-00-00-00-1002.json';
 
 describe('seedMissingJobsOnly', () => {
   let seedMissingJobsOnly: typeof import('../seed/seed-helpers/smart-seeding').seedMissingJobsOnly;
-  let waitingTimesHelpers: typeof import('../seed/seed-helpers/seed-waiting-times');
   let jobsDir: string;
 
   beforeAll(async () => {
     ({ seedMissingJobsOnly } = await import(
       '../seed/seed-helpers/smart-seeding'
     ));
-    waitingTimesHelpers = await import(
-      '../seed/seed-helpers/seed-waiting-times'
-    );
   });
 
   beforeEach(async () => {
@@ -76,17 +77,18 @@ describe('seedMissingJobsOnly', () => {
   });
 
   it('leaves no rows for a job whose write fails partway, and seeds it on the next call', async () => {
-    // Steps 1–4 have written by the time step 5 (waiting periods) fails
-    vi.spyOn(waitingTimesHelpers, 'insertWaitingTimes').mockRejectedValueOnce(
-      new Error('step 5 failure')
-    );
+    // The other tables have written by the time the Waiting Period insert fails
+    const restore = await failWritesTo(db, 'waiting_periods');
 
     const failed = await seedMissingJobsOnly([FILE_1001], jobsDir);
+    await restore();
 
     expect(failed.seeded).toBe(0);
     expect(failed.skipped).toBe(0);
     expect(failed.errors).toHaveLength(1);
-    expect(failed.errors[0].error.message).toBe('step 5 failure');
+    expect(failed.errors[0].error.message).toContain(
+      'writes to waiting_periods fail'
+    );
     expect(failed.errors[0].meta).toEqual({ jobId: '1001' });
     await expect(countAllRows()).resolves.toEqual([0, 0, 0, 0, 0]);
 
@@ -97,8 +99,13 @@ describe('seedMissingJobsOnly', () => {
   });
 
   it('records a failed job with its job ID and moves on to the next job', async () => {
-    vi.spyOn(waitingTimesHelpers, 'insertWaitingTimes').mockRejectedValueOnce(
-      new Error('step 5 failure')
+    // A Procedure code listed twice fails the Procedure insert for 1001 only
+    await writeFile(
+      join(jobsDir, FILE_1001),
+      JSON.stringify({
+        ...jobData,
+        procedures: [...jobData.procedures, ...jobData.procedures],
+      })
     );
 
     const result = await seedMissingJobsOnly([FILE_1001, FILE_1002], jobsDir);

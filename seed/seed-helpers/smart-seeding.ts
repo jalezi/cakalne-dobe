@@ -1,7 +1,8 @@
 /** biome-ignore-all lint/suspicious/noConsole: This module is for seeding scripts */
 
 import { join } from 'node:path';
-import { ingestSnapshot } from '../ingest-snapshot';
+import { db } from '@/db';
+import { ingestSnapshot } from '@/snapshot';
 import {
   extractDateFromJobFilename,
   isWithinRange,
@@ -88,7 +89,10 @@ export async function seedMissingJobsOnly(
 
       // Seed new job with all related data in one transaction
       console.log(`  ✨ Seeding new job: ${jobId}`);
-      await ingestSnapshot(jobData, jobId);
+      const ingested = await ingestSnapshot(db, jobId, jobData);
+      if (!ingested.success) {
+        throw new Error(ingested.error.message);
+      }
 
       result.seeded++;
     } catch (error) {

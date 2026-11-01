@@ -15,6 +15,7 @@ import * as schema from '../src/db/schema';
 import {
   cleanupTestDb,
   createTestSchema,
+  failWritesTo,
   getTestDb,
   setupTestDb,
 } from '../src/db/test';
@@ -46,7 +47,6 @@ const snapshot: AllData = {
 describe('seedDBFromJobs', () => {
   let seedDBFromJobs: typeof import('../seed/seed-db-from-jobs').seedDBFromJobs;
   let seedHelpers: typeof import('../seed/seed-helpers').seedHelpers;
-  let waitingTimesHelpers: typeof import('../seed/seed-helpers/seed-waiting-times');
   let jobsDir: string;
 
   const seededJobIds = async () =>
@@ -57,9 +57,6 @@ describe('seedDBFromJobs', () => {
   beforeAll(async () => {
     ({ seedDBFromJobs } = await import('../seed/seed-db-from-jobs'));
     ({ seedHelpers } = await import('../seed/seed-helpers'));
-    waitingTimesHelpers = await import(
-      '../seed/seed-helpers/seed-waiting-times'
-    );
   });
 
   beforeEach(async () => {
@@ -88,7 +85,7 @@ describe('seedDBFromJobs', () => {
 
     const result = await seedDBFromJobs(false, jobsDir);
 
-    expect(result).toEqual({ seeded: 2, errors: [] });
+    expect(result).toEqual({ seeded: 2, skipped: 0, errors: [] });
     expect((await seededJobIds()).sort()).toEqual(['2001', '2002']);
     await expect(db.$count(schema.waitingPeriods)).resolves.toBe(4);
   });
@@ -98,7 +95,7 @@ describe('seedDBFromJobs', () => {
 
     const result = await seedDBFromJobs(true, jobsDir);
 
-    expect(result).toEqual({ seeded: 2, errors: [] });
+    expect(result).toEqual({ seeded: 2, skipped: 0, errors: [] });
     expect((await seededJobIds()).sort()).toEqual(['2001', '2002']);
   });
 
@@ -111,7 +108,7 @@ describe('seedDBFromJobs', () => {
 
     const result = await seedDBFromJobs(true, jobsDir);
 
-    expect(result).toEqual({ seeded: 0, errors: [{ error }] });
+    expect(result).toEqual({ seeded: 0, skipped: 0, errors: [{ error }] });
     await expect(seededJobIds()).resolves.toEqual([]);
   });
 
@@ -131,20 +128,29 @@ describe('seedDBFromJobs', () => {
   });
 
   it('reports a failed ingest with its job ID and stops there', async () => {
-    const insertWaitingTimes = vi
-      .spyOn(waitingTimesHelpers, 'insertWaitingTimes')
-      .mockRejectedValue(new Error('ingest failure'));
+    const restore = await failWritesTo(db, 'waiting_periods');
 
     const result = await seedDBFromJobs(false, jobsDir);
+    await restore();
 
     expect(result.seeded).toBe(0);
     expect(result.errors).toEqual([
       {
-        error: new Error('ingest failure'),
+        error: expect.objectContaining({
+          message: expect.stringContaining('writes to waiting_periods fail'),
+        }),
         meta: { jobId: expect.stringMatching(/^200[12]$/) },
       },
     ]);
-    expect(insertWaitingTimes).toHaveBeenCalledTimes(1);
     await expect(seededJobIds()).resolves.toEqual([]);
+  });
+
+  it('skips Jobs already stored when run again over the same files', async () => {
+    await seedDBFromJobs(false, jobsDir);
+
+    const result = await seedDBFromJobs(false, jobsDir);
+
+    expect(result).toEqual({ seeded: 0, skipped: 2, errors: [] });
+    expect((await seededJobIds()).sort()).toEqual(['2001', '2002']);
   });
 });
