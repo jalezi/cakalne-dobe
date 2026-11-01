@@ -17,8 +17,8 @@ export default defineConfig({
       include: ['src/**/*.{ts,tsx}', 'seed/**/*.ts', 'scripts/**/*.ts'],
       // json writes coverage/coverage-final.json, read by `fallow health`; json-summary feeds the CI coverage table
       reporter: ['text-summary', 'json', 'json-summary'],
-      // Floors to raise over time, not targets
-      thresholds: { statements: 83, branches: 78, functions: 78, lines: 83 },
+      // Floors, not targets: raise each to the whole percent below current coverage when it goes up
+      thresholds: { statements: 87, branches: 83, functions: 78, lines: 87 },
     },
     projects: [
       {
