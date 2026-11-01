@@ -1,6 +1,5 @@
-import { db } from '@/db';
+import type { db as appDb } from '@/db';
 import { renameProcedures } from '@/db/rename-procedures';
-import type * as schema from '@/db/schema';
 import {
   institutions as institutionsTable,
   jobs as jobsTable,
@@ -8,135 +7,157 @@ import {
   procedures as proceduresTable,
   waitingPeriods as waitingPeriodsTable,
 } from '@/db/schema';
-import { EXPECTED_NUMBER_OF_JOBS, MAX_CHUNK_SIZE } from '@/lib/constants';
-import type { SnapshotInsertPayload, Trx } from './types';
+import { MAX_CHUNK_SIZE } from '@/lib/constants';
+import type { AllData } from '@/lib/zod-schemas/data-schemas';
+import type { Result, SnapshotInsertPayload } from '@/types';
+import {
+  prepareSnapshotInsertPayload,
+  type SnapshotTransformerMeta,
+} from './transformer';
+
+export const INGEST_SNAPSHOT_ERRORS = {
+  TRANSFORM_FAILED: 'TRANSFORM_FAILED',
+  JOB_EXISTS: 'JOB_EXISTS',
+  WRITE_FAILED: 'WRITE_FAILED',
+} as const;
+
+type Database = typeof appDb;
+type Trx = Parameters<Parameters<Database['transaction']>[0]>[0];
+
+export type IngestedSnapshot = {
+  job: { id: string; gitLabJobId: string };
+  inserted: {
+    procedures: number;
+    institutions: number;
+    maxAllowedDays: number;
+    waitingPeriods: number;
+  };
+};
+
+// Thrown inside the transaction to roll it back, then returned as JOB_EXISTS
+class JobExistsError extends Error {}
 
 /**
- * Process job data and insert it into the database
- * @param jobData Job data to insert
- * @param snapshotInsertPayload Additional data to process and insert
- * @returns Result of the database transaction
+ * Stores one Job's Snapshot in one transaction: the Job, new Procedures and
+ * Institutions, its Max Allowed Days and Waiting Periods. Never throws.
+ * @param db Database to write to
+ * @param gitLabJobId GitLab job ID of the Job
+ * @param snapshot The Job's Snapshot
+ * @returns The stored Job and the number of rows inserted per table
  */
-export async function processJobData(
-  jobData: schema.InsertJob,
-  snapshotInsertPayload: SnapshotInsertPayload
-) {
-  return db.transaction(async (trx) => {
-    // JOB
-    const insertedJobs = await insertJobTransaction(trx, jobData);
-    // The insert skips a conflicting Job instead of failing
-    if (insertedJobs.length === 0) {
-      throw new Error(
-        `Job with GitLab job ID ${jobData.gitLabJobId} already exists in the database`
-      );
-    }
-
-    // PROCEDURES
-    const { existingProcedures, allProceduresWithDBIds, insertedProcedures } =
-      await insertProceduresTransaction(trx, snapshotInsertPayload);
-
-    // INSTITUTIONS
-    const { existingInstitutions, insertedInstitutions } =
-      await insertInstitutionsTransaction(trx, snapshotInsertPayload);
-
-    const allInstitutionsWithDBId =
-      existingInstitutions.concat(insertedInstitutions);
-
-    // MAX ALLOWED DAYS
-    const insertedMaxAllowedDays = await insertMaxAllowedDays(
-      trx,
-      snapshotInsertPayload,
-      allProceduresWithDBIds,
-      insertedJobs[0].id
-    );
-
-    // WAITING PERIODS
-    const insertedWaitingPeriods: {
-      jobId: string;
-      institutionId: string;
-    }[] = await insertWaitingPeriodsTransaction(
-      trx,
-      snapshotInsertPayload,
-      allInstitutionsWithDBId,
-      allProceduresWithDBIds,
-      insertedJobs[0].id
-    );
-
-    const totalRows =
-      EXPECTED_NUMBER_OF_JOBS +
-      snapshotInsertPayload.procedures.length +
-      snapshotInsertPayload.institutions.size +
-      snapshotInsertPayload.maxAllowedDays.length +
-      snapshotInsertPayload.waitingPeriods.size;
-
-    const totalRowsInserted =
-      insertedJobs.length +
-      insertedProcedures.length +
-      insertedInstitutions.length +
-      insertedMaxAllowedDays.length +
-      insertedWaitingPeriods.length;
-
+export async function ingestSnapshot(
+  db: Database,
+  gitLabJobId: string,
+  snapshot: AllData
+): Promise<Result<IngestedSnapshot, SnapshotTransformerMeta>> {
+  let payloadResult: ReturnType<typeof prepareSnapshotInsertPayload>;
+  try {
+    payloadResult = prepareSnapshotInsertPayload(snapshot, gitLabJobId);
+  } catch (error) {
+    // The transformer returns Zod errors and rethrows the rest
     return {
-      success: true,
-      data: {
-        job: insertedJobs[0],
+      success: false,
+      error: {
+        code: INGEST_SNAPSHOT_ERRORS.TRANSFORM_FAILED,
+        message: `Failed to prepare snapshot insert payload for job ${gitLabJobId}`,
       },
-      meta: {
-        length: {
-          total: {
-            total: totalRows,
-            inserted: totalRowsInserted,
-          },
-          job: {
-            total: EXPECTED_NUMBER_OF_JOBS,
-            inserted: insertedJobs.length,
-          },
-          procedures: {
-            total: snapshotInsertPayload.procedures.length,
-            inserted: insertedProcedures.length,
-            existing: existingProcedures.length,
-          },
-          institutions: {
-            total: snapshotInsertPayload.institutions.size,
-            inserted: insertedInstitutions.length,
-            existing: existingInstitutions.length,
-          },
-          maxAllowedDays: {
-            total: snapshotInsertPayload.maxAllowedDays.length,
-            inserted: insertedMaxAllowedDays.length,
-          },
-          waitingPeriods: {
-            total: snapshotInsertPayload.waitingPeriods.size,
-            inserted: insertedWaitingPeriods.length,
-          },
-        },
-      },
+      meta: { cause: error instanceof Error ? error.message : String(error) },
     };
-  });
-}
+  }
+  if (!payloadResult.success) {
+    return payloadResult;
+  }
+  const payload = payloadResult.data;
 
-async function insertJobTransaction(trx: Trx, jobData: schema.InsertJob) {
-  return trx
-    .insert(jobsTable)
-    .values(jobData)
-    .returning({
-      id: jobsTable.id,
-      gitLabJobId: jobsTable.gitLabJobId,
-    })
-    .onConflictDoNothing();
+  try {
+    const data = await db.transaction(async (trx) => {
+      // JOB
+      const [job] = await trx
+        .insert(jobsTable)
+        .values({
+          gitLabJobId,
+          startDate: snapshot.start,
+          endDate: snapshot.end,
+        })
+        .returning({ id: jobsTable.id, gitLabJobId: jobsTable.gitLabJobId })
+        .onConflictDoNothing();
+      // The insert skips a conflicting Job instead of failing
+      if (!job) {
+        throw new JobExistsError(
+          `Job with GitLab job ID ${gitLabJobId} already exists in the database`
+        );
+      }
+
+      // PROCEDURES
+      const { insertedProcedures, allProceduresWithDBIds } =
+        await insertProceduresTransaction(trx, payload);
+
+      // INSTITUTIONS
+      const { existingInstitutions, insertedInstitutions } =
+        await insertInstitutionsTransaction(trx, payload);
+      const allInstitutionsWithDBId =
+        existingInstitutions.concat(insertedInstitutions);
+
+      // MAX ALLOWED DAYS
+      const insertedMaxAllowedDays = await insertMaxAllowedDays(
+        trx,
+        payload,
+        allProceduresWithDBIds,
+        job.id
+      );
+
+      // WAITING PERIODS
+      const insertedWaitingPeriods = await insertWaitingPeriodsTransaction(
+        trx,
+        payload,
+        allInstitutionsWithDBId,
+        allProceduresWithDBIds,
+        job.id
+      );
+
+      return {
+        job,
+        inserted: {
+          procedures: insertedProcedures.length,
+          institutions: insertedInstitutions.length,
+          maxAllowedDays: insertedMaxAllowedDays.length,
+          waitingPeriods: insertedWaitingPeriods.length,
+        },
+      };
+    });
+    return { success: true, data };
+  } catch (error) {
+    if (error instanceof JobExistsError) {
+      return {
+        success: false,
+        error: {
+          code: INGEST_SNAPSHOT_ERRORS.JOB_EXISTS,
+          message: error.message,
+        },
+      };
+    }
+    let message = error instanceof Error ? error.message : 'Transaction failed';
+    // A failed query's message names the step; the database's reason is its cause
+    if (error instanceof Error && error.cause instanceof Error) {
+      message += `\ncause: ${error.cause.message}`;
+    }
+    return {
+      success: false,
+      error: { code: INGEST_SNAPSHOT_ERRORS.WRITE_FAILED, message },
+    };
+  }
 }
 
 /**
  * Retrieves existing procedures and inserts new ones.
  * @param trx Database transaction
  * @param snapshotInsertPayload Data containing procedures to process
- * @returns Object with existing, inserted, and combined procedures
+ * @returns Object with inserted and combined procedures
  */
 async function insertProceduresTransaction(
   trx: Trx,
   snapshotInsertPayload: SnapshotInsertPayload
 ): Promise<{
-  existingProcedures: Array<{ id: string; code: string; name: string }>;
   insertedProcedures: Array<{ id: string; code: string; name: string }>;
   allProceduresWithDBIds: Array<{ id: string; code: string; name: string }>;
 }> {
@@ -192,7 +213,6 @@ async function insertProceduresTransaction(
   const allProceduresWithDBIds = [...existingProcedures, ...insertedProcedures];
 
   return {
-    existingProcedures,
     insertedProcedures,
     allProceduresWithDBIds,
   };
@@ -408,7 +428,7 @@ async function insertWaitingPeriodsTransaction(
  * @param insertFn Function to insert a chunk of items
  * @returns Array of inserted items
  */
-export async function insertInChunks<T, R>(
+async function insertInChunks<T, R>(
   items: T[],
   chunkSize: number,
   insertFn: (chunk: T[]) => Promise<R[]>

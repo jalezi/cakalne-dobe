@@ -1,12 +1,11 @@
-import { DrizzleQueryError } from 'drizzle-orm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   validateWebhookPayload: vi.fn(),
   shouldInsertLatestJob: vi.fn(),
   getLastJobId: vi.fn(),
-  prepareJobData: vi.fn(),
-  processJobData: vi.fn(),
+  fetchSnapshot: vi.fn(),
+  ingestSnapshot: vi.fn(),
 }));
 
 vi.mock('../src/app/api/v1/insert-new-job-data/validation', () => ({
@@ -15,11 +14,13 @@ vi.mock('../src/app/api/v1/insert-new-job-data/validation', () => ({
 
 vi.mock('../src/app/api/v1/insert-new-job-data/job-processing', () => ({
   shouldInsertLatestJob: mocks.shouldInsertLatestJob,
-  prepareJobData: mocks.prepareJobData,
 }));
 
-vi.mock('../src/app/api/v1/insert-new-job-data/db-operations', () => ({
-  processJobData: mocks.processJobData,
+vi.mock('@/db', () => ({ db: { name: 'app db' } }));
+
+vi.mock('@/snapshot', () => ({
+  fetchSnapshot: mocks.fetchSnapshot,
+  ingestSnapshot: mocks.ingestSnapshot,
 }));
 
 vi.mock('@/utils/get-last-job-id', () => ({
@@ -28,10 +29,16 @@ vi.mock('@/utils/get-last-job-id', () => ({
 
 import { handleJobIngestionRequest } from '../src/app/api/v1/insert-new-job-data/handle-job-ingestion-request';
 
-const TRANSACTION_RESULT = {
-  success: true,
-  data: { job: { id: 'job-1', gitLabJobId: 'gl-42' } },
-  meta: { length: { total: { total: 10, inserted: 10 } } },
+const SNAPSHOT = { start: '2026-04-01', end: '2026-04-02', procedures: [] };
+
+const INGESTED = {
+  job: { id: 'job-1', gitLabJobId: 'gl-42' },
+  inserted: {
+    procedures: 1,
+    institutions: 1,
+    maxAllowedDays: 1,
+    waitingPeriods: 1,
+  },
 };
 
 describe('handleJobIngestionRequest', () => {
@@ -99,10 +106,10 @@ describe('handleJobIngestionRequest', () => {
       success: false,
       error: { code: 'GET_JOB_ID_FAILED', message: 'GitLab API error' },
     });
-    expect(mocks.prepareJobData).not.toHaveBeenCalled();
+    expect(mocks.fetchSnapshot).not.toHaveBeenCalled();
   });
 
-  it('returns error and stops when job data preparation fails', async () => {
+  it('returns error and stops when the Snapshot fetch fails', async () => {
     mocks.validateWebhookPayload.mockReturnValueOnce({
       success: true,
       data: { success: true },
@@ -115,7 +122,7 @@ describe('handleJobIngestionRequest', () => {
       success: true,
       data: { gitLabJobId: 'gl-42' },
     });
-    mocks.prepareJobData.mockResolvedValueOnce({
+    mocks.fetchSnapshot.mockResolvedValueOnce({
       success: false,
       error: { code: 'FETCH_FAILED', message: 'Failed to fetch job data' },
     });
@@ -126,10 +133,10 @@ describe('handleJobIngestionRequest', () => {
       success: false,
       error: { code: 'FETCH_FAILED', message: 'Failed to fetch job data' },
     });
-    expect(mocks.processJobData).not.toHaveBeenCalled();
+    expect(mocks.ingestSnapshot).not.toHaveBeenCalled();
   });
 
-  it('returns error when the DB transaction throws', async () => {
+  it('returns the ingest error when the Snapshot cannot be stored', async () => {
     mocks.validateWebhookPayload.mockReturnValueOnce({
       success: true,
       data: { success: true },
@@ -142,23 +149,24 @@ describe('handleJobIngestionRequest', () => {
       success: true,
       data: { gitLabJobId: 'gl-42' },
     });
-    mocks.prepareJobData.mockResolvedValueOnce({
+    mocks.fetchSnapshot.mockResolvedValueOnce({
       success: true,
-      data: { jobData: { gitLabJobId: 'gl-42' }, snapshotInsertPayload: {} },
+      data: SNAPSHOT,
     });
-    mocks.processJobData.mockRejectedValueOnce(
-      new Error('Transaction rolled back')
-    );
+    mocks.ingestSnapshot.mockResolvedValueOnce({
+      success: false,
+      error: { code: 'WRITE_FAILED', message: 'Failed query: …\ncause: …' },
+    });
 
     const result = await handleJobIngestionRequest({ success: true });
 
     expect(result).toEqual({
       success: false,
-      error: { code: 'TRANSACTION_FAILED', message: 'Transaction rolled back' },
+      error: { code: 'WRITE_FAILED', message: 'Failed query: …\ncause: …' },
     });
   });
 
-  it('includes the database reason when a DB write fails', async () => {
+  it('ingests the latest Job into the app database when all steps succeed', async () => {
     mocks.validateWebhookPayload.mockReturnValueOnce({
       success: true,
       data: { success: true },
@@ -171,59 +179,23 @@ describe('handleJobIngestionRequest', () => {
       success: true,
       data: { gitLabJobId: 'gl-42' },
     });
-    mocks.prepareJobData.mockResolvedValueOnce({
+    mocks.fetchSnapshot.mockResolvedValueOnce({
       success: true,
-      data: { jobData: { gitLabJobId: 'gl-42' }, snapshotInsertPayload: {} },
+      data: SNAPSHOT,
     });
-    mocks.processJobData.mockRejectedValueOnce(
-      new DrizzleQueryError(
-        'insert into "procedures" ("id", "code", "name") values (?, ?, ?)',
-        ['proc-1', '1001', 'Procedure 1'],
-        new Error(
-          'SQLITE_CONSTRAINT: UNIQUE constraint failed: procedures.name'
-        )
-      )
+    mocks.ingestSnapshot.mockResolvedValueOnce({
+      success: true,
+      data: INGESTED,
+    });
+
+    const result = await handleJobIngestionRequest({ success: true });
+
+    expect(result).toEqual({ success: true, data: INGESTED });
+    expect(mocks.fetchSnapshot).toHaveBeenCalledWith('gl-42');
+    expect(mocks.ingestSnapshot).toHaveBeenCalledWith(
+      { name: 'app db' },
+      'gl-42',
+      SNAPSHOT
     );
-
-    const result = await handleJobIngestionRequest({ success: true });
-
-    expect(result).toEqual({
-      success: false,
-      error: {
-        code: 'TRANSACTION_FAILED',
-        message:
-          'Failed query: insert into "procedures" ("id", "code", "name") values (?, ?, ?)\n' +
-          'params: proc-1,1001,Procedure 1\n' +
-          'cause: SQLITE_CONSTRAINT: UNIQUE constraint failed: procedures.name',
-      },
-    });
-  });
-
-  it('returns success with transaction result when all steps succeed', async () => {
-    mocks.validateWebhookPayload.mockReturnValueOnce({
-      success: true,
-      data: { success: true },
-    });
-    mocks.shouldInsertLatestJob.mockResolvedValueOnce({
-      success: true,
-      data: 'ok',
-    });
-    mocks.getLastJobId.mockResolvedValueOnce({
-      success: true,
-      data: { gitLabJobId: 'gl-42' },
-    });
-    mocks.prepareJobData.mockResolvedValueOnce({
-      success: true,
-      data: {
-        jobData: { gitLabJobId: 'gl-42' },
-        snapshotInsertPayload: {},
-      },
-    });
-    mocks.processJobData.mockResolvedValueOnce(TRANSACTION_RESULT);
-
-    const result = await handleJobIngestionRequest({ success: true });
-
-    expect(result).toEqual({ success: true, data: TRANSACTION_RESULT });
-    expect(mocks.prepareJobData).toHaveBeenCalledWith('gl-42');
   });
 });

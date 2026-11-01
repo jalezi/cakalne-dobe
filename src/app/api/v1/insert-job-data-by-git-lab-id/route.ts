@@ -12,10 +12,17 @@ import { z } from 'zod';
 import { db } from '@/db';
 import { jobs as jobsTable } from '@/db/schema';
 import { requireIngestAuth } from '@/lib/ingest-auth';
+import { fetchSnapshot, ingestSnapshot } from '@/snapshot';
+import { INGEST_SNAPSHOT_ERRORS } from '@/snapshot/ingest';
 import type { Result } from '@/types';
 import { handleError } from '@/utils/handle-error';
-import { processJobData } from '../insert-new-job-data/db-operations';
-import { prepareJobData } from '../insert-new-job-data/job-processing';
+
+const INGEST_ERROR_STATUS: Record<keyof typeof INGEST_SNAPSHOT_ERRORS, number> =
+  {
+    [INGEST_SNAPSHOT_ERRORS.TRANSFORM_FAILED]: 400,
+    [INGEST_SNAPSHOT_ERRORS.JOB_EXISTS]: 409,
+    [INGEST_SNAPSHOT_ERRORS.WRITE_FAILED]: 500,
+  };
 
 const dateSchema = z
   .string()
@@ -195,12 +202,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const preparedJobData = await prepareJobData(gitLabJobId);
-    if (!preparedJobData.success) {
+    const snapshot = await fetchSnapshot(gitLabJobId);
+    if (!snapshot.success) {
       return Response.json(
         {
           success: false,
-          error: preparedJobData.error,
+          error: snapshot.error,
         },
         {
           status: 400,
@@ -208,14 +215,26 @@ export async function POST(request: Request) {
       );
     }
 
-    const transactionResponse = await processJobData(
-      preparedJobData.data.jobData,
-      preparedJobData.data.snapshotInsertPayload
-    );
+    const ingested = await ingestSnapshot(db, gitLabJobId, snapshot.data);
+    if (!ingested.success) {
+      return Response.json(
+        {
+          success: false,
+          error: ingested.error,
+        },
+        {
+          // ingestSnapshot returns only INGEST_SNAPSHOT_ERRORS codes
+          status:
+            INGEST_ERROR_STATUS[
+              ingested.error.code as keyof typeof INGEST_SNAPSHOT_ERRORS
+            ],
+        }
+      );
+    }
 
     return Response.json({
       success: true,
-      data: transactionResponse,
+      data: ingested.data,
     });
   } catch (error) {
     const newError = handleError(error);

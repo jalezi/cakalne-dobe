@@ -34,10 +34,6 @@ export const procedureWithWaitingPeriodSchema =
     waitingPeriods: waitingPeriodsByUrgencySchema,
   });
 
-export type ProcedureWithWaitingPeriod = z.infer<
-  typeof procedureWithWaitingPeriodSchema
->;
-
 export const allDataSchema = z.object({
   start: z.string(),
   end: z.string(),
@@ -45,23 +41,6 @@ export const allDataSchema = z.object({
 });
 
 export type AllData = z.infer<typeof allDataSchema>;
-
-export const facilityProcedureWaitingTimesSchema = z.object({
-  procedure: z.object({
-    code: z.string(),
-    name: z.string(),
-  }),
-  facility: z.string(),
-  waitingPeriods: z.object({
-    regular: z.number().nullable(),
-    fast: z.number().nullable(),
-    veryFast: z.number().nullable(),
-  }),
-});
-
-export type FacilityProcedureWaitingTimes = z.infer<
-  typeof facilityProcedureWaitingTimesSchema
->;
 
 export const procedureAvgWaitingTimesSchema = z.object({
   avg: z.object({

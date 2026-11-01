@@ -9,12 +9,24 @@ import {
 } from 'vitest';
 import type { AllData } from '@/lib/zod-schemas/data-schemas';
 import * as schema from '../src/db/schema';
-import { cleanupTestDb, createTestSchema, getTestDb } from '../src/db/test';
+import {
+  cleanupTestDb,
+  createTestSchema,
+  failWritesTo,
+  getTestDb,
+} from '../src/db/test';
+import { ingestSnapshot } from '../src/snapshot';
 import { snapshotUrl } from '../src/snapshot/source';
 
 const db = getTestDb();
 
 vi.mock('@/db', () => ({ db }));
+
+// Real ingest by default; a case can return an error code the route's own checks never let through
+vi.mock('@/snapshot', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../src/snapshot')>();
+  return { ...actual, ingestSnapshot: vi.fn(actual.ingestSnapshot) };
+});
 
 vi.stubGlobal('fetch', vi.fn());
 
@@ -200,7 +212,18 @@ describe.each([
       });
 
       expect(response.status).toBe(200);
-      expect(await response.json()).toMatchObject({ success: true });
+      expect(await response.json()).toEqual({
+        success: true,
+        data: {
+          job: { id: expect.any(String), gitLabJobId: 'gl-1001' },
+          inserted: {
+            procedures: 1,
+            institutions: 1,
+            maxAllowedDays: 1,
+            waitingPeriods: 1,
+          },
+        },
+      });
       expect(fetch).toHaveBeenCalledWith(snapshotUrl('gl-1001'));
       await expect(db.query.jobs.findFirst()).resolves.toMatchObject({
         gitLabJobId: 'gl-1001',
@@ -213,6 +236,50 @@ describe.each([
         maxAllowedDays: 1,
         waitingPeriods: 1,
       });
+    });
+
+    it('returns 500 WRITE_FAILED and writes nothing when a write fails', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce(
+        new Response(JSON.stringify(SNAPSHOT))
+      );
+      const restore = await failWritesTo(db, 'waiting_periods');
+
+      const response = await post({
+        success: 'ok',
+        gitLabJobId: 'gl-1001',
+        date: '2026-04-01',
+      });
+      await restore();
+
+      expect(response.status).toBe(500);
+      expect(await response.json()).toMatchObject({
+        success: false,
+        error: { code: 'WRITE_FAILED' },
+      });
+      await expect(db.$count(schema.jobs)).resolves.toBe(0);
+    });
+
+    it.each([
+      ['TRANSFORM_FAILED', 400],
+      ['JOB_EXISTS', 409],
+    ])('returns %s from the ingest as %i', async (code, status) => {
+      vi.mocked(fetch).mockResolvedValueOnce(
+        new Response(JSON.stringify(SNAPSHOT))
+      );
+      const error = { code, message: `${code} message` };
+      vi.mocked(ingestSnapshot).mockResolvedValueOnce({
+        success: false,
+        error,
+      });
+
+      const response = await post({
+        success: 'ok',
+        gitLabJobId: 'gl-1001',
+        date: '2026-04-01',
+      });
+
+      expect(response.status).toBe(status);
+      expect(await response.json()).toEqual({ success: false, error });
     });
   }
 );

@@ -1,10 +1,15 @@
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import type { AllData } from '@/lib/zod-schemas/data-schemas';
-import { getInstitutionsToInsert } from '../seed/seed-helpers/seed-institutions';
+import * as schema from '../src/db/schema';
+import { createTestSchema, getTestDb } from '../src/db/test';
 import { prepareSnapshotInsertPayload } from '../src/snapshot/transformer';
 
-// seed-institutions imports @/db, which reads DATABASE_URL on import
-vi.mock('@/db', () => ({ db: {} }));
+const db = getTestDb();
+
+vi.mock('@/db', () => ({ db }));
 
 // Hospital C comes first and Hospital A has four spellings, so the expected
 // order is first-seen, not alphabetical. Hospital E first appears in P1's fast
@@ -43,26 +48,6 @@ const SNAPSHOT: AllData = {
         regular: [{ facility: 'Hospital F', days: 12 }],
         fast: [{ facility: 'Hospital B', days: 4 }],
         veryFast: [{ facility: ' Hospital A ', days: 6 }],
-      },
-    },
-  ],
-};
-
-const SECOND_SNAPSHOT: AllData = {
-  start: '2024-01-02',
-  end: '2024-01-03',
-  procedures: [
-    {
-      code: 'P1',
-      name: 'Procedure 1',
-      maxAllowedDays: { regular: 10, fast: 5, veryFast: 1 },
-      waitingPeriods: {
-        regular: [
-          { facility: 'Hospital D', days: 3 },
-          { facility: ' Hospital  B', days: 8 },
-        ],
-        fast: null,
-        veryFast: null,
       },
     },
   ],
@@ -167,17 +152,52 @@ describe('prepareSnapshotInsertPayload', () => {
   });
 });
 
-describe('getInstitutionsToInsert', () => {
-  it('returns each institution once across jobs, in first-seen order', () => {
-    const institutions = getInstitutionsToInsert([SNAPSHOT, SECOND_SNAPSHOT]);
+describe('Seeding', () => {
+  it('stores two spellings of one institution under one procedure as one Waiting Period row', async () => {
+    const { seedMissingJobsOnly } = await import(
+      '../seed/seed-helpers/smart-seeding'
+    );
+    await createTestSchema(db);
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    const jobsDir = await mkdtemp(join(tmpdir(), 'snapshot-institutions-'));
+    const fileName = 'wp-2024-01-01-06-00-00-3001.json';
+    const snapshot: AllData = {
+      start: '2024-01-01',
+      end: '2024-01-02',
+      procedures: [
+        {
+          code: 'P1',
+          name: 'Procedure 1',
+          maxAllowedDays: { regular: 10, fast: 5, veryFast: 1 },
+          waitingPeriods: {
+            regular: [{ facility: 'Hospital  A', days: 7 }],
+            fast: [{ facility: ' Hospital A', days: 3 }],
+            veryFast: [{ facility: 'Hospital A', days: 1 }],
+          },
+        },
+      ],
+    };
+    await writeFile(join(jobsDir, fileName), JSON.stringify(snapshot));
 
-    expect(Array.from(institutions.entries())).toEqual([
-      ['Hospital C', { name: 'Hospital C' }],
-      ['Hospital A', { name: 'Hospital A' }],
-      ['Hospital E', { name: 'Hospital E' }],
-      ['Hospital F', { name: 'Hospital F' }],
-      ['Hospital B', { name: 'Hospital B' }],
-      ['Hospital D', { name: 'Hospital D' }],
-    ]);
+    try {
+      const result = await seedMissingJobsOnly([fileName], jobsDir);
+
+      expect(result).toEqual({ seeded: 1, skipped: 0, errors: [] });
+      await expect(
+        db.select({ name: schema.institutions.name }).from(schema.institutions)
+      ).resolves.toEqual([{ name: 'Hospital A' }]);
+      await expect(
+        db
+          .select({
+            regular: schema.waitingPeriods.regular,
+            fast: schema.waitingPeriods.fast,
+            veryFast: schema.waitingPeriods.veryFast,
+          })
+          .from(schema.waitingPeriods)
+      ).resolves.toEqual([{ regular: 7, fast: 3, veryFast: 1 }]);
+    } finally {
+      vi.restoreAllMocks();
+      await rm(jobsDir, { recursive: true, force: true });
+    }
   });
 });

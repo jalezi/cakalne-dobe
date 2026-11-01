@@ -191,3 +191,30 @@ export async function cleanupTestDb(db: ReturnType<typeof getTestDb>) {
   await db.delete(schema.institutions).where(sql`1=1`);
   await db.delete(schema.jobs).where(sql`1=1`);
 }
+
+/**
+ * Makes every insert into a table fail, until the returned function runs
+ * @param db The database instance whose table should reject writes
+ * @param table The SQL name of the table
+ * @returns A function that drops the trigger again
+ */
+export async function failWritesTo(
+  db: ReturnType<typeof getTestDb>,
+  table:
+    | 'jobs'
+    | 'procedures'
+    | 'institutions'
+    | 'max_allowed_days'
+    | 'waiting_periods'
+) {
+  const trigger = `fail_writes_to_${table}`;
+  await db.run(
+    sql.raw(`
+      CREATE TRIGGER ${trigger} BEFORE INSERT ON ${table}
+      BEGIN SELECT RAISE(ABORT, 'writes to ${table} fail'); END;
+    `)
+  );
+  return async () => {
+    await db.run(sql.raw(`DROP TRIGGER ${trigger}`));
+  };
+}

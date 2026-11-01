@@ -20,12 +20,13 @@
 
 ## Lifecycle & Operations
 
-| Term                        | Definition                                                                                                                                                                                 | Aliases to avoid                 |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------- |
-| **Snapshot**                | The complete set of waiting periods recorded during a single **Job**                                                                                                                       | Dataset, batch, import           |
-| **Seeding**                 | The process of loading historical **Job** artifacts into the database                                                                                                                      | Migration, import, backfill      |
-| **Coverage**                | The continuous date range represented by **Jobs** stored in the database                                                                                                                   | Date range, span, history        |
-| **Snapshot Insert Payload** | The in-memory, DB-ready shape derived from a **Snapshot** — procedures, institutions, max allowed days, and waiting periods keyed for bulk insertion, before any database IDs are assigned | NotCompleteDataByTable, raw data |
+| Term                        | Definition                                                                                                                                                                                                                                                                                      | Aliases to avoid                 |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| **Snapshot**                | The complete set of waiting periods recorded during a single **Job**                                                                                                                                                                                                                            | Dataset, batch, import           |
+| **Seeding**                 | The process of loading the database by ingesting historical **Job** artifacts one at a time                                                                                                                                                                                                     | Migration, import, backfill      |
+| **Ingest**                  | Storing one **Job**'s **Snapshot** in the database in a single transaction: the **Job**, new **Procedures** and **Institutions**, its **Max Allowed Days** and **Waiting Periods**. Fails if the **Job** is already stored. Both the daily webhook and **Seeding** ingest one **Job** at a time | Insert, process, import          |
+| **Coverage**                | The continuous date range represented by **Jobs** stored in the database                                                                                                                                                                                                                        | Date range, span, history        |
+| **Snapshot Insert Payload** | The in-memory, DB-ready shape derived from a **Snapshot** — procedures, institutions, max allowed days, and waiting periods keyed for bulk insertion, before any database IDs are assigned                                                                                                      | NotCompleteDataByTable, raw data |
 
 ## Relationships
 
@@ -51,5 +52,5 @@
 ## Flagged ambiguities
 
 - **"facility" vs "institution"** — The raw JSON job artifacts and some seed helpers use `facility` to name the same concept the database calls `institution`. Prefer **institution** everywhere in domain discussions and new code. `facility` should be treated as an implementation detail of the raw data format only.
-- **"waiting time" vs "waiting period"** — The seed helper `insertWaitingTimes` and several comments use "waiting time" while the schema, types, and Zod schemas consistently use `waitingPeriods`. Prefer **waiting period** as the canonical term; "waiting time" is a synonym to avoid.
+- **"waiting time" vs "waiting period"** — Some comments and older code use "waiting time" while the schema, types, and Zod schemas consistently use `waitingPeriods`. Prefer **waiting period** as the canonical term; "waiting time" is a synonym to avoid.
 - **"job"** — Overloaded: it refers to the GitLab CI/CD pipeline run (external concept) and the database record representing the resulting data collection event (internal concept). In domain conversations, **Job** always means the internal database record capturing a snapshot of waiting periods at a specific point in time. The external pipeline is simply its source.
