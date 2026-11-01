@@ -1,47 +1,79 @@
-import { db } from '@/db';
-import { fetchSnapshot, ingestSnapshot } from '@/snapshot';
-import type { IngestedSnapshot } from '@/snapshot/ingest';
+import type { db as appDb } from '@/db';
+import { ingestSnapshot } from '@/snapshot';
+import {
+  INGEST_SNAPSHOT_ERRORS,
+  type IngestedSnapshot,
+  jobDay,
+} from '@/snapshot/ingest';
+import type { GitLabSource } from '@/snapshot/source';
 import type { Result } from '@/types';
-import { getLastJobId } from '@/utils/get-last-job-id';
-import { shouldInsertLatestJob } from './job-processing';
+import { handleError } from '@/utils/handle-error';
 import { validateWebhookPayload } from './validation';
 
-const INGESTION_ERRORS = {
-  GET_JOB_ID_FAILED: 'GET_JOB_ID_FAILED',
-} as const;
+export type AlreadyStored = {
+  alreadyStored: true;
+  gitLabJobId: string;
+  /** Present when the Snapshot was downloaded */
+  day?: string;
+};
 
+/**
+ * Stores GitLab's latest `run` Job, unless a Job with its id or day is stored.
+ * @param rawBody The webhook's request body
+ * @param deps The database to write to and the GitLab source to read from
+ * @returns The ingested Job, or `alreadyStored` when nothing was stored
+ */
 export async function handleJobIngestionRequest(
-  rawBody: unknown
-): Promise<Result<IngestedSnapshot>> {
+  rawBody: unknown,
+  { db, source }: { db: typeof appDb; source: GitLabSource }
+): Promise<Result<IngestedSnapshot | AlreadyStored>> {
   const validationResult = validateWebhookPayload(rawBody);
   if (!validationResult.success) {
     return { success: false, error: validationResult.error };
   }
 
-  const shouldInsert = await shouldInsertLatestJob();
-  if (!shouldInsert.success) {
-    return { success: false, error: shouldInsert.error };
+  const latest = await source.latestRunJob();
+  if (!latest.success) {
+    return latest;
   }
+  const { gitLabJobId } = latest.data;
 
-  const lastGitLabIdResponse = await getLastJobId(10);
-  if (!lastGitLabIdResponse.success) {
+  // Saves the download on the second daily call; ingestSnapshot enforces the rule
+  try {
+    const stored = await db.query.jobs.findFirst({
+      columns: { id: true },
+      where: (jobs, { eq }) => eq(jobs.gitLabJobId, gitLabJobId),
+    });
+    if (stored) {
+      return { success: true, data: { alreadyStored: true, gitLabJobId } };
+    }
+  } catch (error) {
     return {
       success: false,
       error: {
-        code: INGESTION_ERRORS.GET_JOB_ID_FAILED,
-        message: lastGitLabIdResponse.error,
+        code: 'DB_QUERY_FAILED',
+        message: `Database query error: ${handleError(error).message}`,
       },
     };
   }
 
-  const gitLabJobId = lastGitLabIdResponse.data.gitLabJobId;
-  const snapshot = await fetchSnapshot(gitLabJobId);
+  const snapshot = await source.fetchSnapshot(gitLabJobId);
   if (!snapshot.success) {
     return { success: false, error: snapshot.error };
   }
 
   const ingested = await ingestSnapshot(db, gitLabJobId, snapshot.data);
   if (!ingested.success) {
+    if (ingested.error.code === INGEST_SNAPSHOT_ERRORS.JOB_EXISTS) {
+      return {
+        success: true,
+        data: {
+          alreadyStored: true,
+          gitLabJobId,
+          day: jobDay(snapshot.data.start),
+        },
+      };
+    }
     return { success: false, error: ingested.error };
   }
   return { success: true, data: ingested.data };

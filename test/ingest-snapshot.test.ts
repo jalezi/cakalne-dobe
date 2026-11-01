@@ -17,10 +17,13 @@ type ProcedureFixture = {
   institutions: string[];
 };
 
-function buildSnapshot(procedures: ProcedureFixture[]): AllData {
+function buildSnapshot(
+  procedures: ProcedureFixture[],
+  start = '2026-10-01T05:00:00+02:00'
+): AllData {
   return {
-    start: '2026-10-01T00:00:00Z',
-    end: '2026-10-01T01:00:00Z',
+    start,
+    end: start,
     procedures: procedures.map(({ code, name, institutions }) => ({
       code,
       name,
@@ -47,15 +50,18 @@ const FIRST_SNAPSHOT = buildSnapshot([
 
 // Shares Procedures 1001 and 1002 and Institution A with the first Snapshot
 // 3 Procedures (1 new), 3 Institutions (2 new), 3 Max Allowed Days, 5 Waiting Periods
-const SECOND_SNAPSHOT = buildSnapshot([
-  {
-    code: '1001',
-    name: 'Procedure 1',
-    institutions: ['Institution A', 'Institution C', 'Institution D'],
-  },
-  { code: '1002', name: 'Procedure 2', institutions: ['Institution C'] },
-  { code: '1004', name: 'Procedure 4', institutions: ['Institution D'] },
-]);
+const SECOND_SNAPSHOT = buildSnapshot(
+  [
+    {
+      code: '1001',
+      name: 'Procedure 1',
+      institutions: ['Institution A', 'Institution C', 'Institution D'],
+    },
+    { code: '1002', name: 'Procedure 2', institutions: ['Institution C'] },
+    { code: '1004', name: 'Procedure 4', institutions: ['Institution D'] },
+  ],
+  '2026-10-02T05:00:00+02:00'
+);
 
 const NO_ROWS = {
   jobs: 0,
@@ -80,7 +86,11 @@ describe('ingestSnapshot', () => {
     expect(result).toEqual({
       success: true,
       data: {
-        job: { id: expect.any(String), gitLabJobId: 'gitlab-job-1' },
+        job: {
+          id: expect.any(String),
+          gitLabJobId: 'gitlab-job-1',
+          day: '2026-10-01',
+        },
         inserted: {
           procedures: 3,
           institutions: 2,
@@ -98,8 +108,8 @@ describe('ingestSnapshot', () => {
     });
     await expect(db.query.jobs.findFirst()).resolves.toMatchObject({
       gitLabJobId: 'gitlab-job-1',
-      startDate: '2026-10-01T00:00:00Z',
-      endDate: '2026-10-01T01:00:00Z',
+      startDate: '2026-10-01T05:00:00+02:00',
+      endDate: '2026-10-01T05:00:00+02:00',
     });
   });
 
@@ -199,6 +209,74 @@ describe('ingestSnapshot', () => {
         where: (procedures, { eq }) => eq(procedures.code, '1001'),
       })
     ).resolves.toMatchObject({ name: 'Procedure-1' });
+  });
+
+  it('returns JOB_EXISTS naming the day and changes no rows when another Job is stored for that day', async () => {
+    await ingestSnapshot(db, 'gitlab-job-1', FIRST_SNAPSHOT);
+    const rowsBefore = await countAllRows();
+
+    // A rerun later that day: a new GitLab job ID and new rows
+    const result = await ingestSnapshot(
+      db,
+      'gitlab-job-2',
+      buildSnapshot(
+        [
+          {
+            code: '1009',
+            name: 'Procedure 9',
+            institutions: ['Institution Z'],
+          },
+        ],
+        '2026-10-01T09:00:00+02:00'
+      )
+    );
+
+    expect(result).toEqual({
+      success: false,
+      error: {
+        code: 'JOB_EXISTS',
+        message: 'A Job for day 2026-10-01 already exists in the database',
+      },
+    });
+    await expect(countAllRows()).resolves.toEqual(rowsBefore);
+  });
+
+  it.each([
+    ['the Ljubljana day', '2026-04-01T05:00:00+02:00', false],
+    ['only the UTC day', '2026-03-31T05:00:00+02:00', true],
+  ])(
+    'reads the day in Ljubljana: a stored Job on %s',
+    async (_case, storedStart, stores) => {
+      await ingestSnapshot(db, 'gitlab-job-1', buildSnapshot([], storedStart));
+
+      // 00:30 in Ljubljana is still 2026-03-31 in UTC
+      const result = await ingestSnapshot(
+        db,
+        'gitlab-job-2',
+        buildSnapshot([], '2026-04-01T00:30:00+02:00')
+      );
+
+      expect(result.success).toBe(stores);
+      if (result.success) {
+        expect(result.data.job.day).toBe('2026-04-01');
+      } else {
+        expect(result.error.code).toBe('JOB_EXISTS');
+      }
+    }
+  );
+
+  it('returns TRANSFORM_FAILED instead of throwing when the start is not a date', async () => {
+    const result = await ingestSnapshot(
+      db,
+      'gitlab-job-1',
+      buildSnapshot([], 'not a date')
+    );
+
+    expect(result).toMatchObject({
+      success: false,
+      error: { code: 'TRANSFORM_FAILED' },
+    });
+    await expect(countAllRows()).resolves.toEqual(NO_ROWS);
   });
 
   it('returns WRITE_FAILED with the database reason and leaves no rows when a write fails', async () => {

@@ -1,3 +1,4 @@
+import { and, eq, ne, sql } from 'drizzle-orm';
 import type { db as appDb } from '@/db';
 import { renameProcedures } from '@/db/rename-procedures';
 import {
@@ -25,7 +26,7 @@ type Database = typeof appDb;
 type Trx = Parameters<Parameters<Database['transaction']>[0]>[0];
 
 export type IngestedSnapshot = {
-  job: { id: string; gitLabJobId: string };
+  job: { id: string; gitLabJobId: string; day: string };
   inserted: {
     procedures: number;
     institutions: number;
@@ -33,6 +34,19 @@ export type IngestedSnapshot = {
     waitingPeriods: number;
   };
 };
+
+const ljubljanaDay = new Intl.DateTimeFormat('sv-SE', {
+  timeZone: 'Europe/Ljubljana',
+});
+
+/**
+ * The Job's day: the Ljubljana calendar day its Snapshot started on (ADR-0002).
+ * @param start The Snapshot's `start`
+ * @returns The day as YYYY-MM-DD; throws a RangeError when `start` is not a date
+ */
+export function jobDay(start: string): string {
+  return ljubljanaDay.format(new Date(start));
+}
 
 // Thrown inside the transaction to roll it back, then returned as JOB_EXISTS
 class JobExistsError extends Error {}
@@ -51,7 +65,9 @@ export async function ingestSnapshot(
   snapshot: AllData
 ): Promise<Result<IngestedSnapshot, SnapshotTransformerMeta>> {
   let payloadResult: ReturnType<typeof prepareSnapshotInsertPayload>;
+  let day: string;
   try {
+    day = jobDay(snapshot.start);
     payloadResult = prepareSnapshotInsertPayload(snapshot, gitLabJobId);
   } catch (error) {
     // The transformer returns Zod errors and rethrows the rest
@@ -71,6 +87,20 @@ export async function ingestSnapshot(
 
   try {
     const data = await db.transaction(async (trx) => {
+      // ONE JOB PER DAY: stored start dates carry Ljubljana's offset, so their date part is the day
+      const sameDayJob = await trx.query.jobs.findFirst({
+        columns: { id: true },
+        where: and(
+          eq(sql`substr(${jobsTable.startDate}, 1, 10)`, day),
+          ne(jobsTable.gitLabJobId, gitLabJobId)
+        ),
+      });
+      if (sameDayJob) {
+        throw new JobExistsError(
+          `A Job for day ${day} already exists in the database`
+        );
+      }
+
       // JOB
       const [job] = await trx
         .insert(jobsTable)
@@ -116,7 +146,7 @@ export async function ingestSnapshot(
       );
 
       return {
-        job,
+        job: { ...job, day },
         inserted: {
           procedures: insertedProcedures.length,
           institutions: insertedInstitutions.length,

@@ -1,13 +1,6 @@
-import {
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AllData } from '@/lib/zod-schemas/data-schemas';
+import { handleBackfillRequest } from '../src/app/api/v1/insert-job-data-by-git-lab-id/handle-backfill-request';
 import * as schema from '../src/db/schema';
 import {
   cleanupTestDb,
@@ -15,32 +8,36 @@ import {
   failWritesTo,
   getTestDb,
 } from '../src/db/test';
-import { ingestSnapshot } from '../src/snapshot';
-import { snapshotUrl } from '../src/snapshot/source';
+import { createInMemoryGitLabSource } from '../src/snapshot/source';
 
 const db = getTestDb();
 
-vi.mock('@/db', () => ({ db }));
+const SNAPSHOT: AllData = {
+  start: '2026-04-01T06:00:00+02:00',
+  end: '2026-04-01T07:00:00+02:00',
+  procedures: [
+    {
+      code: 'PROC-1',
+      name: 'Procedure 1',
+      maxAllowedDays: { regular: 30, fast: 10, veryFast: 5 },
+      waitingPeriods: {
+        regular: [{ facility: 'Facility 1', days: 20 }],
+        fast: [{ facility: 'Facility 1', days: 8 }],
+        veryFast: [{ facility: 'Facility 1', days: 3 }],
+      },
+    },
+  ],
+};
 
-// Real ingest by default; a case can return an error code the route's own checks never let through
-vi.mock('@/snapshot', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../src/snapshot')>();
-  return { ...actual, ingestSnapshot: vi.fn(actual.ingestSnapshot) };
-});
-
-vi.stubGlobal('fetch', vi.fn());
-
-let POST: typeof import('../src/app/api/v1/insert-job-data-by-git-lab-id/route').POST;
-
-beforeAll(async () => {
-  ({ POST } = await import(
-    '../src/app/api/v1/insert-job-data-by-git-lab-id/route'
-  ));
-});
+let source: ReturnType<typeof createInMemoryGitLabSource>;
 
 beforeEach(async () => {
-  vi.resetAllMocks();
+  source = createInMemoryGitLabSource({
+    jobs: [],
+    snapshots: { 'gl-1001': SNAPSHOT },
+  });
   vi.spyOn(console, 'warn').mockImplementation(() => {});
+  vi.spyOn(console, 'info').mockImplementation(() => {});
   await createTestSchema(db);
 });
 
@@ -62,12 +59,13 @@ describe('POST /api/v1/insert-job-data-by-git-lab-id with INGEST_SECRET set', ()
       const findFirst = vi.spyOn(db.query.jobs, 'findFirst');
 
       // Invalid JSON: a 401 (not a 500) shows request.json() never ran
-      const response = await POST(
+      const response = await handleBackfillRequest(
         new Request('http://localhost', {
           method: 'POST',
           body: 'not json',
           headers,
-        })
+        }),
+        { db, source }
       );
 
       expect(response.status).toBe(401);
@@ -76,7 +74,7 @@ describe('POST /api/v1/insert-job-data-by-git-lab-id with INGEST_SECRET set', ()
         error: { code: 'UNAUTHORIZED' },
       });
       expect(findFirst).not.toHaveBeenCalled();
-      expect(fetch).not.toHaveBeenCalled();
+      expect(source.fetched).toEqual([]);
     }
   );
 });
@@ -92,21 +90,18 @@ describe.each([
     });
 
     function post(payload: unknown) {
-      return POST(
+      return handleBackfillRequest(
         new Request('http://localhost', {
           method: 'POST',
           body: JSON.stringify(payload),
           headers,
-        })
+        }),
+        { db, source }
       );
     }
 
-    it('returns 422 INVALID_PAYLOAD for a malformed payload', async () => {
-      const response = await post({
-        success: 'ok',
-        gitLabJobId: 'gl-1001',
-        date: '2026/04/01',
-      });
+    it('returns 422 INVALID_PAYLOAD for a payload without a GitLab job ID', async () => {
+      const response = await post({ success: 'ok' });
 
       expect(response.status).toBe(422);
       expect(await response.json()).toMatchObject({
@@ -127,95 +122,59 @@ describe.each([
       });
     });
 
-    it('returns 409 JOB_EXISTS when the GitLab job ID is already stored', async () => {
-      await storeJob('gl-1001', '2026-03-31T06:00:00Z');
+    it.each([
+      [
+        'more than 10 keys',
+        Object.fromEntries(
+          Array.from({ length: 11 }, (_, i) => [`key${i}`, 'x'])
+        ),
+      ],
+      ['a value over 200 characters', { note: 'x'.repeat(201) }],
+      ['a non-string value', { attempt: 2 }],
+      ['a non-object', 'gap check'],
+    ])(
+      'returns 422 INVALID_PAYLOAD for a meta with %s, and downloads nothing',
+      async (_case, meta) => {
+        const response = await post({
+          success: 'ok',
+          gitLabJobId: 'gl-1001',
+          meta,
+        });
 
-      const response = await post({
-        success: 'ok',
-        gitLabJobId: 'gl-1001',
-        date: '2026-04-01',
-      });
+        expect(response.status).toBe(422);
+        expect(await response.json()).toMatchObject({
+          error: { code: 'INVALID_PAYLOAD' },
+        });
+        expect(source.fetched).toEqual([]);
+      }
+    );
 
-      expect(response.status).toBe(409);
-      expect(await response.json()).toMatchObject({
-        error: { code: 'JOB_EXISTS' },
-      });
-    });
-
-    it('returns 409 JOB_EXISTS when another Job is stored for the date', async () => {
-      await storeJob('gl-1000', '2026-04-01T06:00:00Z');
-
-      const response = await post({
-        success: 'ok',
-        gitLabJobId: 'gl-1001',
-        date: '2026-04-01',
-      });
-
-      expect(response.status).toBe(409);
-      expect(await response.json()).toMatchObject({
-        error: { code: 'JOB_EXISTS' },
-      });
-    });
-
-    it('returns 409 JOB_EXISTS when a date with a time part falls on the day of a stored Job', async () => {
-      await storeJob('gl-1000', '2026-04-01T06:00:00Z');
-
-      const response = await post({
-        success: 'ok',
-        gitLabJobId: 'gl-1001',
-        date: '2026-04-01T23:30:00.000Z',
-      });
-
-      expect(response.status).toBe(409);
-      expect(await response.json()).toMatchObject({
-        error: { code: 'JOB_EXISTS' },
-      });
-    });
-
-    it('returns 400 with the fetch error and writes nothing when the Snapshot fetch fails', async () => {
-      vi.mocked(fetch).mockResolvedValueOnce(
-        new Response(null, { status: 404, statusText: 'Not Found' })
+    it('accepts the largest meta allowed', async () => {
+      const meta = Object.fromEntries(
+        Array.from({ length: 10 }, (_, i) => [`key${i}`, 'x'.repeat(200)])
       );
 
       const response = await post({
         success: 'ok',
         gitLabJobId: 'gl-1001',
-        date: '2026-04-01',
+        meta,
       });
 
-      expect(response.status).toBe(400);
-      expect(await response.json()).toEqual({
-        success: false,
-        error: {
-          code: 'FETCH_FAILED',
-          message: 'Failed to fetch snapshot for job gl-1001: 404 Not Found',
-        },
-      });
-      await expect(countAllRows()).resolves.toEqual({
-        jobs: 0,
-        procedures: 0,
-        institutions: 0,
-        maxAllowedDays: 0,
-        waitingPeriods: 0,
-      });
+      expect(response.status).toBe(200);
     });
 
-    it('writes the Job and its Snapshot rows for a new job ID and date', async () => {
-      vi.mocked(fetch).mockResolvedValueOnce(
-        new Response(JSON.stringify(SNAPSHOT))
-      );
-
-      const response = await post({
-        success: 'ok',
-        gitLabJobId: 'gl-1001',
-        date: '2026-04-01',
-      });
+    it('writes the Job and returns its day and the inserted counts', async () => {
+      const response = await post({ success: 'ok', gitLabJobId: 'gl-1001' });
 
       expect(response.status).toBe(200);
       expect(await response.json()).toEqual({
         success: true,
         data: {
-          job: { id: expect.any(String), gitLabJobId: 'gl-1001' },
+          job: {
+            id: expect.any(String),
+            gitLabJobId: 'gl-1001',
+            day: '2026-04-01',
+          },
           inserted: {
             procedures: 1,
             institutions: 1,
@@ -224,11 +183,7 @@ describe.each([
           },
         },
       });
-      expect(fetch).toHaveBeenCalledWith(snapshotUrl('gl-1001'));
-      await expect(db.query.jobs.findFirst()).resolves.toMatchObject({
-        gitLabJobId: 'gl-1001',
-        startDate: '2026-04-01T06:00:00Z',
-      });
+      expect(source.fetched).toEqual(['gl-1001']);
       await expect(countAllRows()).resolves.toEqual({
         jobs: 1,
         procedures: 1,
@@ -238,17 +193,104 @@ describe.each([
       });
     });
 
-    it('returns 500 WRITE_FAILED and writes nothing when a write fails', async () => {
-      vi.mocked(fetch).mockResolvedValueOnce(
-        new Response(JSON.stringify(SNAPSHOT))
-      );
-      const restore = await failWritesTo(db, 'waiting_periods');
+    it('logs meta with the request and echoes it back unchanged', async () => {
+      const meta = { source: 'gap check', issue: '#201' };
+      const consoleInfo = vi.spyOn(console, 'info');
 
       const response = await post({
         success: 'ok',
         gitLabJobId: 'gl-1001',
-        date: '2026-04-01',
+        meta,
       });
+
+      expect(response.status).toBe(200);
+      expect(await response.json()).toMatchObject({ success: true, meta });
+      expect(consoleInfo).toHaveBeenCalledWith('Backfill request', {
+        gitLabJobId: 'gl-1001',
+        meta,
+      });
+    });
+
+    it('accepts an old body that still sends date, and ignores the date', async () => {
+      // The date names another day than the Snapshot, and is not even valid
+      const response = await post({
+        success: 'ok',
+        gitLabJobId: 'gl-1001',
+        date: '2026/05/09',
+      });
+
+      expect(response.status).toBe(200);
+      expect(await response.json()).toMatchObject({
+        data: { job: { day: '2026-04-01' } },
+      });
+    });
+
+    it.each([
+      ['the GitLab job ID is stored', 'gl-1001', '2026-03-31T06:00:00+02:00'],
+      [
+        'another Job is stored for the day',
+        'gl-1000',
+        '2026-04-01T05:00:00+02:00',
+      ],
+    ])(
+      'returns 409 JOB_EXISTS and echoes meta when %s',
+      async (_case, storedId, storedStart) => {
+        await db.insert(schema.jobs).values({
+          gitLabJobId: storedId,
+          startDate: storedStart,
+          endDate: storedStart,
+        });
+        const meta = { note: 'retry' };
+
+        const response = await post({
+          success: 'ok',
+          gitLabJobId: 'gl-1001',
+          meta,
+        });
+
+        expect(response.status).toBe(409);
+        expect(await response.json()).toMatchObject({
+          success: false,
+          error: { code: 'JOB_EXISTS' },
+          meta,
+        });
+        await expect(db.$count(schema.jobs)).resolves.toBe(1);
+      }
+    );
+
+    it('returns 400 with the fetch error and writes nothing when the Snapshot fetch fails', async () => {
+      const response = await post({ success: 'ok', gitLabJobId: 'gl-404' });
+
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({
+        success: false,
+        error: {
+          code: 'FETCH_FAILED',
+          message: 'No in-memory snapshot found for job gl-404',
+        },
+      });
+      await expect(db.$count(schema.jobs)).resolves.toBe(0);
+    });
+
+    it('returns 400 TRANSFORM_FAILED when the Snapshot cannot be transformed', async () => {
+      source = createInMemoryGitLabSource({
+        jobs: [],
+        snapshots: { 'gl-1001': { ...SNAPSHOT, start: 'not a date' } },
+      });
+
+      const response = await post({ success: 'ok', gitLabJobId: 'gl-1001' });
+
+      expect(response.status).toBe(400);
+      expect(await response.json()).toMatchObject({
+        success: false,
+        error: { code: 'TRANSFORM_FAILED' },
+      });
+    });
+
+    it('returns 500 WRITE_FAILED and writes nothing when a write fails', async () => {
+      const restore = await failWritesTo(db, 'waiting_periods');
+
+      const response = await post({ success: 'ok', gitLabJobId: 'gl-1001' });
       await restore();
 
       expect(response.status).toBe(500);
@@ -258,54 +300,8 @@ describe.each([
       });
       await expect(db.$count(schema.jobs)).resolves.toBe(0);
     });
-
-    it.each([
-      ['TRANSFORM_FAILED', 400],
-      ['JOB_EXISTS', 409],
-    ])('returns %s from the ingest as %i', async (code, status) => {
-      vi.mocked(fetch).mockResolvedValueOnce(
-        new Response(JSON.stringify(SNAPSHOT))
-      );
-      const error = { code, message: `${code} message` };
-      vi.mocked(ingestSnapshot).mockResolvedValueOnce({
-        success: false,
-        error,
-      });
-
-      const response = await post({
-        success: 'ok',
-        gitLabJobId: 'gl-1001',
-        date: '2026-04-01',
-      });
-
-      expect(response.status).toBe(status);
-      expect(await response.json()).toEqual({ success: false, error });
-    });
   }
 );
-
-const SNAPSHOT: AllData = {
-  start: '2026-04-01T06:00:00Z',
-  end: '2026-04-01T07:00:00Z',
-  procedures: [
-    {
-      code: 'PROC-1',
-      name: 'Procedure 1',
-      maxAllowedDays: { regular: 30, fast: 10, veryFast: 5 },
-      waitingPeriods: {
-        regular: [{ facility: 'Facility 1', days: 20 }],
-        fast: [{ facility: 'Facility 1', days: 8 }],
-        veryFast: [{ facility: 'Facility 1', days: 3 }],
-      },
-    },
-  ],
-};
-
-async function storeJob(gitLabJobId: string, startDate: string) {
-  await db
-    .insert(schema.jobs)
-    .values({ gitLabJobId, startDate, endDate: startDate });
-}
 
 async function countAllRows() {
   return {

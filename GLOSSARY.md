@@ -2,13 +2,13 @@
 
 ## Core Entities
 
-| Term                 | Definition                                                                                                                  | Aliases to avoid                       |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
-| **Institution**      | A medical facility in Slovenia where procedures are performed                                                               | Facility, provider, center             |
-| **Procedure**        | A categorized medical service identified by a unique code and name                                                          | Treatment, service, operation          |
-| **Waiting Period**   | The number of days a patient must wait at a specific institution to receive a specific procedure, classified by urgency     | Waiting time, wait time, delay         |
-| **Max Allowed Days** | The regulatory ceiling on how many days a patient may wait for a procedure, per urgency level                               | Maximum wait, legal limit, threshold   |
-| **Job**              | A data-collection event tied to a GitLab CI/CD pipeline run, capturing a snapshot of all waiting periods at a point in time | Run, pipeline, crawl, import, snapshot |
+| Term                 | Definition                                                                                                                                                                                                                                                 | Aliases to avoid                       |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| **Institution**      | A medical facility in Slovenia where procedures are performed                                                                                                                                                                                              | Facility, provider, center             |
+| **Procedure**        | A categorized medical service identified by a unique code and name                                                                                                                                                                                         | Treatment, service, operation          |
+| **Waiting Period**   | The number of days a patient must wait at a specific institution to receive a specific procedure, classified by urgency                                                                                                                                    | Waiting time, wait time, delay         |
+| **Max Allowed Days** | The regulatory ceiling on how many days a patient may wait for a procedure, per urgency level                                                                                                                                                              | Maximum wait, legal limit, threshold   |
+| **Job**              | A data-collection event tied to a GitLab CI/CD pipeline run, capturing a snapshot of all waiting periods at a point in time. At most one **Job** per day (the Ljubljana calendar day the **Snapshot** started on); a later run on a covered day is ignored | Run, pipeline, crawl, import, snapshot |
 
 ## Urgency Levels
 
@@ -33,6 +33,7 @@
 - A **Job** contains one or more **Waiting Periods**, each scoped to one **Institution** and one **Procedure**.
 - A **Procedure** has exactly one **Max Allowed Days** record per **Job** (one per urgency level).
 - A **Waiting Period** belongs to exactly one **Job**, one **Institution**, and one **Procedure**.
+- A day has at most one **Job**.
 - A **Job** is the primary key anchor: deleting a **Job** cascades to its **Waiting Periods** and **Max Allowed Days**.
 
 ## Example dialogue

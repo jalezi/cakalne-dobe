@@ -5,9 +5,9 @@ import fs from 'fs/promises';
 
 import { db } from '@/db';
 import { ingestSnapshot } from '@/snapshot';
+import { INGEST_SNAPSHOT_ERRORS } from '@/snapshot/ingest';
 import { seedHelpers } from './seed-helpers';
 import type { CustomError } from './seed-helpers/types';
-import { checkJobExists } from './seed-helpers/validate-data-coverage';
 
 type SeedFromJobsResult = {
   seeded: number;
@@ -56,12 +56,15 @@ export const seedDBFromJobs = async (
 
   console.info('--- Ingesting snapshots...');
   for (const [gitLabJobId, jobData] of Array.from(dataMap.entries())) {
-    if (await checkJobExists(gitLabJobId)) {
+    const ingested = await ingestSnapshot(db, gitLabJobId, jobData);
+    // Its GitLab job ID or its day is already stored (ADR-0002)
+    if (
+      !ingested.success &&
+      ingested.error.code === INGEST_SNAPSHOT_ERRORS.JOB_EXISTS
+    ) {
       result.skipped++;
       continue;
     }
-
-    const ingested = await ingestSnapshot(db, gitLabJobId, jobData);
     if (!ingested.success) {
       console.warn(`Errors ingesting snapshot ${gitLabJobId}:`);
       console.error(ingested.error);

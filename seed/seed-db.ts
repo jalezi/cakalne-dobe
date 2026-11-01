@@ -22,7 +22,10 @@ if (require.main === module) {
       rl.close();
       return seedDBFromJobs(deleteTables);
     })
-    .then(({ errors }) => {
+    .then(({ seeded, skipped, errors }) => {
+      console.info(
+        `--- Seeded ${seeded}, skipped ${skipped}, errors ${errors.length}`
+      );
       if (errors.length > 0) {
         process.exit(1);
       }
