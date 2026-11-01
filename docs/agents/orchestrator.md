@@ -139,7 +139,7 @@ Read the issue first, with its comments: `gh issue view <n> --comments`. The bod
 
 <What to build, with notes the issue leaves out: the style to match, the code to reuse.>
 
-Constraints: surgical changes only, no unrelated edits. Never re-save the fallow health baseline to make CI pass, and never add the `baseline-growth-ok` label: fix the function, or stop and ask the orchestrator. That rule is about hiding new findings. Re-running `pnpm fallow:health:baseline` is expected after you fix a baselined function or rebase on main, as long as `git diff origin/main -- fallow-health-baseline.json` then shows only deletions and no new key. Follow AGENTS.md / CLAUDE.md.
+Constraints: surgical changes only, no unrelated edits. Docs your change makes stale are related: update them in this PR, as AGENTS.md says. Never re-save the fallow health baseline to make CI pass, and never add the `baseline-growth-ok` label: fix the function, or stop and ask the orchestrator. That rule is about hiding new findings. Re-running `pnpm fallow:health:baseline` is expected after you fix a baselined function or rebase on main, as long as `git diff origin/main -- fallow-health-baseline.json` then shows only deletions and no new key. Follow AGENTS.md / CLAUDE.md.
 
 ## Verify
 
