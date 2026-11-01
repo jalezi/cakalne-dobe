@@ -15,6 +15,7 @@ Apply these rules for all coding tasks:
 - Think before coding: state assumptions explicitly, surface tradeoffs, and ask when something material is unclear.
 - Simplicity first: write the minimum code that solves the request and avoid speculative abstractions.
 - Surgical changes: touch only the code required for the task and do not clean up unrelated areas.
+- Docs stay in sync: when you implement or fix something, update the docs it makes stale (`README.md`, `AGENTS.md`, `docs/`) in the same PR. Search them for the command, step or flag you changed. A stale doc is part of the task, not an unrelated area. If you're unsure whether a doc should change, ask before the PR merges.
 - Goal-driven execution: define a concrete verification step and use it to confirm the change works.
 
 [`CLAUDE.md`](./CLAUDE.md) is the fuller rationale and reference for these rules; this file contains the operative version that agents should follow.
