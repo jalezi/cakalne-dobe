@@ -52,5 +52,5 @@
 ## Flagged ambiguities
 
 - **"facility" vs "institution"** — The raw JSON job artifacts and some seed helpers use `facility` to name the same concept the database calls `institution`. Prefer **institution** everywhere in domain discussions and new code. `facility` should be treated as an implementation detail of the raw data format only.
-- **"waiting time" vs "waiting period"** — The seed helper `insertWaitingTimes` and several comments use "waiting time" while the schema, types, and Zod schemas consistently use `waitingPeriods`. Prefer **waiting period** as the canonical term; "waiting time" is a synonym to avoid.
+- **"waiting time" vs "waiting period"** — Some comments and older code use "waiting time" while the schema, types, and Zod schemas consistently use `waitingPeriods`. Prefer **waiting period** as the canonical term; "waiting time" is a synonym to avoid.
 - **"job"** — Overloaded: it refers to the GitLab CI/CD pipeline run (external concept) and the database record representing the resulting data collection event (internal concept). In domain conversations, **Job** always means the internal database record capturing a snapshot of waiting periods at a specific point in time. The external pipeline is simply its source.

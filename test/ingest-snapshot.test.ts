@@ -140,6 +140,28 @@ describe('ingestSnapshot', () => {
     await expect(countAllRows()).resolves.toEqual(NO_ROWS);
   });
 
+  it('returns TRANSFORM_FAILED with the cause instead of throwing when the transformer throws a non-Zod error', async () => {
+    const badSnapshot = buildSnapshot([
+      { code: '1001', name: 'Procedure 1', institutions: [] },
+    ]);
+    // Object.entries(null) throws a TypeError, not a ZodError
+    badSnapshot.procedures[0].waitingPeriods =
+      null as unknown as AllData['procedures'][number]['waitingPeriods'];
+
+    const result = await ingestSnapshot(db, 'gitlab-job-1', badSnapshot);
+
+    expect(result).toEqual({
+      success: false,
+      error: {
+        code: 'TRANSFORM_FAILED',
+        message:
+          'Failed to prepare snapshot insert payload for job gitlab-job-1',
+      },
+      meta: { cause: expect.stringContaining('null') },
+    });
+    await expect(countAllRows()).resolves.toEqual(NO_ROWS);
+  });
+
   it('returns JOB_EXISTS and changes no rows when the Job is already stored', async () => {
     await db
       .insert(schema.procedures)

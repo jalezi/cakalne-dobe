@@ -17,11 +17,12 @@ import { INGEST_SNAPSHOT_ERRORS } from '@/snapshot/ingest';
 import type { Result } from '@/types';
 import { handleError } from '@/utils/handle-error';
 
-const INGEST_ERROR_STATUS: Record<string, number> = {
-  [INGEST_SNAPSHOT_ERRORS.TRANSFORM_FAILED]: 400,
-  [INGEST_SNAPSHOT_ERRORS.JOB_EXISTS]: 409,
-  [INGEST_SNAPSHOT_ERRORS.WRITE_FAILED]: 500,
-};
+const INGEST_ERROR_STATUS: Record<keyof typeof INGEST_SNAPSHOT_ERRORS, number> =
+  {
+    [INGEST_SNAPSHOT_ERRORS.TRANSFORM_FAILED]: 400,
+    [INGEST_SNAPSHOT_ERRORS.JOB_EXISTS]: 409,
+    [INGEST_SNAPSHOT_ERRORS.WRITE_FAILED]: 500,
+  };
 
 const dateSchema = z
   .string()
@@ -222,7 +223,11 @@ export async function POST(request: Request) {
           error: ingested.error,
         },
         {
-          status: INGEST_ERROR_STATUS[ingested.error.code],
+          // ingestSnapshot returns only INGEST_SNAPSHOT_ERRORS codes
+          status:
+            INGEST_ERROR_STATUS[
+              ingested.error.code as keyof typeof INGEST_SNAPSHOT_ERRORS
+            ],
         }
       );
     }

@@ -50,7 +50,20 @@ export async function ingestSnapshot(
   gitLabJobId: string,
   snapshot: AllData
 ): Promise<Result<IngestedSnapshot, SnapshotTransformerMeta>> {
-  const payloadResult = prepareSnapshotInsertPayload(snapshot, gitLabJobId);
+  let payloadResult: ReturnType<typeof prepareSnapshotInsertPayload>;
+  try {
+    payloadResult = prepareSnapshotInsertPayload(snapshot, gitLabJobId);
+  } catch (error) {
+    // The transformer returns Zod errors and rethrows the rest
+    return {
+      success: false,
+      error: {
+        code: INGEST_SNAPSHOT_ERRORS.TRANSFORM_FAILED,
+        message: `Failed to prepare snapshot insert payload for job ${gitLabJobId}`,
+      },
+      meta: { cause: error instanceof Error ? error.message : String(error) },
+    };
+  }
   if (!payloadResult.success) {
     return payloadResult;
   }
